@@ -35,6 +35,8 @@
 	#include <windows.h>
 #endif
 
+#include <ctime>
+
 static const char *StrLtrim(const char *pStr)
 {
 	while(*pStr && *pStr >= 0 && *pStr <= 32)
@@ -1683,6 +1685,7 @@ int main(int argc, const char **argv) // ignore_convention
 	}
 #endif
 
+	srand(time(NULL));
 	CServer *pServer = CreateServer();
 	IKernel *pKernel = IKernel::Create();
 

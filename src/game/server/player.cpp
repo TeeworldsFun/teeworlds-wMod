@@ -2,6 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <new>
 #include <engine/shared/config.h>
+#include <game/server/statistiques.h>
+#include <game/server/event.h>
 #include "player.h"
 
 
@@ -18,9 +20,14 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_pCharacter = 0;
 	m_ClientID = ClientID;
 	m_Team = GameServer()->m_pController->ClampTeam(Team);
+	if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && Team != TEAM_SPECTATORS )
+		Team = TEAM_RED;
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_LastActionTick = Server()->Tick();
 	m_TeamChangeTick = Server()->Tick();
+	m_level = 0;
+	m_BroadcastTick = 0;
+	str_copy(m_aRealName, "", MAX_NAME_LENGTH);
 }
 
 CPlayer::~CPlayer()
@@ -152,9 +159,9 @@ void CPlayer::OnDisconnect(const char *pReason)
 	{
 		char aBuf[512];
 		if(pReason && *pReason)
-			str_format(aBuf, sizeof(aBuf), "'%s' has left the game (%s)", Server()->ClientName(m_ClientID), pReason);
+			str_format(aBuf, sizeof(aBuf), "'%s' has left the game =S (%s)", Server()->ClientName(m_ClientID), pReason);
 		else
-			str_format(aBuf, sizeof(aBuf), "'%s' has left the game", Server()->ClientName(m_ClientID));
+			str_format(aBuf, sizeof(aBuf), "'%s' has left the game =(", Server()->ClientName(m_ClientID));
 		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", m_ClientID, Server()->ClientName(m_ClientID));
@@ -230,7 +237,7 @@ void CPlayer::Respawn()
 		m_Spawning = true;
 }
 
-void CPlayer::SetTeam(int Team)
+void CPlayer::SetTeam(int Team, bool verbose)
 {
 	// clamp the team
 	Team = GameServer()->m_pController->ClampTeam(Team);
@@ -238,8 +245,20 @@ void CPlayer::SetTeam(int Team)
 		return;
 
 	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "'%s' joined the %s", Server()->ClientName(m_ClientID), GameServer()->m_pController->GetTeamName(Team));
-	GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+
+	if ( verbose )
+	{
+		if ( GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE )
+		{
+			str_format(aBuf, sizeof(aBuf), "'%s' joined the %s", Server()->ClientName(m_ClientID), GameServer()->m_pController->GetTeamName(Team));
+			GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+		}
+		else
+		{
+			str_format(aBuf, sizeof(aBuf), "'%s' joined the zombies", Server()->ClientName(m_ClientID));
+			GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+		}
+	}
 
 	KillCharacter();
 
@@ -263,12 +282,70 @@ void CPlayer::SetTeam(int Team)
 	}
 }
 
+void CPlayer::SetCaptureTeam(int Team)
+{
+        // clamp the team
+        Team = GameServer()->m_pController->ClampTeam(Team);
+        if(m_Team == Team || (GameServer()->m_pEventsGame->GetActualEvent() == TEE_VS_ZOMBIE && m_Team != TEAM_RED) || (m_Team != TEAM_SPECTATORS && this == GameServer()->m_pController->m_pCaptain[m_Team] && GameServer()->m_pController->GetTeamScore(m_Team) > 1) )
+                return;
+
+        char aBuf[512];
+	if ( GameServer()->m_pController->IsTeamplay() )
+	{
+		char NameTeam[512];
+		if (GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE)
+			str_copy(NameTeam, GameServer()->m_pController->GetTeamName(Team), 512);
+		else if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE)
+			str_copy(NameTeam, "zombies", 512);
+	       	str_format(aBuf, sizeof(aBuf), "'%s' was captured by the %s !", Server()->ClientName(m_ClientID), NameTeam);
+	        GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+	}
+
+        m_Team = Team;
+        m_LastActionTick = Server()->Tick();
+        str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", m_ClientID, Server()->ClientName(m_ClientID), m_Team);
+        GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+
+        GameServer()->m_pController->OnPlayerInfoChange(GameServer()->m_apPlayers[m_ClientID]);
+
+        if(Team == TEAM_SPECTATORS)
+        {
+                // update spectator modes
+                for(int i = 0; i < MAX_CLIENTS; ++i)
+                {
+                        if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_SpectatorID == m_ClientID)
+                                GameServer()->m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
+                }
+        }
+
+	if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE)
+		GameServer()->SendChatTarget(GetCID(), "You're a zombie ! Eat some brains !");
+}
+
+void CPlayer::SetSID(long id)
+{
+	m_StatID = id;
+	m_level = m_pGameServer->m_pStatistiques->GetLevel(GetSID());
+}
+
 void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
 
 	if(!GameServer()->m_pController->CanSpawn(m_Team, &SpawnPos))
 		return;
+
+	GameServer()->SetName(GetCID());
+
+	if( GameServer()->m_pStatistiques->GetLevel(GetSID()) < m_level )
+	{
+		m_level = m_pGameServer->m_pStatistiques->GetLevel(GetSID());
+		char Text[256] = "";
+		str_format(Text, 256, "%s has a leveldown. He is level %ld now. Bad Game =( !", m_aRealName, m_level);
+		GameServer()->SendChatTarget(-1, Text);
+	}
+
+	m_Score = m_pGameServer->m_pStatistiques->GetScore(GetSID());
 
 	m_Spawning = false;
 	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);

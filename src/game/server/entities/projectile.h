@@ -7,7 +7,7 @@ class CProjectile : public CEntity
 {
 public:
 	CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
-		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon);
+		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, int Life = false);
 
 	vec2 GetPos(float Time);
 	void FillInfo(CNetObj_Projectile *pProj);
@@ -15,6 +15,8 @@ public:
 	virtual void Reset();
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
+
+	const int GetOwner() { return m_Owner; }
 
 private:
 	vec2 m_Direction;
@@ -27,6 +29,9 @@ private:
 	float m_Force;
 	int m_StartTick;
 	bool m_Explosive;
+	int m_ExplodeTick;
+	bool m_Bounce;
+	bool m_Life;
 };
 
 #endif

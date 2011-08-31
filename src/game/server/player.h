@@ -20,9 +20,14 @@ public:
 
 	void TryRespawn();
 	void Respawn();
-	void SetTeam(int Team);
+	void SetTeam(int Team, bool verbose);
+	void SetCaptureTeam(int Team);
+	void SetSID(long id);
+	void SetRealName(const char RealName[]) { str_copy(m_aRealName, RealName, MAX_NAME_LENGTH); };
 	int GetTeam() const { return m_Team; };
 	int GetCID() const { return m_ClientID; };
+	long GetSID() const { return m_StatID; };
+	const char* GetRealName() { return m_aRealName; };
 
 	void Tick();
 	void PostTick();
@@ -96,6 +101,9 @@ public:
 		int m_Max;
 	} m_Latency;
 
+	unsigned long m_level;
+	time_t m_BroadcastTick;
+
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
@@ -107,6 +115,8 @@ private:
 	bool m_Spawning;
 	int m_ClientID;
 	int m_Team;
+	long m_StatID;
+	char m_aRealName[MAX_NAME_LENGTH];
 };
 
 #endif
