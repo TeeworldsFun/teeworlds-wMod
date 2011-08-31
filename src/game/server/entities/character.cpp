@@ -4,10 +4,13 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 #include <game/mapitems.h>
+#include <game/server/statistiques.h>
+#include <game/server/event.h>
 
 #include "character.h"
 #include "laser.h"
 #include "projectile.h"
+#include "protect.h"
 
 //input count
 struct CInputCount
@@ -45,6 +48,22 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	m_ProximityRadius = ms_PhysSize;
 	m_Health = 0;
 	m_Armor = 0;
+	str_copy(m_aWeapons[WEAPON_HAMMER].m_Name, "Hammer", 50);
+	str_copy(m_aWeapons[WEAPON_GUN].m_Name, "Gun", 50);
+	str_copy(m_aWeapons[WEAPON_SHOTGUN].m_Name, "Shotgun", 50);
+	str_copy(m_aWeapons[WEAPON_GRENADE].m_Name, "Grenade", 50);
+	str_copy(m_aWeapons[WEAPON_RIFLE].m_Name, "Laser", 50);
+	str_copy(m_aWeapons[WEAPON_NINJA].m_Name, "Katana", 50);
+}
+
+CCharacter::~CCharacter()
+{
+	if ( m_AuraProtect[0] != 0 )
+	{
+		for ( int i = 0; i < 12; i++ )
+			delete m_AuraProtect[i];
+		m_AuraProtect[0] = 0;
+	}
 }
 
 void CCharacter::Reset()
@@ -60,6 +79,9 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
 
+	m_HealthRegenStart = 0;
+	m_HealthIncrase = true;
+
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
 
@@ -71,12 +93,19 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_ReckoningTick = 0;
 	mem_zero(&m_SendCore, sizeof(m_SendCore));
 	mem_zero(&m_ReckoningCore, sizeof(m_ReckoningCore));
+	m_Protect = Server()->Tick();
+	m_AuraProtect[0] = 0;
 
 	GameServer()->m_World.InsertEntity(this);
 	m_Alive = true;
 
 	GameServer()->m_pController->OnCharacterSpawn(this);
-
+	if ( GameServer()->m_pEventsGame->GetActualEvent() == HAVE_ALL_WEAPON )
+	{
+		GiveWeapon(WEAPON_RIFLE, 20);
+		GiveWeapon(WEAPON_GRENADE, 20);
+		GiveWeapon(WEAPON_SHOTGUN, 20);
+	}
 	return true;
 }
 
@@ -98,6 +127,12 @@ void CCharacter::SetWeapon(int W)
 
 	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
 		m_ActiveWeapon = 0;
+
+	char a[256] = "";
+	str_format(a, 256, " Ammo of the %s is : %d/%d.", m_aWeapons[W].m_Name, m_aWeapons[W].m_Ammo, g_pData->m_Weapons.m_aId[W].m_Maxammo);
+	GameServer()->SendChatTarget(m_pPlayer->GetCID(), a);
+	
+	GameServer()->m_pStatistiques->AddChangeWeapon(m_pPlayer->GetSID());
 }
 
 bool CCharacter::IsGrounded()
@@ -115,11 +150,19 @@ void CCharacter::HandleNinja()
 	if(m_ActiveWeapon != WEAPON_NINJA)
 		return;
 
-	if ((Server()->Tick() - m_Ninja.m_ActivationTick) > (g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000))
+	int active_player = 0;
+	for ( int i = 0; i < MAX_CLIENTS; i++ )
 	{
-		// time's up, return
+		if ( GameServer()->IsClientPlayer(i) )
+			active_player++;
+	}
+
+	if ( m_Ninja.m_Killed >= 3 || (active_player != 1 && m_Ninja.m_Killed >= active_player - 1) )
+	{
 		m_aWeapons[WEAPON_NINJA].m_Got = false;
 		m_ActiveWeapon = m_LastWeapon;
+		if(m_ActiveWeapon == WEAPON_NINJA)
+			m_ActiveWeapon = WEAPON_GUN;
 
 		SetWeapon(m_ActiveWeapon);
 		return;
@@ -179,7 +222,8 @@ void CCharacter::HandleNinja()
 				if(m_NumObjectsHit < 10)
 					m_apHitObjects[m_NumObjectsHit++] = aEnts[i];
 
-				aEnts[i]->TakeDamage(vec2(0, -10.0f), g_pData->m_Weapons.m_Ninja.m_pBase->m_Damage, m_pPlayer->GetCID(), WEAPON_NINJA);
+				if(aEnts[i]->TakeDamage(vec2(0, 10.0f), 20, m_pPlayer->GetCID(), WEAPON_NINJA))
+					m_Ninja.m_Killed++;
 			}
 		}
 
@@ -193,7 +237,7 @@ void CCharacter::HandleNinja()
 void CCharacter::DoWeaponSwitch()
 {
 	// make sure we can switch
-	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got)
+	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got || (GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA) )
 		return;
 
 	// switch Weapon
@@ -249,10 +293,9 @@ void CCharacter::FireWeapon()
 	DoWeaponSwitch();
 	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 
-	bool FullAuto = false;
-	if(m_ActiveWeapon == WEAPON_GRENADE || m_ActiveWeapon == WEAPON_SHOTGUN || m_ActiveWeapon == WEAPON_RIFLE)
-		FullAuto = true;
-
+	bool FullAuto = true;
+	/*if(m_ActiveWeapon == WEAPON_GRENADE || m_ActiveWeapon == WEAPON_SHOTGUN || m_ActiveWeapon == WEAPON_RIFLE)
+		FullAuto = true;*/
 
 	// check if we gonna fire
 	bool WillFire = false;
@@ -272,6 +315,14 @@ void CCharacter::FireWeapon()
 		m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
 		GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
 		return;
+	}
+
+	int sound = -1;
+
+	if ( (Server()->Tick() - m_SoundReloadStart) >= 150 * Server()->TickSpeed() / 1000 )
+	{
+		m_SoundReloadStart = Server()->Tick();
+		sound = SOUND_GRENADE_EXPLODE;
 	}
 
 	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius*0.75f;
@@ -317,6 +368,11 @@ void CCharacter::FireWeapon()
 			if(Hits)
 				m_ReloadTimer = Server()->TickSpeed()/3;
 
+			GameServer()->CreateExplosion(m_Pos, m_pPlayer->GetCID(), m_ActiveWeapon, true, false);
+			if ( sound != -1 )
+				GameServer()->CreateSound(m_Pos, sound);
+
+
 		} break;
 
 		case WEAPON_GUN:
@@ -326,7 +382,7 @@ void CCharacter::FireWeapon()
 				ProjStartPos,
 				Direction,
 				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-				1, 0, 0, -1, WEAPON_GUN);
+				1, true, 0, sound, WEAPON_GUN);
 
 			// pack the Projectile and send it to the client Directly
 			CNetObj_Projectile p;
@@ -338,8 +394,9 @@ void CCharacter::FireWeapon()
 				Msg.AddInt(((int *)&p)[i]);
 
 			Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
-
-			GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE);
+			
+			if ( sound != -1 )
+				GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE);
 		} break;
 
 		case WEAPON_SHOTGUN:
@@ -361,7 +418,7 @@ void CCharacter::FireWeapon()
 					ProjStartPos,
 					vec2(cosf(a), sinf(a))*Speed,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-					1, 0, 0, -1, WEAPON_SHOTGUN);
+					1, true, 0, sound, WEAPON_SHOTGUN);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -371,36 +428,69 @@ void CCharacter::FireWeapon()
 					Msg.AddInt(((int *)&p)[i]);
 			}
 
+			if ( sound != -1 )
+				GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
 			Server()->SendMsg(&Msg, 0,m_pPlayer->GetCID());
 
-			GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
 		} break;
 
 		case WEAPON_GRENADE:
 		{
-			CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GRENADE,
-				m_pPlayer->GetCID(),
-				ProjStartPos,
-				Direction,
-				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
-				1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GRENADE);
-
-			// pack the Projectile and send it to the client Directly
-			CNetObj_Projectile p;
-			pProj->FillInfo(&p);
+			int ShotSpread = 2;
 
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-			Msg.AddInt(1);
-			for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
-				Msg.AddInt(((int *)&p)[i]);
+			Msg.AddInt(ShotSpread*2+1);
+
+			for(int i = -ShotSpread; i <= ShotSpread; ++i)
+			{
+				float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+				float a = GetAngle(Direction);
+				a += Spreading[i+2];
+				float v = 1-(absolute(i)/(float)ShotSpread);
+				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+
+				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GRENADE,
+					m_pPlayer->GetCID(),
+					ProjStartPos,
+					vec2(cosf(a), sinf(a))*Speed,
+					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
+					1, true, 0, sound, WEAPON_GRENADE);
+
+				// pack the Projectile and send it to the client Directly
+				CNetObj_Projectile p;
+				pProj->FillInfo(&p);
+
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+				Msg.AddInt(1);
+				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+					Msg.AddInt(((int *)&p)[i]);
+			}
+
+			if ( sound != -1 )
+				GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
 			Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
 
-			GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
 		} break;
 
 		case WEAPON_RIFLE:
 		{
-			new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
+			int ShotSpread = 2;
+
+			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+			Msg.AddInt(ShotSpread*2+1);
+
+			for(int i = -ShotSpread; i <= ShotSpread; ++i)
+			{
+				float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+				float a = GetAngle(Direction);
+				a += Spreading[i+2];
+				float v = 1-(absolute(i)/(float)ShotSpread);
+				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+
+				new CLaser(GameWorld(), m_Pos, vec2(cosf(a), sinf(a))*Speed, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
+			}
+
+			if ( sound != -1 )
 			GameServer()->CreateSound(m_Pos, SOUND_RIFLE_FIRE);
 		} break;
 
@@ -413,22 +503,64 @@ void CCharacter::FireWeapon()
 			m_Ninja.m_CurrentMoveTime = g_pData->m_Weapons.m_Ninja.m_Movetime * Server()->TickSpeed() / 1000;
 			m_Ninja.m_OldVelAmount = length(m_Core.m_Vel);
 
-			GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
+			if ( sound != -1 )
+				GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
 		} break;
 
 	}
 
 	m_AttackTick = Server()->Tick();
 
-	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0) // -1 == unlimited
+	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && GameServer()->m_pEventsGame->GetActualEvent() != UNLIMITED_AMMO) // -1 == unlimited
 		m_aWeapons[m_ActiveWeapon].m_Ammo--;
 
 	if(!m_ReloadTimer)
-		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / 1000;
+		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / 7500;
+
+	GameServer()->m_pStatistiques->AddFire(m_pPlayer->GetSID());
 }
 
 void CCharacter::HandleWeapons()
 {
+	if ( GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA && m_ActiveWeapon != WEAPON_NINJA)
+	{
+		switch(GameServer()->m_pEventsGame->GetActualEvent())
+		{
+			case HAMMER:
+				m_ActiveWeapon = WEAPON_HAMMER;
+				break;
+			case GUN:
+				m_ActiveWeapon = WEAPON_GUN;
+				break;
+			case SHOTGUN:
+				if ( m_aWeapons[WEAPON_SHOTGUN].m_Got == false )
+					GiveWeapon(WEAPON_SHOTGUN, 20);
+				m_ActiveWeapon = WEAPON_SHOTGUN;
+				break;
+			case GRENADE:
+				if ( m_aWeapons[WEAPON_GRENADE].m_Got == false )
+					GiveWeapon(WEAPON_GRENADE, 20);
+				m_ActiveWeapon = WEAPON_GRENADE;
+				break;
+			case RIFLE:
+				if ( m_aWeapons[WEAPON_RIFLE].m_Got == false )
+					GiveWeapon(WEAPON_RIFLE, 20);
+				m_ActiveWeapon = WEAPON_RIFLE;
+				break;
+			case KATANA:
+				if ( m_aWeapons[WEAPON_NINJA].m_Got == false )
+					GiveNinja();
+				m_ActiveWeapon = WEAPON_NINJA;
+				break;
+		}
+	}
+	else if ( GameServer()->m_pEventsGame->GetActualEvent() == WALLSHOT )
+	{
+		if ( m_aWeapons[WEAPON_RIFLE].m_Got == false )
+			GiveWeapon(WEAPON_RIFLE, 20);
+		m_ActiveWeapon = WEAPON_RIFLE;
+	}
+
 	//ninja
 	HandleNinja();
 
@@ -442,29 +574,59 @@ void CCharacter::HandleWeapons()
 	// fire Weapon, if wanted
 	FireWeapon();
 
-	// ammo regen
-	int AmmoRegenTime = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Ammoregentime;
-	if(AmmoRegenTime)
+	if ( m_ActiveWeapon != WEAPON_NINJA && GameServer()->m_pEventsGame->GetActualEvent() != HAMMER && ((Server()->Tick() - m_HealthRegenStart) >= 150 * Server()->TickSpeed() / 1000) )
 	{
-		// If equipped and not active, regen ammo?
-		if (m_ReloadTimer <= 0)
+		if( m_ActiveWeapon != WEAPON_HAMMER || !(m_LatestInput.m_Fire&1) )
 		{
-			if (m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart < 0)
-				m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick();
-
-			if ((Server()->Tick() - m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart) >= AmmoRegenTime * Server()->TickSpeed() / 1000)
+			if ( GameServer()->m_pEventsGame->GetActualEvent() != LIFE_ARMOR_CRAZY || m_HealthIncrase == true )
 			{
-				// Add some ammo
-				m_aWeapons[m_ActiveWeapon].m_Ammo = min(m_aWeapons[m_ActiveWeapon].m_Ammo + 1, 10);
-				m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = -1;
+		        	if (m_Health < 10)
+			            m_Health++;
+			        else if (m_Armor < 10)
+			            m_Armor++;
+				
+				if (m_Armor == 10)
+					m_HealthIncrase = false;
 			}
+			else
+			{
+				if (m_Armor > 0)
+		           		m_Armor--;
+		        	else if (m_Health > 1)
+		            		m_Health--;
+
+				if (m_Health == 1)
+					m_HealthIncrase = true;
+			}
+		        m_HealthRegenStart = Server()->Tick();
 		}
-		else
+		else if ( (Server()->Tick() - m_HealthRegenStart) >= 350 * Server()->TickSpeed() / 1000 )
 		{
-			m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = -1;
+			if (m_Armor > 0)
+		            m_Armor--;
+		        else
+		            m_Health--;
+
+			if (m_Health <= 0)
+				Die(m_pPlayer->GetCID(), WEAPON_WORLD);
+
+			m_HealthRegenStart = Server()->Tick();
 		}
 	}
 
+	if ( m_ActiveWeapon != WEAPON_NINJA && m_ActiveWeapon != WEAPON_HAMMER && !(m_LatestInput.m_Fire&1))
+	{
+		if (m_ActiveWeapon != WEAPON_GUN && (Server()->Tick() - m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart) >= 250 * Server()->TickSpeed() / 1000 && m_aWeapons[m_ActiveWeapon].m_Ammo < 20)
+		{
+			m_aWeapons[m_ActiveWeapon].m_Ammo++;
+			m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick();
+		}
+		else if ( m_ActiveWeapon == WEAPON_GUN && (Server()->Tick() - m_aWeapons[WEAPON_GUN].m_AmmoRegenStart) >= 50 * Server()->TickSpeed() / 1000 && m_aWeapons[m_ActiveWeapon].m_Ammo < 100)
+		{
+			m_aWeapons[WEAPON_GUN].m_Ammo++;
+			m_aWeapons[WEAPON_GUN].m_AmmoRegenStart = Server()->Tick();
+		}
+	}
 	return;
 }
 
@@ -472,23 +634,63 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
 	if(m_aWeapons[Weapon].m_Ammo < g_pData->m_Weapons.m_aId[Weapon].m_Maxammo || !m_aWeapons[Weapon].m_Got)
 	{
+		if (!m_aWeapons[Weapon].m_Got)
+			m_aWeapons[Weapon].m_Ammo = min(g_pData->m_Weapons.m_aId[Weapon].m_Maxammo, Ammo);
+		else
+			m_aWeapons[Weapon].m_Ammo += Ammo;
+
 		m_aWeapons[Weapon].m_Got = true;
-		m_aWeapons[Weapon].m_Ammo = min(g_pData->m_Weapons.m_aId[Weapon].m_Maxammo, Ammo);
+		
+		if ( m_aWeapons[Weapon].m_Ammo > 100 )
+			m_aWeapons[Weapon].m_Ammo = 100;
+	
+		if ( Weapon == m_ActiveWeapon && m_ActiveWeapon != WEAPON_NINJA && m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_GUN && m_aWeapons[Weapon].m_Ammo >= 20)
+		{
+			char a[256] = "";
+			str_format(a, 256, "Ammo of the %s is : %d/%d.", m_aWeapons[Weapon].m_Name, m_aWeapons[Weapon].m_Ammo, g_pData->m_Weapons.m_aId[Weapon].m_Maxammo);
+			GameServer()->SendChatTarget(m_pPlayer->GetCID(), a);
+		}
+		
+		GameServer()->m_pStatistiques->AddPickUpWeapon(m_pPlayer->GetSID());
 		return true;
 	}
 	return false;
 }
 
-void CCharacter::GiveNinja()
+bool CCharacter::GiveNinja()
 {
-	m_Ninja.m_ActivationTick = Server()->Tick();
-	m_aWeapons[WEAPON_NINJA].m_Got = true;
-	m_aWeapons[WEAPON_NINJA].m_Ammo = -1;
-	if (m_ActiveWeapon != WEAPON_NINJA)
+	if ( !m_aWeapons[WEAPON_NINJA].m_Got || m_Ninja.m_Killed > 0 )
+	{ 
+		m_aWeapons[WEAPON_NINJA].m_Got = true;
+		m_aWeapons[WEAPON_NINJA].m_Ammo = -1;
 		m_LastWeapon = m_ActiveWeapon;
-	m_ActiveWeapon = WEAPON_NINJA;
+		m_ActiveWeapon = WEAPON_NINJA;
+		m_Ninja.m_Damage = 0;
+		m_Ninja.m_Killed = 0;
 
-	GameServer()->CreateSound(m_Pos, SOUND_PICKUP_NINJA);
+		GameServer()->CreateSound(m_Pos, SOUND_PICKUP_NINJA);
+		if ( GameServer()->m_pEventsGame->GetActualEvent() != KATANA )
+			GameServer()->m_pStatistiques->AddPickUpNinja(m_pPlayer->GetSID());
+		return true;
+	}
+	return false;
+}
+
+bool CCharacter::RemoveWeapon(int Weapon)
+{
+	if ( m_aWeapons[Weapon].m_Got )
+	{
+		m_aWeapons[Weapon].m_Got = false;
+		if ( m_ActiveWeapon == Weapon )
+		{
+			m_ActiveWeapon = m_LastWeapon;
+			if(m_ActiveWeapon == WEAPON_NINJA || m_ActiveWeapon == Weapon)
+				m_ActiveWeapon = WEAPON_GUN;
+			SetWeapon(m_ActiveWeapon);
+		}
+		return true;
+	}
+	return false;
 }
 
 void CCharacter::SetEmote(int Emote, int Tick)
@@ -545,12 +747,17 @@ void CCharacter::Tick()
 		char Buf[128];
 		str_format(Buf, sizeof(Buf), "You were moved to %s due to team balancing", GameServer()->m_pController->GetTeamName(m_pPlayer->GetTeam()));
 		GameServer()->SendBroadcast(Buf, m_pPlayer->GetCID());
-
+		m_pPlayer->m_BroadcastTick = Server()->Tick();
 		m_pPlayer->m_ForceBalanced = false;
 	}
 
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
+
+	if(IsGrounded() == false && m_Core.m_Jumped == m_Jumped )
+		m_Core.m_Jumped &= ~2;
+	else if (m_Core.m_Jumped != m_Jumped)
+		m_Jumped = m_Core.m_Jumped;
 
 	// handle death-tiles and leaving gamelayer
 	if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
@@ -560,6 +767,19 @@ void CCharacter::Tick()
 		GameLayerClipped(m_Pos))
 	{
 		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
+	}
+
+	if ((m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) && m_AuraProtect[0] == 0 )
+	{
+		for ( int i = 0; i < 12; i++ )
+			m_AuraProtect[i] = new CProtect(&(GameServer()->m_World), this, i * 30, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
+	}
+
+	else if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) && m_AuraProtect[0] != 0 )
+	{
+		for ( int i = 0; i < 12; i++ )
+			delete m_AuraProtect[i];
+		m_AuraProtect[0] = 0;
 	}
 
 	// handle Weapons
@@ -655,7 +875,7 @@ void CCharacter::TickDefered()
 
 bool CCharacter::IncreaseHealth(int Amount)
 {
-	if(m_Health >= 10)
+	if(m_Health >= 10 || m_ActiveWeapon == WEAPON_NINJA)
 		return false;
 	m_Health = clamp(m_Health+Amount, 0, 10);
 	return true;
@@ -663,7 +883,7 @@ bool CCharacter::IncreaseHealth(int Amount)
 
 bool CCharacter::IncreaseArmor(int Amount)
 {
-	if(m_Armor >= 10)
+	if(m_Armor >= 10 || m_ActiveWeapon == WEAPON_NINJA)
 		return false;
 	m_Armor = clamp(m_Armor+Amount, 0, 10);
 	return true;
@@ -696,21 +916,77 @@ void CCharacter::Die(int Killer, int Weapon)
 	m_pPlayer->m_DieTick = Server()->Tick();
 
 	m_Alive = false;
+	if ( m_AuraProtect[0] != 0 )
+	{
+		for ( int i = 0; i < 12; i++ )
+			delete m_AuraProtect[i];
+		m_AuraProtect[0] = 0;
+	}
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+	if ( GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE )
+		GetPlayer()->SetCaptureTeam(GameServer()->m_apPlayers[Killer]->GetTeam());
+	else if ( GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
+		GetPlayer()->SetCaptureTeam(TEAM_RED);
 }
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
-	m_Core.m_Vel += Force;
+	if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) || From == m_pPlayer->GetCID())
+		m_Core.m_Vel += Force;
 
-	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From) && !g_Config.m_SvTeamdamage)
+	if ( GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && GetPlayer()->GetTeam() != TEAM_RED && GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->GetTeam() == TEAM_RED )
+		GetPlayer()->SetCaptureTeam(TEAM_RED);
+
+	if( ((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_HEAL && Weapon == WEAPON_HAMMER) || (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE)) && GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From))
+	{
+		int heal = 5;
+		if(m_Health < 10)
+		{
+			m_Health += heal;
+			if ( m_Health - 10 > 0 )
+				heal = m_Health - 10;
+			else
+				heal = 0;
+		}
+
+		if(heal && m_Armor < 10 )
+		{
+			m_Armor += heal;
+			if ( m_Armor > 10 )
+				m_Armor = 0;
+		}
+		return false;
+	}
+	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From) && !g_Config.m_SvTeamdamage && GameServer()->m_pEventsGame->GetActualEventTeam() != CAN_KILL)
 		return false;
 
-	// m_pPlayer only inflicts half damage on self
+	if ( m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed()))
+		return false;
+	else
+		m_Protect = 0;
+
 	if(From == m_pPlayer->GetCID())
-		Dmg = max(1, Dmg/2);
+		return false;
+
+	if ( m_ActiveWeapon == WEAPON_NINJA && Weapon != WEAPON_NINJA )
+	{
+		m_Ninja.m_Damage += Dmg;
+		if ( m_Ninja.m_Damage >= 40 )
+		{
+			Dmg = m_Ninja.m_Damage / 40;
+			m_Ninja.m_Damage = 0;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else if ( Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && GameServer()->m_pEventsGame->GetActualEvent() != HAMMER )
+		return false;
+	else if ( GameServer()->m_pEventsGame->GetActualEvent() == PROTECT_X2 )
+		Dmg = min(1, Dmg/2);
 
 	m_DamageTaken++;
 
@@ -726,7 +1002,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		GameServer()->CreateDamageInd(m_Pos, 0, Dmg);
 	}
 
-	if(Dmg)
+	if(Dmg && Weapon != WEAPON_NINJA && GameServer()->m_pEventsGame->GetActualEvent() != INSTAGIB)
 	{
 		if(m_Armor)
 		{
@@ -749,6 +1025,11 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		}
 
 		m_Health -= Dmg;
+	}
+	else if ( Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->GetActualEvent() == INSTAGIB )
+	{
+		m_Health = 0;
+		m_Armor = 0;
 	}
 
 	m_DamageTakenTick = Server()->Tick();
@@ -781,7 +1062,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			}
 		}
 
-		return false;
+		return true;
 	}
 
 	if (Dmg > 2)
@@ -841,7 +1122,11 @@ void CCharacter::Snap(int SnappingClient)
 	{
 		pCharacter->m_Health = m_Health;
 		pCharacter->m_Armor = m_Armor;
-		if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
+		if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && m_ActiveWeapon != WEAPON_GUN && m_ActiveWeapon != WEAPON_NINJA && m_ActiveWeapon != WEAPON_HAMMER)
+			pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo / 2;
+		else if(m_ActiveWeapon == WEAPON_GUN && m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
+			pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo / 10;
+		else
 			pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo;
 	}
 

@@ -13,6 +13,8 @@
 #include "gamemodes/tdm.h"
 #include "gamemodes/ctf.h"
 #include "gamemodes/mod.h"
+#include "statistiques.h"
+#include "event.h"
 
 enum
 {
@@ -51,7 +53,15 @@ CGameContext::CGameContext()
 CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if ( m_apPlayers[i] )
+			m_pStatistiques->SetStopPlay(m_apPlayers[i]->GetSID());
 		delete m_apPlayers[i];
+	}
+
+	m_pStatistiques->WriteStat();
+	delete m_pStatistiques;
+	delete m_pEventsGame;
 	if(!m_Resetting)
 		delete m_pVoteOptionHeap;
 }
@@ -82,6 +92,22 @@ class CCharacter *CGameContext::GetPlayerChar(int ClientID)
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return 0;
 	return m_apPlayers[ClientID]->GetCharacter();
+}
+
+void CGameContext::SetName(int ClientID)
+{
+	if (!m_apPlayers[ClientID] || str_comp(m_apPlayers[ClientID]->GetRealName(), "") == 0)
+		return;
+
+	char Prefix[10] = "";
+	if (Server()->IsAuthed(ClientID))
+		str_append(Prefix, "A", 10);
+	if (m_pEventsGame->GetActualEventTeam() == STEAL_TEE && (m_pController->m_pCaptain[TEAM_RED] == m_apPlayers[ClientID] || m_pController->m_pCaptain[TEAM_BLUE] == m_apPlayers[ClientID]) )
+		str_append(Prefix, "C", 10);
+
+	char Name[MAX_NAME_LENGTH + 10] = "";
+	str_format(Name, MAX_NAME_LENGTH + 10, "[%s%ld]%s", Prefix, m_pStatistiques->GetLevel(m_apPlayers[ClientID]->GetSID()), m_apPlayers[ClientID]->GetRealName());
+	Server()->SetClientName(ClientID, Name);
 }
 
 void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount)
@@ -115,8 +141,29 @@ void CGameContext::CreateHammerHit(vec2 Pos)
 }
 
 
-void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage)
+void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke)
 {
+	if ( Smoke == true )
+	{	
+		CCharacter *apEnts[MAX_CLIENTS];
+		int Num = m_World.FindEntities(Pos, 135.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		for(int i = 0; i < Num; i++)
+		{
+			if ( Owner == apEnts[i]->GetPlayer()->GetCID() )
+				return;
+		}
+	}
+
+	/*if ( Weapon == WEAPON_HAMMER )
+	{
+		CLaser *apEnts[50];
+		int Num = m_World.FindEntities(Pos, 300.0f, (CEntity**)apEnts, 50, CGameWorld::ENTTYPE_LASER);
+		for(int i = 0; i < Num; i++)
+		{
+			m_World.DestroyEntity(apEnts[i]);
+		}
+	}*/
+	
 	// create the event
 	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
 	if(pEvent)
@@ -390,6 +437,7 @@ void CGameContext::OnTick()
 
 	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();
+	m_pEventsGame->Tick();
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -399,6 +447,8 @@ void CGameContext::OnTick()
 			m_apPlayers[i]->PostTick();
 		}
 	}
+
+	m_pStatistiques->Tick();
 
 	// update voting
 	if(m_VoteCloseTime)
@@ -506,22 +556,54 @@ void CGameContext::OnClientPredictedInput(int ClientID, void *pInput)
 
 void CGameContext::OnClientEnter(int ClientID)
 {
+	char ip[MAX_IP_LENGTH] = "";
+	Server()->GetClientAddr(ClientID, ip, MAX_IP_LENGTH);
+	bool cut = true;
+	for ( int i = 0; i < MAX_IP_LENGTH; i++ )
+	{
+		if ( ip[i] == '[' )
+			cut = false;
+		else if ( ip[i] == ':' && cut == true )
+		{
+			ip[i] = '\0';
+			break;
+		}
+		else if ( ip[i] == ']' )
+			ip[i] = true;
+	}
+	m_apPlayers[ClientID]->SetSID(m_pStatistiques->GetId(ip, Server()->ClientName(ClientID), Server()->ClientClan(ClientID), Server()->ClientCountry(ClientID)));
+	m_pStatistiques->SetStartPlay(m_apPlayers[ClientID]->GetSID());
+
 	//world.insert_entity(&players[client_id]);
 	m_apPlayers[ClientID]->Respawn();
 	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
+	str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s =D", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
 	SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d", ClientID, Server()->ClientName(ClientID), m_apPlayers[ClientID]->GetTeam());
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	m_VoteUpdate = true;
+
+	m_apPlayers[ClientID]->SetRealName(Server()->ClientName(ClientID));
+	SetName(ClientID);
+	SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod ***");
+	SendChatTarget(ClientID, "** Writed by PJK **");
+	SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
+	SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /weapon , /stats and /ranks **");
+	SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
 }
 
 void CGameContext::OnClientConnected(int ClientID)
 {
 	// Check which team the player should be on
-	const int StartTeam = g_Config.m_SvTournamentMode ? TEAM_SPECTATORS : m_pController->GetAutoTeam(ClientID);
+	int StartTeam;
+	if ( g_Config.m_SvTournamentMode || m_pEventsGame->GetActualEvent() == SURVIVOR )
+		StartTeam = TEAM_SPECTATORS;
+	else if ( m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
+		StartTeam = TEAM_RED;
+	else
+		StartTeam = m_pController->GetAutoTeam(ClientID);
 
 	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam);
 	//players[client_id].init(client_id);
@@ -549,7 +631,13 @@ void CGameContext::OnClientConnected(int ClientID)
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 {
+	if ( m_apPlayers[ClientID] == m_pController->m_pCaptain[TEAM_RED] )
+		m_pController->m_pCaptain[TEAM_RED] = 0;
+	else if ( m_apPlayers[ClientID] == m_pController->m_pCaptain[TEAM_BLUE] )
+		m_pController->m_pCaptain[TEAM_BLUE] = 0;
+
 	AbortVoteKickOnDisconnect(ClientID);
+	m_pStatistiques->SetStopPlay(m_apPlayers[ClientID]->GetSID());
 	m_apPlayers[ClientID]->OnDisconnect(pReason);
 	delete m_apPlayers[ClientID];
 	m_apPlayers[ClientID] = 0;
@@ -601,7 +689,113 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pMessage++;
 		}
 
-		SendChat(ClientID, Team, pMsg->m_pMessage);
+		if(pMsg->m_pMessage[0]=='/')
+		{
+			if (str_comp_nocase(pMsg->m_pMessage, "/cmdlist") == 0 || str_comp_nocase(pMsg->m_pMessage, "/help") == 0 )
+			{
+				SendChatTarget(ClientID, "*** Commands available are : ***");
+				SendChatTarget(ClientID, "/cmdlist or /help : To get commands available.");			
+				SendChatTarget(ClientID, "/info : To get informations of this mod.");
+				SendChatTarget(ClientID, "/weapon : To get informations of the actual weapon.");
+				SendChatTarget(ClientID, "/ammo : To get ammo of the actual weapon.");
+				SendChatTarget(ClientID, "/stats : To get your statistics.");
+				SendChatTarget(ClientID, "/ranks : To get your ranks.");
+				SendChatTarget(ClientID, "/player : To get your upgrades.");
+				SendChatTarget(ClientID, "/lock : To lock/unlock your statistics.");
+				SendChatTarget(ClientID, "/reset_stats : To reset partially your statistics.");
+				SendChatTarget(ClientID, "/reset_all_stats : To reset all your statistics.");
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/info") == 0)
+			{
+				SendChatTarget(ClientID, "*** Extreme Weapon Mod ***");
+				SendChatTarget(ClientID, "** Writed by PJK **");
+				SendChatTarget(ClientID, "*It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
+				SendChatTarget(ClientID, "- The gun is very fast and explodes when it hits. You have 100 Ammo that regenerate in 5 sec.");
+				SendChatTarget(ClientID, "- The hammer is also very fast and explodes to protect us when it is used but it use our armor and health.");
+				SendChatTarget(ClientID, "- The grenade is faster and has a larger curvature in this mod, it fires six bullets that explode all the time.");
+				SendChatTarget(ClientID, "- The shotgun is faster in this mod, it fires six bullets that explode when they hit or they deploy in 6 others balls each when they haven't got energy.");
+				SendChatTarget(ClientID, "- The laser is faster in this mod and it fires 6 laser beam that explode when they bounce.");
+				SendChatTarget(ClientID, "- The katana is the most powerful of all weapons, it transforms 50 damage in 1, can move very quickly, prevents die on death zone and kills in a single shot but it can only kill 3 tee and you can't regenerate.");
+				SendChatTarget(ClientID, "- For the grenade, the shotgun and the laser, you have 20 Ammo that regenerate in 5 sec but you can store up to 100 by pick up the weapons in the map."); 
+				SendChatTarget(ClientID, "- You can fly into the air by pressing the up key and the hook is longer in this mod.");
+				SendChatTarget(ClientID, "- There is a system of statistics to get information of your gameplay. (Say /stats to have this statistics but you can't modify your name to keep them)");
+				SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/weapon") == 0)
+			{
+				CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
+				if (pChr)
+				{
+					switch(pChr->GetActiveWeapon())
+					{
+						case WEAPON_HAMMER:
+							SendChatTarget(ClientID, "- The hammer is very fast and explodes to protect us when it is used but it use our armor and health.");
+							break;
+						case WEAPON_GUN:
+							SendChatTarget(ClientID, "- The gun is very fast and explodes when it hits. You have 100 Ammo that regenerate in 5 sec.");
+							break;
+						case WEAPON_GRENADE:
+							SendChatTarget(ClientID, "- The grenade is faster and has a larger curvature in this mod, it fires six bullets that explode all the time.");
+							break;
+						case WEAPON_SHOTGUN:
+							SendChatTarget(ClientID, "- The shotgun is faster in this mod, it fires six bullets that explode when they hit or they deploy in 6 others balls each when they haven't got energy.");
+						break;
+						case WEAPON_RIFLE:
+							SendChatTarget(ClientID, "- The laser is faster in this mod and it fires 6 laser beam that explode when they bounce.");
+							break;
+						case WEAPON_NINJA:
+							SendChatTarget(ClientID, "- The katana is the most powerful of all weapons, it transforms 50 damage in 1, can move very quickly, prevents die on death zone and kills in a single shot but it can only kill 3 tee and you can't regenerate.");
+							break;
+					}
+				}
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/ammo") == 0)
+			{
+				CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
+				if ( pChr )
+				{
+					char a[256] = "";
+					str_format(a, 256, " Ammo of the actual weapon is : %d/%d.", pChr->GetAmmoActiveWeapon(), g_pData->m_Weapons.m_aId[pChr->GetActiveWeapon()].m_Maxammo);
+					SendChatTarget(ClientID, a);
+				}
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/stats") == 0)
+			{
+				SendChat(ClientID, Team, pMsg->m_pMessage);
+				m_pStatistiques->DisplayStat(m_apPlayers[ClientID]->GetSID(), m_apPlayers[ClientID]->GetRealName());
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/ranks") == 0)
+			{
+				SendChat(ClientID, Team, pMsg->m_pMessage);
+				m_pStatistiques->DisplayRank(m_apPlayers[ClientID]->GetSID(), m_apPlayers[ClientID]->GetRealName());
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/player") == 0)
+			{
+				m_pStatistiques->DisplayPlayer(m_apPlayers[ClientID]->GetSID(), ClientID);
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/lock") == 0)
+			{
+				bool lock = m_pStatistiques->Lock(m_apPlayers[ClientID]->GetSID());
+				char a[256] = "";
+				str_format(a, 256, "Your statistics are now : %s. ", lock ? "Locked" : "Unlocked");
+				SendChatTarget(ClientID, a);
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/reset_stats") == 0)
+				m_pStatistiques->ResetPartialStat(m_apPlayers[ClientID]->GetSID());
+			else if(str_comp_nocase(pMsg->m_pMessage, "/reset_all_stats") == 0)
+				m_pStatistiques->ResetAllStat(m_apPlayers[ClientID]->GetSID());
+			else
+			{ 
+				char error[256] = "";
+				str_format(error, 256, "Unrecognized option : %s. To get commands available, say /cmdlist", pMsg->m_pMessage);
+				SendChatTarget(ClientID, error);
+			}
+		}
+		else
+		{
+			SendChat(ClientID, Team, pMsg->m_pMessage);
+			m_pStatistiques->AddMessage(m_apPlayers[ClientID]->GetSID());
+		}
 	}
 	else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 	{
@@ -669,6 +863,12 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 			}
 
+			if(str_comp_nocase(pReason, "No reason given") == 0 || str_length(pReason) < 3)
+			{
+				SendChatTarget(ClientID, "Server does not allow voting to kick players without reason");
+				return;
+			}
+
 			if(g_Config.m_SvVoteKickMin)
 			{
 				int PlayerNum = 0;
@@ -699,7 +899,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				SendChatTarget(ClientID, "You can't kick admins");
 				char aBufKick[128];
-				str_format(aBufKick, sizeof(aBufKick), "'%s' called for vote to kick you", Server()->ClientName(ClientID));
+				str_format(aBufKick, sizeof(aBufKick), "'%s' called for vote to kick you (Reason : %s)", Server()->ClientName(ClientID), pReason);
 				SendChatTarget(KickID, aBufKick);
 				return;
 			}
@@ -721,6 +921,12 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(!g_Config.m_SvVoteSpectate)
 			{
 				SendChatTarget(ClientID, "Server does not allow voting to move players to spectators");
+				return;
+			}
+
+			if(str_comp_nocase(pReason, "No reason given") == 0)
+			{
+				SendChatTarget(ClientID, "Server does not allow voting to move players to spectators without reason");
 				return;
 			}
 
@@ -774,6 +980,20 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		if(pPlayer->GetTeam() == pMsg->m_Team || (g_Config.m_SvSpamprotection && pPlayer->m_LastSetTeam && pPlayer->m_LastSetTeam+Server()->TickSpeed()*3 > Server()->Tick()))
 			return;
 
+		if(m_pEventsGame->GetActualEventTeam() >= STEAL_TEE && pMsg->m_Team != TEAM_SPECTATORS)
+		{
+			SendBroadcast("You can't join other team with this event, wait a team capture all players", ClientID);
+			m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
+			return;
+		}
+
+		if(m_pEventsGame->GetActualEvent() == SURVIVOR && pMsg->m_Team != TEAM_SPECTATORS)
+		{
+			SendBroadcast("You can't join other team with this event, wait a winner", ClientID);
+			m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
+			return;
+		}
+
 		if(pPlayer->m_TeamChangeTick > Server()->Tick())
 		{
 			pPlayer->m_LastSetTeam = Server()->Tick();
@@ -781,6 +1001,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf), "Time to wait before changing team: %02d:%02d", TimeLeft/60, TimeLeft%60);
 			SendBroadcast(aBuf, ClientID);
+			m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
 			return;
 		}
 
@@ -792,18 +1013,22 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				pPlayer->m_LastSetTeam = Server()->Tick();
 				if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
 					m_VoteUpdate = true;
-				pPlayer->SetTeam(pMsg->m_Team);
+				pPlayer->SetTeam(pMsg->m_Team, true);
 				(void)m_pController->CheckTeamBalance();
 				pPlayer->m_TeamChangeTick = Server()->Tick();
 			}
 			else
+			{
 				SendBroadcast("Teams must be balanced, please join other team", ClientID);
+				m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
+			}
 		}
 		else
 		{
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf), "Only %d active players are allowed", g_Config.m_SvMaxClients-g_Config.m_SvSpectatorSlots);
 			SendBroadcast(aBuf, ClientID);
+			m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
 		}
 	}
 	else if (MsgID == NETMSGTYPE_CL_SETSPECTATORMODE && !m_World.m_Paused)
@@ -928,9 +1153,12 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 		// set infos
 		char aOldName[MAX_NAME_LENGTH];
-		str_copy(aOldName, Server()->ClientName(ClientID), sizeof(aOldName));
-		Server()->SetClientName(ClientID, pMsg->m_pName);
-		if(str_comp(aOldName, Server()->ClientName(ClientID)) != 0)
+		str_copy(aOldName, m_apPlayers[ClientID]->GetRealName(), sizeof(aOldName));
+
+		m_apPlayers[ClientID]->SetRealName(pMsg->m_pName);
+		SetName(ClientID);
+
+		if(str_comp(aOldName, m_apPlayers[ClientID]->GetRealName()) != 0)
 		{
 			char aChatText[256];
 			str_format(aChatText, sizeof(aChatText), "'%s' changed name to '%s'", aOldName, Server()->ClientName(ClientID));
@@ -943,6 +1171,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
 		pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
 		m_pController->OnPlayerInfoChange(pPlayer);
+		m_pStatistiques->SetInfo(m_apPlayers[ClientID]->GetSID(), pMsg->m_pName, pMsg->m_pClan, pMsg->m_Country);
+		SetName(ClientID);
 	}
 	else if (MsgID == NETMSGTYPE_CL_EMOTICON && !m_World.m_Paused)
 	{
@@ -1023,6 +1253,13 @@ void CGameContext::ConBroadcast(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	pSelf->SendBroadcast(pResult->GetString(0), -1);
+	for ( int i = 0; i < MAX_CLIENTS; i++ )
+	{
+		if (pSelf->m_apPlayers[i])
+		{
+			pSelf->m_apPlayers[i]->m_BroadcastTick = pSelf->Server()->Tick();
+		}
+	}
 }
 
 void CGameContext::ConSay(IConsole::IResult *pResult, void *pUserData)
@@ -1048,7 +1285,7 @@ void CGameContext::ConSetTeam(IConsole::IResult *pResult, void *pUserData)
 		return;
 
 	pSelf->m_apPlayers[ClientID]->m_TeamChangeTick = pSelf->Server()->Tick()+pSelf->Server()->TickSpeed()*Delay*60;
-	pSelf->m_apPlayers[ClientID]->SetTeam(Team);
+	pSelf->m_apPlayers[ClientID]->SetTeam(Team, true);
 	(void)pSelf->m_pController->CheckTeamBalance();
 }
 
@@ -1063,7 +1300,7 @@ void CGameContext::ConSetTeamAll(IConsole::IResult *pResult, void *pUserData)
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 		if(pSelf->m_apPlayers[i])
-			pSelf->m_apPlayers[i]->SetTeam(Team);
+			pSelf->m_apPlayers[i]->SetTeam(Team, true);
 
 	(void)pSelf->m_pController->CheckTeamBalance();
 }
@@ -1298,6 +1535,404 @@ void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 }
 
+void CGameContext::ConNextEvent(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->m_pEventsGame->NextEvent();
+}
+
+void CGameContext::ConNextRandomEvent(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->m_pEventsGame->NextRandomEvent();
+}
+
+void CGameContext::ConSetEvent(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (!pResult->NumArguments() || !pSelf->m_pEventsGame->SetEvent(pResult->GetInteger(0)))
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid event id to set");
+}
+
+void CGameContext::ConAddTimeEvent(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		if (!pSelf->m_pEventsGame->AddTime(pResult->GetInteger(0)))
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid time to add");
+	}
+	else
+	{
+		if (!pSelf->m_pEventsGame->AddTime())
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Error unknown to add time");
+	}
+}
+
+void CGameContext::ConNextEventTeam(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if ( pSelf->m_pController->IsTeamplay() )
+		pSelf->m_pEventsGame->NextEventTeam();
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+}
+
+void CGameContext::ConNextRandomEventTeam(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->m_pEventsGame->NextRandomEventTeam();
+}
+
+void CGameContext::ConSetEventTeam(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if ( pSelf->m_pController->IsTeamplay() )
+	{
+		if (!pResult->NumArguments() || !pSelf->m_pEventsGame->SetEventTeam(pResult->GetInteger(0)))
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid event id to set");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+}
+
+void CGameContext::ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if ( pSelf->m_pController->IsTeamplay() )
+	{
+		if (pResult->NumArguments())
+		{
+			if (!pSelf->m_pEventsGame->AddTimeTeam(pResult->GetInteger(0)))
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid time to add");
+		}
+		else
+		{
+			if (!pSelf->m_pEventsGame->AddTimeTeam())
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Error unknown to add time");
+		}
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+}
+
+void CGameContext::ConListPlayer(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "List of Players :");
+
+	for ( int i = 0; i < MAX_CLIENTS; i++ )
+	{
+		if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+		{
+			char Text[256] = "";
+			str_format(Text, 256, "Client ID : %d. Name : %s. Stats ID : %ld.", i, pSelf->m_apPlayers[i]->GetRealName(), pSelf->m_apPlayers[i]->GetSID());
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", Text);
+		}
+	}
+}
+
+void CGameContext::ConGiveShotgun(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 20);
+					pSelf->SendChatTarget(i, "An admin give to you a shotgun !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 20);
+			pSelf->SendChatTarget(id, "An admin give to you a shotgun !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
+void CGameContext::ConGiveGrenade(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 20))
+						pSelf->SendChatTarget(i, "An admin give to you 20 ammos for/with a launch-grenade !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 20))
+				pSelf->SendChatTarget(id, "An admin give to you 20 ammos for/with a launch-grenade !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
+void CGameContext::ConGiveRifle(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if (pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 20))
+						pSelf->SendChatTarget(i, "An admin give to you 20 ammos for/with a rifle !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if (pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 20))
+				pSelf->SendChatTarget(id, "An admin give to you 20 ammos for/with a rifle !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
+void CGameContext::ConGiveKatana(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if (pSelf->m_apPlayers[i]->GetCharacter()->GiveNinja())
+						pSelf->SendChatTarget(i, "An admin give to you a katana !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if (pSelf->m_apPlayers[id]->GetCharacter()->GiveNinja())
+				pSelf->SendChatTarget(id, "An admin give to you a katana !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
+void CGameContext::ConGiveProtect(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					pSelf->m_apPlayers[i]->GetCharacter()->SetProtect(true);
+					pSelf->SendChatTarget(i, "An admin give to you a protection");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			pSelf->m_apPlayers[id]->GetCharacter()->SetProtect(true);
+			pSelf->SendChatTarget(id, "An admin give to you a protection");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
+void CGameContext::ConRemoveShotgun(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_SHOTGUN))
+						pSelf->SendChatTarget(i, "An admin remove your shotgun !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_SHOTGUN))
+				pSelf->SendChatTarget(id, "An admin remove your shotgun !");
+		}
+
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
+void CGameContext::ConRemoveGrenade(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_GRENADE))
+						pSelf->SendChatTarget(i, "An admin remove your launch-grenade !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_GRENADE))
+				pSelf->SendChatTarget(id, "An admin remove your launch-grenade !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
+void CGameContext::ConRemoveRifle(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_RIFLE))
+						pSelf->SendChatTarget(i, "An admin remove your rifle !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_RIFLE))
+				pSelf->SendChatTarget(id, "An admin remove your rifle !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
+void CGameContext::ConRemoveKatana(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_NINJA))
+						pSelf->SendChatTarget(i, "An admin remove your katana !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_NINJA))
+				pSelf->SendChatTarget(id, "An admin remove your katana !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
+void CGameContext::ConRemoveProtect(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					pSelf->m_apPlayers[i]->GetCharacter()->SetProtect(false);
+					pSelf->SendChatTarget(i, "An admin remove your protection");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			pSelf->m_apPlayers[id]->GetCharacter()->SetProtect(false);
+			pSelf->SendChatTarget(id, "An admin remove your protection");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+		
+}
+
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
@@ -1329,10 +1964,32 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("set_team_all", "i", CFGFLAG_SERVER, ConSetTeamAll, this, "Set team of all players to team");
 
 	Console()->Register("add_vote", "sr", CFGFLAG_SERVER, ConAddVote, this, "Add a voting option");
-	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "remove a voting option");
+	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "Remove a voting option");
 	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, ConForceVote, this, "Force a voting option");
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
+
+	Console()->Register("next_event", "", CFGFLAG_SERVER, ConNextEvent, this, "Next Event for the game.");
+	Console()->Register("next_random_event", "", CFGFLAG_SERVER, ConNextRandomEvent, this, "Next Random Event for the game.");
+	Console()->Register("set_event", "i", CFGFLAG_SERVER, ConSetEvent, this, "Set Event for the game.");
+	Console()->Register("add_time_event", "?i", CFGFLAG_SERVER, ConAddTimeEvent, this, "Add more time to the actual Event.");
+
+	Console()->Register("next_event_team", "", CFGFLAG_SERVER, ConNextEventTeam, this, "Next Event for the game.");
+	Console()->Register("next_random_event_team", "", CFGFLAG_SERVER, ConNextRandomEventTeam, this, "Next Random Event for the game.");
+	Console()->Register("set_event_team", "i", CFGFLAG_SERVER, ConSetEventTeam, this, "Set Event for the game.");
+	Console()->Register("add_time_event_team", "?i", CFGFLAG_SERVER, ConAddTimeEventTeam, this, "Add more time to the actual Event.");
+
+	Console()->Register("list_player", "", CFGFLAG_SERVER, ConListPlayer, this, "List name players, clients id and statistics id.");
+	Console()->Register("shotgun", "i", CFGFLAG_SERVER, ConGiveShotgun, this, "Give shotgun to the player with this client id.");
+	Console()->Register("grenade", "i", CFGFLAG_SERVER, ConGiveGrenade, this, "Give grenade to the player with this client id.");
+	Console()->Register("rifle", "i", CFGFLAG_SERVER, ConGiveRifle, this, "Give rifle to the player with this client id.");
+	Console()->Register("katana", "i", CFGFLAG_SERVER, ConGiveKatana, this, "Give katana to the player with this client id.");
+	Console()->Register("protect", "i", CFGFLAG_SERVER, ConGiveProtect, this, "Give protection to the player with this client id.");
+	Console()->Register("unshotgun", "i", CFGFLAG_SERVER, ConRemoveShotgun, this, "Remove shotgun from the player with this client id.");
+	Console()->Register("ungrenade", "i", CFGFLAG_SERVER, ConRemoveGrenade, this, "Remove grenade from the player with this client id.");
+	Console()->Register("unrifle", "i", CFGFLAG_SERVER, ConRemoveRifle, this, "Remove rifle from the player with this client id.");
+	Console()->Register("unkatana", "i", CFGFLAG_SERVER, ConRemoveKatana, this, "Remove katana from the player with this client id.");
+	Console()->Register("unprotect", "i", CFGFLAG_SERVER, ConRemoveProtect, this, "Remove protection from the player with this client id.");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 }
@@ -1398,6 +2055,9 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 		}
 	}
 
+	m_pStatistiques = new CStatistiques(this);	
+	m_pEventsGame = new CEvent(this);
+
 	//game.world.insert_entity(game.Controller);
 
 #ifdef CONF_DEBUG
@@ -1443,7 +2103,7 @@ bool CGameContext::IsClientReady(int ClientID)
 
 bool CGameContext::IsClientPlayer(int ClientID)
 {
-	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
+	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() != TEAM_SPECTATORS ? true : false;
 }
 
 const char *CGameContext::GameType() { return m_pController && m_pController->m_pGameType ? m_pController->m_pGameType : ""; }

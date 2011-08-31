@@ -8,7 +8,7 @@
 
 CGameControllerTDM::CGameControllerTDM(class CGameContext *pGameServer) : IGameController(pGameServer)
 {
-	m_pGameType = "TDM";
+	m_pGameType = "wTDM|wDM|Fun|Mod";
 	m_GameFlags = GAMEFLAG_TEAMS;
 }
 
@@ -17,7 +17,7 @@ int CGameControllerTDM::OnCharacterDeath(class CCharacter *pVictim, class CPlaye
 	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 
 
-	if(Weapon != WEAPON_GAME)
+	if(Weapon != WEAPON_GAME && pKiller)
 	{
 		// do team scoring
 		if(pKiller == pVictim->GetPlayer() || pKiller->GetTeam() == pVictim->GetPlayer()->GetTeam())
@@ -26,7 +26,7 @@ int CGameControllerTDM::OnCharacterDeath(class CCharacter *pVictim, class CPlaye
 			m_aTeamscore[pKiller->GetTeam()&1]++; // good shit
 	}
 
-	pVictim->GetPlayer()->m_RespawnTick = max(pVictim->GetPlayer()->m_RespawnTick, Server()->Tick()+Server()->TickSpeed()*g_Config.m_SvRespawnDelayTDM);
+	//pVictim->GetPlayer()->m_RespawnTick = max(pVictim->GetPlayer()->m_RespawnTick, Server()->Tick()+Server()->TickSpeed()*g_Config.m_SvRespawnDelayTDM);
 
 	return 0;
 }

@@ -130,16 +130,13 @@ function Intermediate_Output(settings, input)
 end
 
 function build(settings)
-	-- apply compiler settings
-	config.compiler:Apply(settings)
-	
 	--settings.objdir = Path("objs")
 	settings.cc.Output = Intermediate_Output
 
 	if config.compiler.driver == "cl" then
 		settings.cc.flags:Add("/wd4244")
 	else
-		settings.cc.flags:Add("-Wall", "-fno-exceptions")
+		settings.cc.flags:Add("-Wall", "-fno-exceptions", "-march=native")
 		if platform == "macosx" then
 			settings.cc.flags:Add("-mmacosx-version-min=10.5", "-isysroot /Developer/SDKs/MacOSX10.5.sdk")
 			settings.link.flags:Add("-mmacosx-version-min=10.5", "-isysroot /Developer/SDKs/MacOSX10.5.sdk")
