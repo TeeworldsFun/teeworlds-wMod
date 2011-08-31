@@ -15,6 +15,8 @@ class IGameController
 	vec2 m_aaSpawnPoints[3][64];
 	int m_aNumSpawnPoints[3];
 
+	bool m_ForceDoBalance;
+
 	class CGameContext *m_pGameServer;
 	class IServer *m_pServer;
 
@@ -79,6 +81,8 @@ public:
 	bool IsFriendlyFire(int ClientID1, int ClientID2);
 
 	bool IsForceBalanced();
+	
+	bool IsNormalEnd();
 
 	/*
 
@@ -141,6 +145,11 @@ public:
 	int ClampTeam(int Team);
 
 	virtual void PostReset();
+
+	int GetNumPlayer(int Team);
+	int GetTeamScore(int Team) { return m_aTeamscore[Team]; };
+	int GetRoundStartTick() { return m_RoundStartTick; };
+	CPlayer *m_pCaptain[2];
 };
 
 #endif

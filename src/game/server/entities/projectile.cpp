@@ -2,10 +2,11 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <game/generated/protocol.h>
 #include <game/server/gamecontext.h>
+#include "game/server/event.h"
 #include "projectile.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
-		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon)
+		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, int Life)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE)
 {
 	m_Type = Type;
@@ -19,7 +20,9 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_Weapon = Weapon;
 	m_StartTick = Server()->Tick();
 	m_Explosive = Explosive;
-
+	m_ExplodeTick = 0;
+	m_Bounce = false;
+	m_Life = Life;
 	GameWorld()->InsertEntity(this);
 }
 
@@ -64,21 +67,74 @@ void CProjectile::Tick()
 	int Collide = GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0);
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
 	CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
+	
+	if (m_Weapon == WEAPON_GRENADE && m_ExplodeTick % 2 == 0 && (GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING || GameServer()->Collision()->CheckPoint(PrevPos) == false))
+	{
+		GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
+	}
 
+	m_ExplodeTick++;
 	m_LifeSpan--;
+	
+	if ( m_Weapon == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->GetActualEvent() == BULLET_PIERCING ) && m_LifeSpan < 0 && m_Life == false )
+	{
+			int ShotSpread = 2;
+
+			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+			Msg.AddInt(ShotSpread*2+1);
+
+			for(int i = -ShotSpread; i <= ShotSpread; ++i)
+			{
+				float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+				float a = GetAngle(m_Direction);
+				a += Spreading[i+2];
+				float v = 1-(absolute(i)/(float)ShotSpread);
+				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+
+				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
+					m_Owner,
+					CurPos,
+					vec2(cosf(a), sinf(a))*Speed,
+					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
+					1, true, 0, m_SoundImpact, WEAPON_SHOTGUN, true);
+
+				// pack the Projectile and send it to the client Directly
+				CNetObj_Projectile p;
+				pProj->FillInfo(&p);
+
+				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+					Msg.AddInt(((int *)&p)[i]);
+			}
+
+			Server()->SendMsg(&Msg, 0, m_Owner);
+	}
 
 	if(TargetChr || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
 	{
-		if(m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
+		if((m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE) && (GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING || GameServer()->Collision()->CheckPoint(PrevPos) == false))
 			GameServer()->CreateSound(CurPos, m_SoundImpact);
 
-		if(m_Explosive)
-			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false);
+		if(m_Explosive && (GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING || GameServer()->Collision()->CheckPoint(PrevPos) == false))
+			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, false);
 
 		else if(TargetChr)
 			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
-
-		GameServer()->m_World.DestroyEntity(this);
+		
+		if (GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING || m_LifeSpan < 0)
+			GameServer()->m_World.DestroyEntity(this);
+//		else if ( Collide && m_Life == false )
+//		{
+//			m_StartTick = Server()->Tick();
+//			vec2 TempDir = PrevPos - CurPos;
+//			m_Pos = PrevPos;
+//			/*if ( GameServer()->Collision()->CheckPoint(PrevPos + vec2(TempDir.x, 0)) )
+//				TempDir.x *= -1;
+//			else if ( GameServer()->Collision()->CheckPoint(PrevPos + vec2(0, TempDir.y)) )
+//				TempDir.y *= -1;*/
+//			m_Direction = TempDir;
+//
+//			m_Life = true;
+//		}
 	}
 }
 

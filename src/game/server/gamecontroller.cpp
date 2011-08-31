@@ -8,7 +8,8 @@
 #include "entities/pickup.h"
 #include "gamecontroller.h"
 #include "gamecontext.h"
-
+#include "statistiques.h"
+#include "event.h"
 
 IGameController::IGameController(class CGameContext *pGameServer)
 {
@@ -29,10 +30,14 @@ IGameController::IGameController(class CGameContext *pGameServer)
 
 	m_UnbalancedTick = -1;
 	m_ForceBalanced = false;
+	m_ForceDoBalance = false;
 
 	m_aNumSpawnPoints[0] = 0;
 	m_aNumSpawnPoints[1] = 0;
 	m_aNumSpawnPoints[2] = 0;
+
+	m_pCaptain[0] = 0;
+	m_pCaptain[1] = 0;
 }
 
 IGameController::~IGameController()
@@ -210,17 +215,24 @@ void IGameController::StartRound()
 {
 	ResetGame();
 
-	m_RoundStartTick = Server()->Tick();
+	if (IsNormalEnd())
+		m_RoundStartTick = Server()->Tick();
+	if ( GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
+		GameServer()->m_pEventsGame->m_StartEventRound = Server()->Tick();
 	m_SuddenDeath = 0;
 	m_GameOverTick = -1;
 	GameServer()->m_World.m_Paused = false;
 	m_aTeamscore[TEAM_RED] = 0;
 	m_aTeamscore[TEAM_BLUE] = 0;
 	m_ForceBalanced = false;
+	m_ForceDoBalance = true;
+	m_pCaptain[0] = 0;
+	m_pCaptain[1] = 0;
 	Server()->DemoRecorder_HandleAutoStart();
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "start round type='%s' teamplay='%d'", m_pGameType, m_GameFlags&GAMEFLAG_TEAMS);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+	GameServer()->SendChatTarget(-1, "--------------------");
 }
 
 void IGameController::ChangeMap(const char *pToMap)
@@ -341,16 +353,88 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 	if(!pKiller || Weapon == WEAPON_GAME)
 		return 0;
 	if(pKiller == pVictim->GetPlayer())
-		pVictim->GetPlayer()->m_Score--; // suicide
+	{
+		//pVictim->GetPlayer()->m_Score--; // suicide
+		m_pGameServer->m_pStatistiques->AddSuicide(pVictim->GetPlayer()->GetSID());
+	}
+
 	else
 	{
-		if(IsTeamplay() && pVictim->GetPlayer()->GetTeam() == pKiller->GetTeam())
+		/*if(IsTeamplay() && pVictim->GetPlayer()->GetTeam() == pKiller->GetTeam())
 			pKiller->m_Score--; // teamkill
-		else
-			pKiller->m_Score++; // normal kill
+		else*/
+		if(!(IsTeamplay() && pVictim->GetPlayer()->GetTeam() == pKiller->GetTeam()))
+		{
+			//pKiller->m_Score++; // normal kill
+			m_pGameServer->m_pStatistiques->AddKill(pKiller->GetSID());
+			pKiller->m_Score = m_pGameServer->m_pStatistiques->GetScore(pKiller->GetSID());
+
+			GameServer()->SetName(pKiller->GetCID());
+
+			if( m_pGameServer->m_pStatistiques->GetLevel(pKiller->GetSID()) > pKiller->m_level )
+			{
+				pKiller->m_level = m_pGameServer->m_pStatistiques->GetLevel(pKiller->GetSID());
+				char Text[256] = "";
+				str_format(Text, 256, "%s has a levelup ! He is level %ld now ! Good Game ;) !", pKiller->GetRealName(), pKiller->m_level);
+				m_pGameServer->SendChatTarget(-1, Text);
+			}
+			else
+			{
+				char Text[256] = "";
+				str_format(Text, 256, "XP : %d/%d", m_pGameServer->m_pStatistiques->GetXp(pKiller->GetSID()), pKiller->m_level + 1);
+				m_pGameServer->SendChatTarget(pKiller->GetCID(), Text);
+			}
+		}
+
+		if ( m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) > 0 && (m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) % 5) == 0 )
+		{
+			char spree_note[6][32] = { "is on a killing spree", "is on a rampage", "is dominating", "is unstoppable", "is Godlike", "is Wicked SICK" };
+			if( m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) <= 30 )
+			{
+				char buf[512];
+				str_format(buf, sizeof(buf), "%s %s with %ld kills !", pKiller->GetRealName(), spree_note[m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID())/5-1], m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()));
+				GameServer()->SendChatTarget(-1, buf);
+			}
+			else
+			{
+				char Text[256] = "";
+				str_format(Text, 256, "WARNING : %s must be stopped !!! %ld kills !!! ;)", pKiller->GetRealName(), m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()));
+				GameServer()->SendChatTarget(-1, Text);
+			}
+		}
+		
+		if ( pVictim->GetPlayer()->m_PlayerFlags & PLAYERFLAG_CHATTING )
+		{
+			char Text[256] = "";
+			str_format(Text, 256, "%s made a chatkill to %s!", pKiller->GetRealName(), pVictim->GetPlayer()->GetRealName());
+			GameServer()->SendChatTarget(-1, Text);
+		}
 	}
+	
+	if ( m_pGameServer->m_pStatistiques->GetActualKill(pVictim->GetPlayer()->GetSID()) >= 5 )
+	{
+		char Text[256] = "";
+		str_format(Text, 256, "%s %ld-kills killing spree was ended by %s.", pVictim->GetPlayer()->GetRealName(),m_pGameServer->m_pStatistiques->GetActualKill(pVictim->GetPlayer()->GetSID()), pKiller->GetRealName());
+		GameServer()->CreateExplosion(pVictim->m_Pos, pVictim->GetPlayer()->GetCID(), WEAPON_GAME, true, false);
+		GameServer()->CreateSound(pVictim->m_Pos, SOUND_GRENADE_EXPLODE);
+		GameServer()->SendChatTarget(-1, Text);
+	}
+
+	m_pGameServer->m_pStatistiques->AddDead(pVictim->GetPlayer()->GetSID());
+
 	if(Weapon == WEAPON_SELF)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
+
+	if(GameServer()->m_pEventsGame->GetActualEvent() == SURVIVOR)
+	{
+		pVictim->GetPlayer()->SetCaptureTeam(TEAM_SPECTATORS);
+		char Text[256] = "";
+		str_format(Text, 256, "'%s' is killed by '%s' ! Try Again ;)", pVictim->GetPlayer()->GetRealName(), pKiller->GetRealName());
+		GameServer()->CreateExplosion(pVictim->m_Pos, pVictim->GetPlayer()->GetCID(), WEAPON_GAME, true, false);
+		GameServer()->CreateSound(pVictim->m_Pos, SOUND_GRENADE_EXPLODE);
+		GameServer()->SendChatTarget(-1, Text);
+	}
+
 	return 0;
 }
 
@@ -361,7 +445,7 @@ void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 
 	// give default weapons
 	pChr->GiveWeapon(WEAPON_HAMMER, -1);
-	pChr->GiveWeapon(WEAPON_GUN, 10);
+	pChr->GiveWeapon(WEAPON_GUN, 100);
 }
 
 void IGameController::DoWarmup(int Seconds)
@@ -400,6 +484,36 @@ bool IGameController::IsForceBalanced()
 		return false;
 }
 
+bool IGameController::IsNormalEnd()
+{
+	if (IsTeamplay() && ((g_Config.m_SvScorelimit > 0 && (m_aTeamscore[TEAM_RED] >= g_Config.m_SvScorelimit || m_aTeamscore[TEAM_BLUE] >= g_Config.m_SvScorelimit)) || (g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60)))
+		return true;
+	else if (!IsTeamplay())
+	{
+		// gather some stats
+		int Topscore = 0;
+		int TopscoreCount = 0;
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(GameServer()->m_apPlayers[i])
+			{
+				if(GameServer()->m_apPlayers[i]->m_Score > Topscore)
+				{
+					Topscore = GameServer()->m_apPlayers[i]->m_Score;
+					TopscoreCount = 1;
+				}
+				else if(GameServer()->m_apPlayers[i]->m_Score == Topscore)
+					TopscoreCount++;
+			}
+		}
+			// check score win condition
+		if((g_Config.m_SvScorelimit > 0 && Topscore >= g_Config.m_SvScorelimit) || (g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60))
+			return true;
+	}
+
+	return false;
+}
+
 bool IGameController::CanBeMovedOnBalance(int ClientID)
 {
 	return true;
@@ -418,16 +532,18 @@ void IGameController::Tick()
 	if(m_GameOverTick != -1)
 	{
 		// game over.. wait for restart
-		if(Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*10)
+		if ( (!IsNormalEnd() && Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*2) || Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*10)
+
 		{
-			CycleMap();
+			if (IsNormalEnd())
+				CycleMap();
 			StartRound();
 			m_RoundCount++;
 		}
 	}
-
+					
 	// do team-balancing
-	if (IsTeamplay() && m_UnbalancedTick != -1 && Server()->Tick() > m_UnbalancedTick+g_Config.m_SvTeambalanceTime*Server()->TickSpeed()*60)
+	if (IsTeamplay() && ((GameServer()->m_pEventsGame->GetActualEventTeam() < STEAL_TEE && m_UnbalancedTick != -1 && Server()->Tick() > m_UnbalancedTick+g_Config.m_SvTeambalanceTime*Server()->TickSpeed()*60) || (GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && m_ForceDoBalance == true)))
 	{
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", "Balancing teams");
 
@@ -469,16 +585,46 @@ void IGameController::Tick()
 
 				// move the player to the other team
 				int Temp = pP->m_LastActionTick;
-				pP->SetTeam(M^1);
+				if ( m_ForceDoBalance )
+					pP->SetTeam(M^1, false);
+				else
+					pP->SetTeam(M^1, true);
+
 				pP->m_LastActionTick = Temp;
 
 				pP->Respawn();
-				pP->m_ForceBalanced = true;
+
+				if ( !m_ForceDoBalance )
+					pP->m_ForceBalanced = true;
 			} while (--NumBalance);
 
-			m_ForceBalanced = true;
+			if ( m_ForceDoBalance )
+				m_ForceDoBalance = false;
+			else
+				m_ForceBalanced = true;
 		}
 		m_UnbalancedTick = -1;
+	}
+	else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_ForceDoBalance == true )
+	{
+		m_ForceDoBalance = false;
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(!GameServer()->m_apPlayers[i] || !CanBeMovedOnBalance(i))
+				continue;
+			
+			GameServer()->m_apPlayers[i]->SetTeam(TEAM_BLUE, false);
+		}
+	}
+	else if (!IsTeamplay() && m_ForceDoBalance == true)
+	{
+		for ( int i = 0; i < MAX_CLIENTS; i++ )
+		{
+			if ( GameServer()->m_apPlayers[i] )
+				GameServer()->m_apPlayers[i]->SetTeam(0, false);
+		}
+		
+		m_ForceDoBalance = false;
 	}
 
 	// check for inactive players
@@ -495,7 +641,7 @@ void IGameController::Tick()
 					case 0:
 						{
 							// move player to spectator
-							GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
+							GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS, true);
 						}
 						break;
 					case 1:
@@ -508,7 +654,7 @@ void IGameController::Tick()
 							if(Spectators >= g_Config.m_SvSpectatorSlots)
 								Server()->Kick(i, "Kicked for inactivity");
 							else
-								GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
+								GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS, true);
 						}
 						break;
 					case 2:
@@ -668,7 +814,70 @@ void IGameController::DoWincheck()
 		if(IsTeamplay())
 		{
 			// check score win condition
-			if((g_Config.m_SvScorelimit > 0 && (m_aTeamscore[TEAM_RED] >= g_Config.m_SvScorelimit || m_aTeamscore[TEAM_BLUE] >= g_Config.m_SvScorelimit)) ||
+			if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() >= STEAL_TEE && m_ForceDoBalance == false)
+			{
+				m_aTeamscore[0] = GetNumPlayer(0);
+				m_aTeamscore[1] = GetNumPlayer(1);
+
+				if (GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE)
+				{
+					if ( !m_pCaptain[TEAM_RED] && m_aTeamscore[TEAM_RED] > 0 )
+					{
+						int CaptainId = 0;
+						while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() != TEAM_RED);
+						m_pCaptain[TEAM_RED] = GameServer()->m_apPlayers[CaptainId];
+						char Text[256] = "";
+						str_format(Text, 256, "%s is the captain of the red team !", m_pCaptain[TEAM_RED]->GetRealName());
+						GameServer()->SendChatTarget(-1, Text);
+						GameServer()->SendChatTarget(CaptainId, "You're the captain of the red team ! You must keep your teammate and capture all players !");
+					}
+					if ( !m_pCaptain[TEAM_BLUE] && m_aTeamscore[TEAM_BLUE] > 0 )
+					{
+						int CaptainId = 0;
+						while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() != TEAM_BLUE);
+						m_pCaptain[TEAM_BLUE] = GameServer()->m_apPlayers[CaptainId];
+						char Text[256] = "";
+						str_format(Text, 256, "%s is the captain of the blue team !", m_pCaptain[TEAM_BLUE]->GetRealName());
+						GameServer()->SendChatTarget(-1, Text);
+						GameServer()->SendChatTarget(CaptainId, "You're the captain of the blue team ! You must keep your teammate and capture all players !");
+					}
+				}
+				else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_aTeamscore[TEAM_BLUE] > 1 && !m_pCaptain[TEAM_RED] && Server()->Tick() > m_RoundStartTick+Server()->TickSpeed()*5 )
+				{
+					int CaptainId = 0;
+					while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() == TEAM_SPECTATORS);
+					m_pCaptain[TEAM_RED] = GameServer()->m_apPlayers[CaptainId];
+					m_pCaptain[TEAM_RED]->SetTeam(TEAM_RED, false);
+					char Text[256] = "";
+					str_format(Text, 256, "%s is a zombie !!! Flee or be his slaves !!!", m_pCaptain[TEAM_RED]->GetRealName());
+					GameServer()->SendChatTarget(-1, Text);
+					GameServer()->SendChatTarget(CaptainId, "You're a zombie ! Eat some brains !");
+				}
+
+				if ((m_pGameServer->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && ((m_aTeamscore[0] == 0 && m_aTeamscore[1] > 1) || (m_aTeamscore[1] == 0 && m_aTeamscore[0] > 1))) || 
+				     (m_pGameServer->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && ((m_aTeamscore[TEAM_BLUE] == 0 && m_aTeamscore[TEAM_RED] > 1) || Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*35)))
+				{
+					if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() == STEAL_TEE )
+					{
+						int Team = m_aTeamscore[TEAM_RED] ? TEAM_RED : TEAM_BLUE;
+						char Text[256] = "";
+						str_format(Text, 256, "The %s of captain %s win !", Team ? "red team" : "blue team", m_pCaptain[Team]->GetRealName());
+						GameServer()->SendChatTarget(-1, Text);
+					}
+					else if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
+					{
+						int Team = m_aTeamscore[TEAM_BLUE] ? TEAM_BLUE : TEAM_RED;
+						if ( Team == TEAM_BLUE )
+							m_aTeamscore[TEAM_BLUE] = 100;
+						char Text[256] = "";
+						str_format(Text, 256, "The %s win !", Team ? "zombies" : "humans");
+						GameServer()->SendChatTarget(-1, Text);
+					}
+
+					EndRound();
+				}
+			}
+			else if((g_Config.m_SvScorelimit > 0 && (m_aTeamscore[TEAM_RED] >= g_Config.m_SvScorelimit || m_aTeamscore[TEAM_BLUE] >= g_Config.m_SvScorelimit)) ||
 				(g_Config.m_SvTimelimit > 0 && (Server()->Tick()-m_RoundStartTick) >= g_Config.m_SvTimelimit*Server()->TickSpeed()*60))
 			{
 				if(m_aTeamscore[TEAM_RED] != m_aTeamscore[TEAM_BLUE])
@@ -679,6 +888,36 @@ void IGameController::DoWincheck()
 		}
 		else
 		{
+			if (GameServer()->m_pEventsGame->GetActualEvent() == SURVIVOR)
+			{
+				int active_player = 0;
+				int nb_player = 0;
+				int id = 0;
+				for ( int i = 0; i < MAX_CLIENTS; i++ )
+				{
+					if ( GameServer()->m_apPlayers[i] )
+						nb_player++;
+					if ( GameServer()->IsClientPlayer(i) )
+					{
+						active_player++;
+						id = i;
+					}
+				}
+
+				if ( active_player == 1 && nb_player > 1 )
+				{
+					char aBuf[256];
+					str_format(aBuf, 256, "%s is the winner !!! Good Game !!!",  GameServer()->m_apPlayers[id]->GetRealName());
+					GameServer()->SendChatTarget(-1, aBuf);
+					EndRound();
+				}
+				else if ( active_player == 0 && nb_player > 0 )
+				{
+					GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
+					EndRound();
+				}
+			}
+
 			// gather some stats
 			int Topscore = 0;
 			int TopscoreCount = 0;
@@ -717,3 +956,17 @@ int IGameController::ClampTeam(int Team)
 		return Team&1;
 	return 0;
 }
+
+int IGameController::GetNumPlayer(int Team)
+{
+	int aT[2] = {0,0};
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+		{
+			aT[GameServer()->m_apPlayers[i]->GetTeam()]++;
+		}
+	}
+	return aT[Team];
+}
+

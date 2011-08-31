@@ -59,6 +59,26 @@ class CGameContext : public IGameServer
 	static void ConForceVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConClearVotes(IConsole::IResult *pResult, void *pUserData);
 	static void ConVote(IConsole::IResult *pResult, void *pUserData);
+	static void ConNextEvent(IConsole::IResult *pResult, void *pUserData);
+	static void ConNextRandomEvent(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetEvent(IConsole::IResult *pResult, void *pUserData);
+	static void ConAddTimeEvent(IConsole::IResult *pResult, void *pUserData);
+	static void ConNextEventTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConNextRandomEventTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetEventTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConListPlayer(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveShotgun(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveGrenade(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveRifle(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveKatana(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveProtect(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveShotgun(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveGrenade(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveRifle(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveKatana(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveProtect(IConsole::IResult *pResult, void *pUserData);
+
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	CGameContext(int Resetting);
@@ -75,6 +95,9 @@ public:
 	~CGameContext();
 
 	void Clear();
+	
+	class CStatistiques *m_pStatistiques;
+	class CEvent *m_pEventsGame;
 
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
@@ -84,6 +107,7 @@ public:
 
 	// helper functions
 	class CCharacter *GetPlayerChar(int ClientID);
+	void SetName(int ClientID);
 
 	// voting
 	void StartVote(const char *pDesc, const char *pCommand, const char *pReason);
@@ -113,7 +137,7 @@ public:
 
 	// helper functions
 	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage);
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke);
 	void CreateHammerHit(vec2 Pos);
 	void CreatePlayerSpawn(vec2 Pos);
 	void CreateDeath(vec2 Pos, int Who);

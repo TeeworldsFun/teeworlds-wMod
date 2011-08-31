@@ -67,7 +67,7 @@ void CPickup::Tick()
 			case POWERUP_WEAPON:
 				if(m_Subtype >= 0 && m_Subtype < NUM_WEAPONS)
 				{
-					if(pChr->GiveWeapon(m_Subtype, 10))
+					if(pChr->GiveWeapon(m_Subtype, 20))
 					{
 						RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
 
@@ -85,9 +85,9 @@ void CPickup::Tick()
 				break;
 
 			case POWERUP_NINJA:
+				// activate ninja on target player
+				if (pChr->GiveNinja())
 				{
-					// activate ninja on target player
-					pChr->GiveNinja();
 					RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
 
 					// loop through all players, setting their emotes

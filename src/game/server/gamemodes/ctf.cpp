@@ -8,6 +8,7 @@
 #include <game/server/entities/flag.h>
 #include <game/server/player.h>
 #include <game/server/gamecontext.h>
+#include <game/server/statistiques.h>
 #include "ctf.h"
 
 CGameControllerCTF::CGameControllerCTF(class CGameContext *pGameServer)
@@ -15,7 +16,7 @@ CGameControllerCTF::CGameControllerCTF(class CGameContext *pGameServer)
 {
 	m_apFlags[0] = 0;
 	m_apFlags[1] = 0;
-	m_pGameType = "CTF";
+	m_pGameType = "wCTF|wDM|Fun|Mod";
 	m_GameFlags = GAMEFLAG_TEAMS|GAMEFLAG_FLAGS;
 }
 
@@ -41,6 +42,7 @@ bool CGameControllerCTF::OnEntity(int Index, vec2 Pos)
 int CGameControllerCTF::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int WeaponID)
 {
 	IGameController::OnCharacterDeath(pVictim, pKiller, WeaponID);
+
 	int HadFlag = 0;
 
 	// drop flags
@@ -98,7 +100,7 @@ bool CGameControllerCTF::CanBeMovedOnBalance(int ClientID)
 		for(int fi = 0; fi < 2; fi++)
 		{
 			CFlag *F = m_apFlags[fi];
-			if(F->m_pCarryingCharacter == Character)
+			if(F && F->m_pCarryingCharacter == Character)
 				return false;
 		}
 	}
@@ -193,6 +195,25 @@ void CGameControllerCTF::Tick()
 						str_format(aBuf, sizeof(aBuf), "The %s flag was captured by '%s'", fi ? "blue" : "red", Server()->ClientName(F->m_pCarryingCharacter->GetPlayer()->GetCID()));
 					}
 					GameServer()->SendChat(-1, -2, aBuf);
+
+					GameServer()->m_pStatistiques->AddFlagCapture(F->m_pCarryingCharacter->GetPlayer()->GetSID());
+					F->m_pCarryingCharacter->GetPlayer()->m_Score = GameServer()->m_pStatistiques->GetScore(F->m_pCarryingCharacter->GetPlayer()->GetSID());
+
+					GameServer()->SetName(F->m_pCarryingCharacter->GetPlayer()->GetCID());
+
+					if( GameServer()->m_pStatistiques->GetLevel(F->m_pCarryingCharacter->GetPlayer()->GetSID()) > F->m_pCarryingCharacter->GetPlayer()->m_level )
+					{
+						F->m_pCarryingCharacter->GetPlayer()->m_level = GameServer()->m_pStatistiques->GetLevel(F->m_pCarryingCharacter->GetPlayer()->GetSID());
+						char Text[256] = "";
+						str_format(Text, 256, "%s has a levelup ! He is level %ld now ! Good Game ;) !", F->m_pCarryingCharacter->GetPlayer()->GetRealName(), F->m_pCarryingCharacter->GetPlayer()->m_level);
+						GameServer()->SendChatTarget(-1, Text);
+					}
+					else
+					{
+						char Text[256] = "";
+						str_format(Text, 256, "XP : %d/%d", GameServer()->m_pStatistiques->GetXp(F->m_pCarryingCharacter->GetPlayer()->GetSID()),  F->m_pCarryingCharacter->GetPlayer()->m_level + 1);
+						GameServer()->SendChatTarget( F->m_pCarryingCharacter->GetPlayer()->GetCID(), Text);
+					}
 					for(int i = 0; i < 2; i++)
 						m_apFlags[i]->Reset();
 

@@ -25,6 +25,7 @@ public:
 	static const int ms_PhysSize = 28;
 
 	CCharacter(CGameWorld *pWorld);
+	~CCharacter();
 
 	virtual void Reset();
 	virtual void Destroy();
@@ -54,14 +55,19 @@ public:
 
 	bool IncreaseHealth(int Amount);
 	bool IncreaseArmor(int Amount);
+	void SetProtect(bool set) { if (set) {m_Protect = -1;} else {m_Protect = 0;} };
 
 	bool GiveWeapon(int Weapon, int Ammo);
-	void GiveNinja();
+	bool GiveNinja();
+
+	bool RemoveWeapon(int Weapon);
 
 	void SetEmote(int Emote, int Tick);
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
+	int GetActiveWeapon() { return m_ActiveWeapon; }
+	int GetAmmoActiveWeapon() { return m_aWeapons[m_ActiveWeapon].m_Ammo; }
 
 private:
 	// player controlling this character
@@ -79,6 +85,7 @@ private:
 		int m_Ammo;
 		int m_Ammocost;
 		bool m_Got;
+		char m_Name[50];
 
 	} m_aWeapons[NUM_WEAPONS];
 
@@ -88,6 +95,7 @@ private:
 
 	int m_ReloadTimer;
 	int m_AttackTick;
+	int m_SoundReloadStart;
 
 	int m_DamageTaken;
 
@@ -111,6 +119,11 @@ private:
 
 	int m_Health;
 	int m_Armor;
+    	int m_HealthRegenStart;
+	bool m_HealthIncrase;
+	int m_Protect;
+
+	class CProtect *m_AuraProtect[12];
 
 	// ninja
 	struct
@@ -119,6 +132,8 @@ private:
 		int m_ActivationTick;
 		int m_CurrentMoveTime;
 		int m_OldVelAmount;
+		int m_Damage;
+		int m_Killed;
 	} m_Ninja;
 
 	// the player core for the physics
