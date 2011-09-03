@@ -237,7 +237,7 @@ void CCharacter::HandleNinja()
 void CCharacter::DoWeaponSwitch()
 {
 	// make sure we can switch
-	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got || (GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA) )
+	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got || (GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA) || GameServer()->m_pEventsGame->GetActualEvent() == WALLSHOT )
 		return;
 
 	// switch Weapon
