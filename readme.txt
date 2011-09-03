@@ -1,5 +1,5 @@
 This is a mod (wDM/wTDM/wCTF) and it's for the game Teeworlds and it's being maintained by PJK (PJK136).
-If You want compile this mod and host this mod, If you want to compile this mod, please update this regularly !
+If You want compile this mod and host this mod, please update this regularly because it's a beta version and have many bugs !
 
 Teeworlds README is as follows:
 Copyright (c) 2011 Magnus Auvinen
