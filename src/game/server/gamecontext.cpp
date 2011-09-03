@@ -596,7 +596,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	m_apPlayers[ClientID]->SetRealName(Server()->ClientName(ClientID));
 	SetName(ClientID);
 	SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod ***");
-	SendChatTarget(ClientID, "** Writed by PJK **");
+	SendChatTarget(ClientID, "** Wrote by PJK **");
 	SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
 	SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /weapon , /stats and /ranks **");
 	SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
@@ -716,7 +716,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			else if(str_comp_nocase(pMsg->m_pMessage, "/info") == 0)
 			{
 				SendChatTarget(ClientID, "*** Extreme Weapon Mod ***");
-				SendChatTarget(ClientID, "** Writed by PJK **");
+				SendChatTarget(ClientID, "** Wrote by PJK **");
 				SendChatTarget(ClientID, "*It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
 				SendChatTarget(ClientID, "- The gun is very fast and explodes when it hits. You have 100 Ammo that regenerate in 5 sec.");
 				SendChatTarget(ClientID, "- The hammer is also very fast and explodes to protect us when it is used but it use our armor and health.");
