@@ -59,11 +59,13 @@ CGameContext::~CGameContext()
 		delete m_apPlayers[i];
 	}
 
-	m_pStatistiques->WriteStat();
-	delete m_pStatistiques;
-	delete m_pEventsGame;
 	if(!m_Resetting)
+	{
+		m_pStatistiques->WriteStat();
 		delete m_pVoteOptionHeap;
+		delete m_pStatistiques;
+		delete m_pEventsGame;
+	}
 }
 
 void CGameContext::Clear()
@@ -73,6 +75,9 @@ void CGameContext::Clear()
 	CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
 	int NumVoteOptions = m_NumVoteOptions;
 	CTuningParams Tuning = m_Tuning;
+	
+	CStatistiques *pStatistiques = m_pStatistiques;
+	CEvent *pEventsGame = m_pEventsGame;
 
 	m_Resetting = true;
 	this->~CGameContext();
@@ -84,6 +89,9 @@ void CGameContext::Clear()
 	m_pVoteOptionLast = pVoteOptionLast;
 	m_NumVoteOptions = NumVoteOptions;
 	m_Tuning = Tuning;
+	
+	m_pStatistiques = pStatistiques;
+	m_pEventsGame = pEventsGame;
 }
 
 
