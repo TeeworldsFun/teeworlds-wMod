@@ -704,6 +704,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				SendChatTarget(ClientID, "*** Commands available are : ***");
 				SendChatTarget(ClientID, "/cmdlist or /help : To get commands available.");			
 				SendChatTarget(ClientID, "/info : To get informations of this mod.");
+				SendChatTarget(ClientID, "/credits : To get informations of author of this mod.");
 				SendChatTarget(ClientID, "/weapon : To get informations of the actual weapon.");
 				SendChatTarget(ClientID, "/ammo : To get ammo of the actual weapon.");
 				SendChatTarget(ClientID, "/stats : To get your statistics.");
@@ -728,6 +729,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				SendChatTarget(ClientID, "- You can fly into the air by pressing the up key and the hook is longer in this mod.");
 				SendChatTarget(ClientID, "- There is a system of statistics to get information of your gameplay. (Say /stats to have this statistics but you can't modify your name to keep them)");
 				SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/credits") == 0)
+			{
+				SendChatTarget(ClientID, "*** Extreme Weapon Mod ***");
+				SendChatTarget(ClientID, "** Wrote by PJK **");
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/weapon") == 0)
 			{

@@ -375,6 +375,8 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 			{
 				pKiller->m_level = m_pGameServer->m_pStatistiques->GetLevel(pKiller->GetSID());
 				char Text[256] = "";
+				str_format(Text, 256, "XP : %d/%d", pKiller->m_level, pKiller->m_level);
+				m_pGameServer->SendChatTarget(pKiller->GetCID(), Text);
 				str_format(Text, 256, "%s has a levelup ! He is level %ld now ! Good Game ;) !", pKiller->GetRealName(), pKiller->m_level);
 				m_pGameServer->SendChatTarget(-1, Text);
 			}
