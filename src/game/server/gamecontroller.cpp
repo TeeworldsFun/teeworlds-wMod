@@ -545,7 +545,7 @@ void IGameController::Tick()
 	}
 					
 	// do team-balancing
-	if (IsTeamplay() && ((GameServer()->m_pEventsGame->GetActualEventTeam() < STEAL_TEE && m_UnbalancedTick != -1 && Server()->Tick() > m_UnbalancedTick+g_Config.m_SvTeambalanceTime*Server()->TickSpeed()*60) || (GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && m_ForceDoBalance == true)))
+	if (IsTeamplay() && ((GameServer()->m_pEventsGame->GetActualEventTeam() < STEAL_TEE && m_UnbalancedTick != -1 && Server()->Tick() > m_UnbalancedTick+g_Config.m_SvTeambalanceTime*Server()->TickSpeed()*60) || (GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE && m_ForceDoBalance == true)))
 	{
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", "Balancing teams");
 
@@ -844,7 +844,7 @@ void IGameController::DoWincheck()
 						GameServer()->SendChatTarget(CaptainId, "You're the captain of the blue team ! You must keep your teammate and capture all players !");
 					}
 				}
-				else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_aTeamscore[TEAM_BLUE] > 1 && !m_pCaptain[TEAM_RED] && Server()->Tick() > m_RoundStartTick+Server()->TickSpeed()*5 )
+				else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_aTeamscore[TEAM_BLUE] > 1 && !m_pCaptain[TEAM_RED] && Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*5 )
 				{
 					int CaptainId = 0;
 					while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() == TEAM_SPECTATORS);
@@ -872,7 +872,7 @@ void IGameController::DoWincheck()
 						if ( Team == TEAM_BLUE )
 							m_aTeamscore[TEAM_BLUE] = 100;
 						char Text[256] = "";
-						str_format(Text, 256, "The %s win !", Team ? "zombies" : "humans");
+						str_format(Text, 256, "The %s win !", Team ? "humans" : "zombies");
 						GameServer()->SendChatTarget(-1, Text);
 					}
 
