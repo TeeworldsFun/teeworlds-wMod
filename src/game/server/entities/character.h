@@ -123,7 +123,7 @@ private:
 	bool m_HealthIncrase;
 	int m_Protect;
 
-	class CProtect *m_AuraProtect[12];
+	class CAura *m_AuraProtect[12];
 
 	// ninja
 	struct

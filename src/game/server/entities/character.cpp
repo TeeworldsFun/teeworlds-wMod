@@ -10,7 +10,7 @@
 #include "character.h"
 #include "laser.h"
 #include "projectile.h"
-#include "protect.h"
+#include "aura.h"
 
 //input count
 struct CInputCount
@@ -772,7 +772,7 @@ void CCharacter::Tick()
 	if ((m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) && m_AuraProtect[0] == 0 )
 	{
 		for ( int i = 0; i < 12; i++ )
-			m_AuraProtect[i] = new CProtect(&(GameServer()->m_World), this, i * 30, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
+			m_AuraProtect[i] = new CAura(&(GameServer()->m_World), this, i * 30, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
 	}
 
 	else if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) && m_AuraProtect[0] != 0 )
