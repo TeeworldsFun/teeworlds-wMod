@@ -122,8 +122,8 @@ void CProjectile::Tick()
 		
 		if (GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING || m_LifeSpan < 0)
 			GameServer()->m_World.DestroyEntity(this);
-//		else if ( Collide && m_Life == false )
-//		{
+		else if ( Collide && m_Life == false )
+		{
 //			m_StartTick = Server()->Tick();
 //			vec2 TempDir = PrevPos - CurPos;
 //			m_Pos = PrevPos;
@@ -132,9 +132,16 @@ void CProjectile::Tick()
 //			else if ( GameServer()->Collision()->CheckPoint(PrevPos + vec2(0, TempDir.y)) )
 //				TempDir.y *= -1;*/
 //			m_Direction = TempDir;
-//
+
 //			m_Life = true;
-//		}
+			vec2 TempPos = CurPos;
+			vec2 TempDir = m_Direction * 4.0f;
+
+			GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
+			m_Pos = TempPos;
+			m_Dir = normalize(TempDir);
+			m_Life = true;
+		}
 	}
 }
 

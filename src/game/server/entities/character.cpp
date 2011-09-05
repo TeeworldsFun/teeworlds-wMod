@@ -759,8 +759,6 @@ void CCharacter::Tick()
 
 	if( m_Core.m_Jumped & 3 && GameServer()->m_pEventsGame->GetActualEvent() == GRAVITY_M0_5 )
 		m_Core.m_Vel.y = GameServer()->Tuning()->m_AirJumpImpulse;
-	else if( m_Core.m_Jumped & 1 && GameServer()->m_pEventsGame->GetActualEvent() == GRAVITY_M0_5 )
-		m_Core.m_Vel.y = GameServer()->Tuning()->m_GroundJumpImpulse;
 
 	// handle death-tiles and leaving gamelayer
 	if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
