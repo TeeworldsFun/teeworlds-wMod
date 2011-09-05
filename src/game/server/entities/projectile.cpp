@@ -127,7 +127,7 @@ void CProjectile::Tick()
 			vec2 TempPos = PrevPos;
 			vec2 TempDir = m_Direction;
 
-			GameServer()->Collision()->MovePoint(&TempPos, &TempDir, /*1.*/0f, 0);
+			GameServer()->Collision()->MovePoint(&TempPos, &TempDir, /*1.*/0.0f, 0);
 			m_Pos = TempPos;
 			m_Direction = normalize(TempDir);
 			m_Life = true;
