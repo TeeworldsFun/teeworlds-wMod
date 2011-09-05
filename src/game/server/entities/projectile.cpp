@@ -122,7 +122,7 @@ void CProjectile::Tick()
 		
 		if ((GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING && GameServer()->m_pEventsGame->GetActualEvent() != BULLET_BOUNCE) || m_LifeSpan < 0)
 			GameServer()->m_World.DestroyEntity(this);
-		else if ( Collide && GameServer()->m_pEventsGame->GetActualEvent() != BULLET_BOUNCE )
+		else if ( Collide && GameServer()->m_pEventsGame->GetActualEvent() == BULLET_BOUNCE )
 		{
 			vec2 TempPos = PrevPos;
 			vec2 TempDir = m_Direction * 4.0f;
