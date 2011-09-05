@@ -751,7 +751,7 @@ void CCharacter::Tick()
 		m_pPlayer->m_ForceBalanced = false;
 	}
 
-	if(m_Core.m_Jumped & 2)
+	if(m_Core.m_Jumped & 3)
 		m_Jumped &= ~2;
 
 	m_Core.m_Input = m_Input;
