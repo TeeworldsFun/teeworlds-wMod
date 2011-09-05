@@ -751,13 +751,16 @@ void CCharacter::Tick()
 		m_pPlayer->m_ForceBalanced = false;
 	}
 
+	if(m_Core.m_Jumped & 3)
+		m_Core.m_Jumped |= 1;
+
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
 
-	if(IsGrounded() == false && m_Core.m_Jumped == m_Jumped )
-		m_Core.m_Jumped &= ~2;
-	else if (m_Core.m_Jumped != m_Jumped)
-		m_Jumped = m_Core.m_Jumped;
+	if( m_Core.m_Jumped & 3 && GameServer()->m_pEventsGame->GetActualEvent == GRAVITY_M0_5 )
+		m_Core.m_Vel.y = m_pWorld->m_Tuning.m_AirJumpImpulse;
+	else if( m_Core.m_Jumped & 1 && GameServer()->m_pEventsGame->GetActualEvent == GRAVITY_M0_5 )
+		m_Core.m_Vel.y = m_pWorld->m_Tuning.m_GroundJumpImpulse;
 
 	// handle death-tiles and leaving gamelayer
 	if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
