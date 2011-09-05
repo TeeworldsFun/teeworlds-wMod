@@ -752,7 +752,7 @@ void CCharacter::Tick()
 	}
 
 	if(m_Core.m_Jumped & 3)
-		m_Jumped &= ~2;
+		m_Core.m_Jumped &= ~2;
 
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
