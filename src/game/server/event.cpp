@@ -87,6 +87,9 @@ void CEvent::Tick()
 		case BULLET_PIERCING:
 			str_format(Text, 256, "Event : All Bullets can pierce Tee and Tiles ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
 			break;
+		case BULLET_BOUNCE:
+			str_format(Text, 256, "Event : All Bullets can bounce ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			break;
 		case HAVE_ALL_WEAPON:
 			str_format(Text, 256, "Event : All get all weapons when respawn ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
 			break;

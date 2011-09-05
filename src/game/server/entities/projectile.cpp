@@ -120,20 +120,10 @@ void CProjectile::Tick()
 		else if(TargetChr)
 			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
 		
-		if (GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING || m_LifeSpan < 0)
+		if ((GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING && GameServer()->m_pEventsGame->GetActualEvent() != BULLET_BOUNCE) || m_LifeSpan < 0)
 			GameServer()->m_World.DestroyEntity(this);
-		else if ( Collide && m_Life == false )
+		else if ( Collide && GameServer()->m_pEventsGame->GetActualEvent() != BULLET_BOUNCE )
 		{
-//			m_StartTick = Server()->Tick();
-//			vec2 TempDir = PrevPos - CurPos;
-//			m_Pos = PrevPos;
-//			/*if ( GameServer()->Collision()->CheckPoint(PrevPos + vec2(TempDir.x, 0)) )
-//				TempDir.x *= -1;
-//			else if ( GameServer()->Collision()->CheckPoint(PrevPos + vec2(0, TempDir.y)) )
-//				TempDir.y *= -1;*/
-//			m_Direction = TempDir;
-
-//			m_Life = true;
 			vec2 TempPos = PrevPos;
 			vec2 TempDir = m_Direction * 4.0f;
 
