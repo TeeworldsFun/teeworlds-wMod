@@ -139,7 +139,7 @@ void CProjectile::Tick()
 
 			GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
 			m_Pos = TempPos;
-			m_Dir = normalize(TempDir);
+			m_Direction = normalize(TempDir);
 			m_Life = true;
 		}
 	}
