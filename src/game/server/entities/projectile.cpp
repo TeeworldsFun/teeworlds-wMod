@@ -125,7 +125,7 @@ void CProjectile::Tick()
 		else if ( Collide && GameServer()->m_pEventsGame->GetActualEvent() == BULLET_BOUNCE )
 		{
 			vec2 TempPos = PrevPos;
-			vec2 TempDir = m_Direction * 4.0f;
+			vec2 TempDir = m_Direction;
 
 			GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
 			m_Pos = TempPos;
