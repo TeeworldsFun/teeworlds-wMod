@@ -18,7 +18,7 @@ public:
 	inline int GetActualEvent() { return m_ActualEvent[0]; };
 
 	inline bool IsTwoEvent() { return m_TwoEvent; };
-	inline bool IsActualEvent(int Event) { if ( Event == m_ActualEvent[0] || (IsTwoEvent() && Event == m_ActualEvent[1]) || (m_ActualEvent[0] == ALL && Event > KATANA && Event != WALLSHOT && Event != SURVIVOR && Event != GRAVITY_M0_5 )) { return true; } return false; };
+	inline bool IsActualEvent(int Event) { if ( Event == m_ActualEvent[0] || (IsTwoEvent() && Event == m_ActualEvent[1]) || (m_ActualEvent[0] == ALL && Event > KATANA && Event != WALLSHOT && Event != SURVIVOR && Event != GRAVITY_M0_5 && Event != BULLET_BOUNCE)) { return true; } return false; };
 	inline int GetActualEventTeam() { return m_ActualEventTeam; };
 
 	void NextEvent();
