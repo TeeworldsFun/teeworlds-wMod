@@ -9,7 +9,7 @@ public:
 
 	virtual void Reset();
 	virtual void Tick();
-private:
+
 	vec2 m_Vel;
 };
 
