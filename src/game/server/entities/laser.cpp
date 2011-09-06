@@ -29,9 +29,9 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 
 	m_From = From;
 	m_Pos = At;
-	if ( GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING )
+	if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
 		m_Energy = -1;
-	if ( GameServer()->m_pEventsGame->GetActualEvent() != WALLSHOT || m_Bounces > 0 )
+	if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
 		pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE);
 	return true;
 }
@@ -56,7 +56,7 @@ void CLaser::DoBounce()
 			m_From = m_Pos;
 			m_Pos = To;
 
-			if ( GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING )
+			if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
 			{
 				vec2 TempPos = m_Pos;
 				vec2 TempDir = m_Dir * 4.0f;
@@ -97,7 +97,7 @@ void CLaser::Tick()
 	if(Server()->Tick() > m_EvalTick+(Server()->TickSpeed()*GameServer()->Tuning()->m_LaserBounceDelay)/1000.0f)
 		DoBounce();
 	
-	if( GameServer()->m_pEventsGame->GetActualEvent() == BULLET_PIERCING && Server()->Tick() > m_EvalTick+Server()->TickSpeed()/1000.f )
+	if( GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && Server()->Tick() > m_EvalTick+Server()->TickSpeed()/1000.f )
 		m_Energy -= 188;
 }
 

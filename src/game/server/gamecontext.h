@@ -67,6 +67,7 @@ class CGameContext : public IGameServer
 	static void ConNextRandomEventTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetEventTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetTwoEvent(IConsole::IResult *pResult, void *pUserData);
 	static void ConListPlayer(IConsole::IResult *pResult, void *pUserData);
 	static void ConGiveShotgun(IConsole::IResult *pResult, void *pUserData);
 	static void ConGiveGrenade(IConsole::IResult *pResult, void *pUserData);

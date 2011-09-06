@@ -606,7 +606,7 @@ void CGameContext::OnClientConnected(int ClientID)
 {
 	// Check which team the player should be on
 	int StartTeam;
-	if ( g_Config.m_SvTournamentMode || m_pEventsGame->GetActualEvent() == SURVIVOR )
+	if ( g_Config.m_SvTournamentMode || m_pEventsGame->IsActualEvent(SURVIVOR) )
 		StartTeam = TEAM_SPECTATORS;
 	else if ( m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
 		StartTeam = TEAM_RED;
@@ -1001,7 +1001,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			return;
 		}
 
-		if(m_pEventsGame->GetActualEvent() == SURVIVOR && pMsg->m_Team != TEAM_SPECTATORS)
+		if(m_pEventsGame->IsActualEvent(SURVIVOR) && pMsg->m_Team != TEAM_SPECTATORS)
 		{
 			SendBroadcast("You can't join other team with this event, wait a winner", ClientID);
 			m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
@@ -1630,6 +1630,12 @@ void CGameContext::ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserDa
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
 }
 
+void CGameContext::ConSetTwoEvent(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->m_pEventsGame->SetTwoEvent();
+}
+
 void CGameContext::ConListPlayer(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
@@ -1992,6 +1998,8 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("next_random_event_team", "", CFGFLAG_SERVER, ConNextRandomEventTeam, this, "Next Random Event for the game.");
 	Console()->Register("set_event_team", "i", CFGFLAG_SERVER, ConSetEventTeam, this, "Set Event for the game.");
 	Console()->Register("add_time_event_team", "?i", CFGFLAG_SERVER, ConAddTimeEventTeam, this, "Add more time to the actual Event.");
+
+	Console()->Register("set_two_event", "", CFGFLAG_SERVER, ConSetTwoEvent, this, "Activate/Desactivate Two Events");
 
 	Console()->Register("list_player", "", CFGFLAG_SERVER, ConListPlayer, this, "List name players, clients id and statistics id.");
 	Console()->Register("shotgun", "i", CFGFLAG_SERVER, ConGiveShotgun, this, "Give shotgun to the player with this client id.");

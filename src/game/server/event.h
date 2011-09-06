@@ -3,7 +3,7 @@
 
 #include <game/server/gamecontext.h>
 
-enum {NOTHING, HAMMER, GUN, SHOTGUN, GRENADE, RIFLE, KATANA, UNLIMITED_AMMO, LIFE_ARMOR_CRAZY, SURVIVOR, PROTECT_X2, INSTAGIB, WALLSHOT, BULLET_PIERCING, BULLET_BOUNCE, HAVE_ALL_WEAPON, GRAVITY_0, GRAVITY_M0_5, BOUNCE_10, HOOK_VERY_LONG, SPEED_X10,  WEAPON_SLOW, END};
+enum {NOTHING, HAMMER, GUN, SHOTGUN, GRENADE, RIFLE, KATANA, UNLIMITED_AMMO, LIFE_ARMOR_CRAZY, SURVIVOR, PROTECT_X2, INSTAGIB, WALLSHOT, BULLET_PIERCING, BULLET_BOUNCE, HAVE_ALL_WEAPON, GRAVITY_0, GRAVITY_M0_5, BOUNCE_10, HOOK_VERY_LONG, SPEED_X10,  WEAPON_SLOW, ALL, END};
 
 enum {T_NOTHING, HAMMER_HEAL, RIFLE_HEAL, CAN_KILL, STEAL_TEE, TEE_VS_ZOMBIE, T_END};
 
@@ -14,13 +14,19 @@ public:
 	~CEvent();
 	void Tick();
 
-	inline int GetActualEvent() { return m_ActualEvent; };
+	//ONLY FOR EVENT BEFORE KATANA !!!
+	inline int GetActualEvent() { return m_ActualEvent[0]; };
+
+	inline bool IsTwoEvent() { return m_TwoEvent; };
+	inline bool IsActualEvent(int Event) { if ( Event == m_ActualEvent[0] || (IsTwoEvent() && Event == m_ActualEvent[1]) || (m_ActualEvent[0] == ALL && Event > KATANA && Event != WALLSHOT && Event != SURVIVOR && Event != GRAVITY_M0_5 )) { return true; } return false; };
 	inline int GetActualEventTeam() { return m_ActualEventTeam; };
 
 	void NextEvent();
 	void NextRandomEvent();
 	bool SetEvent(int event);
 	bool AddTime(long secondes = 150);
+
+	inline void SetTwoEvent() { if (m_TwoEvent) { m_TwoEvent = false; return; } else if ( !Controller()->IsTeamplay() ) { m_TwoEvent = true; return; } };
 
 	void NextEventTeam();
 	void NextRandomEventTeam();
@@ -36,9 +42,10 @@ private:
 
 	void SetTune();
 	void ResetTune();
-	int m_ActualEvent;
+	bool m_TwoEvent;
+	int m_ActualEvent[2];
 	int m_ActualEventTeam;
-	time_t m_StartEvent;
+	time_t m_StartEvent[2];
 	time_t m_StartEventTeam;
 	time_t m_LastSend;
 
