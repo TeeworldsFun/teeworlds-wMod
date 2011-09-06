@@ -780,7 +780,7 @@ void CCharacter::Tick()
 	if (!m_AuraProtect[0] && (m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())))
 	{
 		for ( int i = 0; i < 12; i++ )
-			m_AuraProtect[i] = new CAura(&(GameServer()->m_World), this, i * 30, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
+			m_AuraProtect[i] = new CAura(&(GameServer()->m_World), this, i * 30, 60, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
 	}
 
 	else if ( m_AuraProtect[0] && !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) )
@@ -795,7 +795,7 @@ void CCharacter::Tick()
 		if ((GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))
 		{
 				for ( int i = 0; i < 3; i++ )
-					m_AuraCaptain[i] = new CAura(&(GameServer()->m_World), this, i * 120, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
+					m_AuraCaptain[i] = new CAura(&(GameServer()->m_World), this, i * 120, 40, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
 		}
 	}
 	else if (!(GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))

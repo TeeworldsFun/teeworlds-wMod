@@ -4,12 +4,13 @@
 #include <game/server/gamecontext.h>
 #include "aura.h"
 
-CAura::CAura(CGameWorld *pGameWorld, CCharacter *Character, float StartDegres, int Type)
+CAura::CAura(CGameWorld *pGameWorld, CCharacter *Character, float StartDegres, int Distance, int Type)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP)
 {
 	m_pCharacter = Character;
 	m_Type = Type;
-	m_degres = StartDegres;
+	m_Degres = StartDegres;
+	m_Distance = Distance;
 
 	m_ProximityRadius = PickupPhysSize;
 	GameWorld()->InsertEntity(this);
@@ -22,11 +23,11 @@ void CAura::Reset()
 
 void CAura::Tick()
 {
-	m_Pos = m_pCharacter->m_Pos + (GetDir(m_degres*M_PIl/180) * 62);
-	if ( m_degres + 5 < 360 )
-		m_degres += 5;
+	m_Pos = m_pCharacter->m_Pos + (GetDir(m_Degres*M_PIl/180) * m_Distance);
+	if ( m_Degres + 5 < 360 )
+		m_Degres += 5;
 	else
-		m_degres = 0;
+		m_Degres = 0;
 }
 
 void CAura::Snap(int SnappingClient)
