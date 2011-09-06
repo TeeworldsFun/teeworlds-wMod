@@ -846,14 +846,23 @@ void IGameController::DoWincheck()
 				}
 				else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_aTeamscore[TEAM_BLUE] > 1 && !m_pCaptain[TEAM_RED] && Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*5 )
 				{
-					int CaptainId = 0;
-					while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() == TEAM_SPECTATORS);
-					m_pCaptain[TEAM_RED] = GameServer()->m_apPlayers[CaptainId];
-					m_pCaptain[TEAM_RED]->SetTeam(TEAM_RED, false);
-					char Text[256] = "";
-					str_format(Text, 256, "%s is a zombie !!! Flee or be his slaves !!!", m_pCaptain[TEAM_RED]->GetRealName());
-					GameServer()->SendChatTarget(-1, Text);
-					GameServer()->SendChatTarget(CaptainId, "You're a zombie ! Eat some brains !");
+					if ( !m_aTeamscore[TEAM_RED] )
+					{
+						int CaptainId = 0;
+						while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() == TEAM_SPECTATORS);
+						m_pCaptain[TEAM_RED] = GameServer()->m_apPlayers[CaptainId];
+						m_pCaptain[TEAM_RED]->SetTeam(TEAM_RED, false);
+						char Text[256] = "";
+						str_format(Text, 256, "%s is a zombie !!! Flee or be his slaves !!!", m_pCaptain[TEAM_RED]->GetRealName());
+						GameServer()->SendChatTarget(-1, Text);
+						GameServer()->SendChatTarget(CaptainId, "You're a zombie ! Eat some brains !");
+					}
+					else
+					{
+						int CaptainId = 0;
+						while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() != TEAM_RED);
+						m_pCaptain[TEAM_RED] = GameServer()->m_apPlayers[CaptainId];
+					}
 				}
 
 				if ((m_pGameServer->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && ((m_aTeamscore[0] == 0 && m_aTeamscore[1] > 1) || (m_aTeamscore[1] == 0 && m_aTeamscore[0] > 1))) || 
