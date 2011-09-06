@@ -28,5 +28,14 @@ void CLoot::Tick()
 		m_Vel.y += GameServer()->m_World.m_Core.m_Tuning.m_Gravity;
 		GameServer()->Collision()->MoveBox(&m_Pos, &m_Vel, vec2(PickupPhysSize, PickupPhysSize), 0.5f);
 	}
+
+	if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
+		GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
+		GameServer()->Collision()->GetCollisionAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
+		GameServer()->Collision()->GetCollisionAt(m_Pos.x-m_ProximityRadius/3.f, m_Pos.y+m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
+		GameLayerClipped(m_Pos))
+	{
+		Reset();
+	}
 }
 
