@@ -440,6 +440,18 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 
 	CLoot *loot = new CLoot(&GameServer()->m_World, POWERUP_HEALTH, 0);
 	loot->m_Pos = pVictim->m_Pos;
+	loot->m_Vel.x = -50;
+
+	loot = new CLoot(&GameServer()->m_World, POWERUP_ARMOR, 0);
+	loot->m_Pos = pVictim->m_Pos;
+	loot->m_Vel.x = 50;
+
+	if ( pVictim->GetActiveWeapon() != WEAPON_GUN && pVictim->GetActiveWeapon() != WEAPON_HAMMER )
+	{
+		loot = new CLoot(&GameServer()->m_World, POWERUP_WEAPON, pVictim->GetActiveWeapon());
+		loot->m_Pos = pVictim->m_Pos;
+		loot->m_Vel.x = 0;
+	}
 
 	return 0;
 }
