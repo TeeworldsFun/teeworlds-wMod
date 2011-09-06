@@ -5,10 +5,13 @@
 CStatistiques::CStatistiques(CGameContext *GameServer)
 {
 	m_pGameServer = GameServer;
+	m_pServer = m_pGameServer->Server();
+	m_pController = m_pGameServer->m_pController;
+
 	m_last_write = time(NULL);
 	std::ifstream fichier("Statistiques.txt");
 	Stats stats;
-	if(fichier && !fichier.eof())
+	if(fichier.is_open() && !fichier.eof())
 	{
 		for ( int i = 0; true; i++ )
 		{
@@ -536,14 +539,13 @@ void CStatistiques::DisplayPlayer(long id, int ClientID)
 void CStatistiques::WriteStat()
 {
 	std::ofstream fichier("Statistiques.txt", std::ios::out | std::ios::trunc);
-	if(fichier)
+	if(fichier.is_open())
 	{
 		for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
 		{
 			UpdateStat(i);
 			if ( m_statistiques[i].m_level > 0 )
 			{
-
 				fichier << m_statistiques[i].m_ip << " ";
 				fichier << m_statistiques[i].m_name << " ";
 				fichier << m_statistiques[i].m_clan << " ";

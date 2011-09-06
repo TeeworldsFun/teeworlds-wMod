@@ -633,12 +633,13 @@ void IGameController::Tick()
 					pP->m_ForceBalanced = true;
 			} while (--NumBalance);
 
-			if ( m_ForceDoBalance )
-				m_ForceDoBalance = false;
-			else
+			if ( !m_ForceDoBalance )
 				m_ForceBalanced = true;
 		}
 		m_UnbalancedTick = -1;
+		
+		if ( m_ForceDoBalance )
+			m_ForceDoBalance = false;
 	}
 	else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_ForceDoBalance == true )
 	{

@@ -795,7 +795,7 @@ void CCharacter::Tick()
 		if ((GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))
 		{
 				for ( int i = 0; i < 3; i++ )
-					m_AuraCaptain[i] = new CAura(&(GameServer()->m_World), this, i * 120, 40, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
+					m_AuraCaptain[i] = new CAura(&(GameServer()->m_World), this, i * 120, 45, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
 		}
 	}
 	else if (!(GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))
