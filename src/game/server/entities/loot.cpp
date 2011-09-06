@@ -12,7 +12,7 @@ CLoot::CLoot(CGameWorld *pGameWorld, int Type, int SubType)
 
 void CLoot::Reset()
 {
-	GameWorld()->RemoveEntity(this);
+	GameWorld()->DestroyEntity(this);
 }
 
 void CLoot::Tick()
@@ -21,7 +21,7 @@ void CLoot::Tick()
 
 	if(m_SpawnTick > 0)
 	{
-		GameWorld()->RemoveEntity(this);
+		GameWorld()->DestroyEntity(this);
 	}
 	else 
 	{

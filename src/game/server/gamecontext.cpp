@@ -162,17 +162,6 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 				return;
 		}
 	}
-
-	if ( m_pEventsGame->IsActualEvent(WEAPON_SLOW) )
-	{
-		CProjectile *apEnts[100];
-		int Num = m_World.FindEntities(Pos, 135.0f, (CEntity**)apEnts, 100, CGameWorld::ENTTYPE_PROJECTILE);
-		for(int i = 0; i < Num; i++)
-		{
-			if ( Owner != apEnts[i]->GetOwner() )
-				m_World.RemoveEntity(apEnts[i]);
-		}
-	}
 	
 	// create the event
 	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
