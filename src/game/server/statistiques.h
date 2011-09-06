@@ -155,10 +155,10 @@ public:
 	inline void AddFlagCapture(long id) { if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_flag_capture++; }
 	inline bool Lock(long id) { if ( m_statistiques[id].m_lock ) { m_statistiques[id].m_lock = false; return false; } else { m_statistiques[id].m_lock = true; return true; } }
 
-	inline bool UpgradeWeapon(long id) { if (!m_statistiques.m_upgrade.m_money) { return false; } m_statistiques.m_upgrade.m_weapon++; };
-	inline bool UpgradeLife(long id) { if (!m_statistiques.m_upgrade.m_money) { return false; } m_statistiques.m_upgrade.m_life++; };
-	inline bool UpgradeMove(long id) { if (!m_statistiques.m_upgrade.m_money) { return false; } m_statistiques.m_upgrade.m_move++; };
-	inline bool UpgradeHook(long id) { if (!m_statistiques.m_upgrade.m_money) { return false; } m_statistiques.m_upgrade.m_hook++; };
+	inline bool UpgradeWeapon(long id) { if (!m_statistiques[id].m_upgrade.m_money) { return false; } m_statistiques[id].m_upgrade.m_weapon++; };
+	inline bool UpgradeLife(long id) { if (!m_statistiques[id].m_upgrade.m_money) { return false; } m_statistiques[id].m_upgrade.m_life++; };
+	inline bool UpgradeMove(long id) { if (!m_statistiques[id].m_upgrade.m_money) { return false; } m_statistiques[id].m_upgrade.m_move++; };
+	inline bool UpgradeHook(long id) { if (!m_statistiques[id].m_upgrade.m_money) { return false; } m_statistiques[id].m_upgrade.m_hook++; };
 
 private:
 	CGameContext *GameServer() const { return m_pGameServer; }
