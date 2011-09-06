@@ -162,15 +162,15 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 		}
 	}
 
-	/*if ( Weapon == WEAPON_HAMMER )
+	if ( IsActualEvent(WEAPON_SLOW) )
 	{
-		CLaser *apEnts[50];
-		int Num = m_World.FindEntities(Pos, 300.0f, (CEntity**)apEnts, 50, CGameWorld::ENTTYPE_LASER);
+		CProjectile *apEnts[100];
+		int Num = m_World.FindEntities(Pos, 135.0f, (CEntity**)apEnts, 100, CGameWorld::ENTTYPE_PROJECTILE);
 		for(int i = 0; i < Num; i++)
 		{
 			m_World.DestroyEntity(apEnts[i]);
 		}
-	}*/
+	}
 	
 	// create the event
 	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
