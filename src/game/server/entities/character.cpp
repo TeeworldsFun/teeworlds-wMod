@@ -64,6 +64,12 @@ CCharacter::~CCharacter()
 			delete m_AuraProtect[i];
 		m_AuraProtect[0] = 0;
 	}
+	if ( m_AuraCaptain[0] != 0 )
+	{
+		for ( int i = 0; i < 3; i++ )
+			delete m_AuraCaptain[i];
+		m_AuraCaptain[0] = 0;
+	}
 }
 
 void CCharacter::Reset()
@@ -95,6 +101,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	mem_zero(&m_ReckoningCore, sizeof(m_ReckoningCore));
 	m_Protect = Server()->Tick();
 	m_AuraProtect[0] = 0;
+	m_AuraCaptain[0] = 0;
 
 	GameServer()->m_World.InsertEntity(this);
 	m_Alive = true;
@@ -770,17 +777,32 @@ void CCharacter::Tick()
 		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 	}
 
-	if ((m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) && m_AuraProtect[0] == 0 )
+	if (!m_AuraProtect[0] && (m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())))
 	{
 		for ( int i = 0; i < 12; i++ )
 			m_AuraProtect[i] = new CAura(&(GameServer()->m_World), this, i * 30, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
 	}
 
-	else if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) && m_AuraProtect[0] != 0 )
+	else if ( m_AuraProtect[0] && !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) )
 	{
 		for ( int i = 0; i < 12; i++ )
 			delete m_AuraProtect[i];
 		m_AuraProtect[0] = 0;
+	}
+	
+	if ( !m_AuraCaptain[0] )
+	{
+		if ((GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))
+		{
+				for ( int i = 0; i < 3; i++ )
+					m_AuraCaptain[i] = new CAura(&(GameServer()->m_World), this, i * 120, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
+		}
+	}
+	else if (!(GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))
+	{
+		for ( int i = 0; i < 3; i++ )
+			delete m_AuraCaptain[i];
+		m_AuraCaptain[0] = 0;
 	}
 
 	// handle Weapons
@@ -922,6 +944,12 @@ void CCharacter::Die(int Killer, int Weapon)
 		for ( int i = 0; i < 12; i++ )
 			delete m_AuraProtect[i];
 		m_AuraProtect[0] = 0;
+	}
+	if ( m_AuraCaptain[0] != 0 )
+	{
+		for ( int i = 0; i < 3; i++ )
+			delete m_AuraCaptain[i];
+		m_AuraCaptain[0] = 0;
 	}
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;

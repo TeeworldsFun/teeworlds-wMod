@@ -124,6 +124,7 @@ private:
 	int m_Protect;
 
 	class CAura *m_AuraProtect[12];
+	class CAura *m_AuraCaptain[3];
 
 	// ninja
 	struct
