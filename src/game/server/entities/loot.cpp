@@ -27,10 +27,6 @@ void CLoot::Tick()
 	{
 		m_Vel.y += GameServer()->m_World.m_Core.m_Tuning.m_Gravity;
 		GameServer()->Collision()->MoveBox(&m_Pos, &m_Vel, vec2(PickupPhysSize, PickupPhysSize), 0.5f);
-		if ( m_Vel.x < 0 )
-			m_Vel.x++;
-		if ( m_Vel.x > 0 )
-			m_Vel.x--;
 	}
 }
 
