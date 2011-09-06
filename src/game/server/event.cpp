@@ -8,10 +8,13 @@ CEvent::CEvent(CGameContext *GameServer)
 	m_pGameServer = GameServer;
 	m_pServer = m_pGameServer->Server();
 	m_pController = m_pGameServer->m_pController;
-	m_StartEvent = 0;
+	m_StartEvent[0] = 0;
+	m_StartEvent[1] = 0;
 	m_StartEventTeam = 0;
 	m_StartEventRound = 0;
-	m_ActualEvent = -1;
+	m_TwoEvent = false;
+	m_ActualEvent[0] = -1;
+	m_ActualEvent[1] = -1;
 	m_ActualEventTeam = -1;
 	m_LastSend = 0;
 }
@@ -23,94 +26,188 @@ CEvent::~CEvent()
 
 void CEvent::Tick()
 {
-	time_t Elapsed = difftime(time(NULL), m_StartEvent);
-	if ( Elapsed >= 150 )
+	if ( m_TwoEvent && Controller()->IsTeamplay() )
+		m_TwoEvent = false;
+
+	time_t Elapsed[2] = {difftime(time(NULL), m_StartEvent[0]), 0};
+	if ( m_TwoEvent )
+		Elapsed[1] = difftime(time(NULL), m_StartEvent[1]);
+
+	if ( Elapsed[0] >= 150 )
 	{
-		if ( m_ActualEvent == -1 || m_ActualEvent >= GRAVITY_0 )
-			ResetTune();
-		else if ( m_ActualEvent == SURVIVOR )
+		if ( m_ActualEvent[0] == SURVIVOR )
 		{
 			GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
 			Controller()->EndRound();
 		}
 
 		int NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING;
-		while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent || (NewEvent == SURVIVOR && Controller()->IsTeamplay()));
+		while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[0] || (NewEvent == SURVIVOR && Controller()->IsTeamplay()));
 
-		m_ActualEvent = NewEvent;
-		m_StartEvent = time(NULL);
+		m_ActualEvent[0] = NewEvent;
+		m_StartEvent[0] = time(NULL);
 		SetTune();
 	}
-	
+	if ( m_TwoEvent && Elapsed[1] >= 150 )
+	{
+		int NewEvent = (rand() % ((ALL - 1) - NOTHING + 1)) + NOTHING;
+		while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[1] || (NewEvent > NOTHING && NewEvent < KATANA) || NewEvent == WALLSHOT || (m_ActualEvent[0] == GRAVITY_0 && NewEvent == GRAVITY_M0_5) || (m_ActualEvent[0] == GRAVITY_M0_5 && NewEvent == GRAVITY_0) || NewEvent == SURVIVOR);
+
+		m_ActualEvent[1] = NewEvent;
+		m_StartEvent[1] = time(NULL);
+		SetTune();
+	}
+
 	char Text[256] = "";
-	switch(m_ActualEvent)
+	switch(m_ActualEvent[0])
 	{
 		case NOTHING:
-			str_format(Text, 256, "Event : Nothing. | Remaining : %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : Nothing. | Remaining : %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case HAMMER:
-			str_format(Text, 256, "Event : All Get Hammer ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Hammer ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case GUN:
-			str_format(Text, 256, "Event : All Get Gun ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Gun ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case SHOTGUN:
-			str_format(Text, 256, "Event : All Get Shotgun ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Shotgun ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case GRENADE:
-			str_format(Text, 256, "Event : All Get Grenade ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Grenade ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case RIFLE:
-			str_format(Text, 256, "Event : All Get Rifle ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Rifle ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case KATANA:
-			str_format(Text, 256, "Event : All Get Katana ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Katana ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case UNLIMITED_AMMO:
-			str_format(Text, 256, "Event : All Get Unlimited Ammo ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Unlimited Ammo ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case LIFE_ARMOR_CRAZY:
-			str_format(Text, 256, "Event : All Get Life and Armor Crazy ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Life and Armor Crazy ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case SURVIVOR:
-			str_format(Text, 256, "Event : Mode Survivor ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : Mode Survivor ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case PROTECT_X2:
-			str_format(Text, 256, "Event : All Get Protect X2 ! | Remaining : %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Protect X2 ! | Remaining : %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case INSTAGIB:
-			str_format(Text, 256, "Event : Mode Instagib ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : Mode Instagib ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case WALLSHOT:
-			str_format(Text, 256, "Event : Mode WallShot ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : Mode WallShot ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case BULLET_PIERCING:
-			str_format(Text, 256, "Event : All Bullets can pierce Tee and Tiles ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Bullets can pierce Tee and Tiles ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case BULLET_BOUNCE:
-			str_format(Text, 256, "Event : All Bullets can bounce ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Bullets can bounce ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case HAVE_ALL_WEAPON:
-			str_format(Text, 256, "Event : All get all weapons when respawn ! | Remaininig %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All get all weapons when respawn ! | Remaininig %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case GRAVITY_0:
-			str_format(Text, 256, "Event : Gravity modified to 0 ! | Remaining : %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : Gravity modified to 0 ! | Remaining : %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case GRAVITY_M0_5:
-			str_format(Text, 256, "Event : Gravity modified to -0.5 ! | Remaining : %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : Gravity modified to -0.5 ! | Remaining : %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case BOUNCE_10:
-			str_format(Text, 256, "Event : Laser Bounce Num modified to 10 ! | Remaining : %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : Laser Bounce Num modified to 10 ! | Remaining : %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case HOOK_VERY_LONG:
-			str_format(Text, 256, "Event : Hook Length is now very long ! | Remaining : %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : Hook Length is now very long ! | Remaining : %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case SPEED_X10:
-			str_format(Text, 256, "Event : All Get Speed X10 ! | Remaining : %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All Get Speed X10 ! | Remaining : %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
 		case WEAPON_SLOW:
-			str_format(Text, 256, "Event : All bullets are slow ! | Remaining : %02d:%02d", (150 - Elapsed) / 60, (150 - Elapsed) % 60);
+			str_format(Text, 256, "Event : All bullets are slow ! | Remaining : %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
 			break;
+		case ALL:
+			str_format(Text, 256, "Event : All events are active ! | Remaining : %02d:%02d", (150 - Elapsed[0]) / 60, (150 - Elapsed[0]) % 60);
+			break;
+	}
+
+	if ( IsTwoEvent() )
+	{
+		char Temp[256] = "";
+		switch(m_ActualEvent[1])
+		{
+			case NOTHING:
+				str_format(Temp, 256, "\nEvent 2 : Nothing. | Remaining : %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case HAMMER:
+				str_format(Temp, 256, "\nEvent 2 : All Get Hammer ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case GUN:
+				str_format(Temp, 256, "\nEvent 2 : All Get Gun ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case SHOTGUN:
+				str_format(Temp, 256, "\nEvent 2 : All Get Shotgun ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case GRENADE:
+				str_format(Temp, 256, "\nEvent 2 : All Get Grenade ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case RIFLE:
+				str_format(Temp, 256, "\nEvent 2 : All Get Rifle ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case KATANA:
+				str_format(Temp, 256, "\nEvent 2 : All Get Katana ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case UNLIMITED_AMMO:
+				str_format(Temp, 256, "\nEvent 2 : All Get Unlimited Ammo ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case LIFE_ARMOR_CRAZY:
+				str_format(Temp, 256, "\nEvent 2 : All Get Life and Armor Crazy ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case SURVIVOR:
+				str_format(Temp, 256, "\nEvent 2 : Mode Survivor ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case PROTECT_X2:
+				str_format(Temp, 256, "\nEvent 2 : All Get Protect X2 ! | Remaining : %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case INSTAGIB:
+				str_format(Temp, 256, "\nEvent 2 : Mode Instagib ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case WALLSHOT:
+				str_format(Temp, 256, "\nEvent 2 : Mode WallShot ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case BULLET_PIERCING:
+				str_format(Temp, 256, "\nEvent 2 : All Bullets can pierce Tee and Tiles ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case BULLET_BOUNCE:
+				str_format(Temp, 256, "\nEvent 2 : All Bullets can bounce ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case HAVE_ALL_WEAPON:
+				str_format(Temp, 256, "\nEvent 2 : All get all weapons when respawn ! | Remaininig %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case GRAVITY_0:
+				str_format(Temp, 256, "\nEvent 2 : Gravity modified to 0 ! | Remaining : %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case GRAVITY_M0_5:
+				str_format(Temp, 256, "\nEvent 2 : Gravity modified to -0.5 ! | Remaining : %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case BOUNCE_10:
+				str_format(Temp, 256, "\nEvent 2 : Laser Bounce Num modified to 10 ! | Remaining : %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case HOOK_VERY_LONG:
+				str_format(Temp, 256, "\nEvent 2 : Hook Length is now very long ! | Remaining : %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case SPEED_X10:
+				str_format(Temp, 256, "\nEvent 2 : All Get Speed X10 ! | Remaining : %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case WEAPON_SLOW:
+				str_format(Temp, 256, "\nEvent 2 : All bullets are slow ! | Remaining : %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+			case ALL:
+				str_format(Temp, 256, "\nEvent 2 : All events are active ! | Remaining : %02d:%02d", (150 - Elapsed[1]) / 60, (150 - Elapsed[1]) % 60);
+				break;
+		}
+		str_append(Text, Temp, 256);
 	}
 
 	if ( Controller()->IsTeamplay() )
@@ -176,33 +273,38 @@ void CEvent::Tick()
 
 void CEvent::SetTune()
 {
-	switch (m_ActualEvent)
+	ResetTune();
+	if ( IsActualEvent(GRAVITY_0) )
 	{
-		case GRAVITY_0:
 			GameServer()->Tuning()->Set("gravity", static_cast<float>(0.0));
 			GameServer()->SendTuningParams(-1);
-			break;
-		case GRAVITY_M0_5:
+	}
+	if ( IsActualEvent(GRAVITY_M0_5) )
+	{
 			GameServer()->Tuning()->Set("gravity", static_cast<float>(-0.5));
 			GameServer()->SendTuningParams(-1);
-			break;
-		case BOUNCE_10:
+	}
+	if ( IsActualEvent(BOUNCE_10) )
+	{
 			GameServer()->Tuning()->Set("laser_bounce_num", static_cast<float>(10.0));
 			GameServer()->SendTuningParams(-1);
-			break;
-		case HOOK_VERY_LONG:
+	}
+	if ( IsActualEvent(HOOK_VERY_LONG) )
+	{
 			GameServer()->Tuning()->Set("hook_length", static_cast<float>(10000.0));
 			GameServer()->Tuning()->Set("hook_fire_speed", static_cast<float>(300.0));
 			GameServer()->SendTuningParams(-1);
-			break;
-		case SPEED_X10:
+	}
+	if ( IsActualEvent(SPEED_X10) )
+	{
 			GameServer()->Tuning()->Set("ground_control_speed", static_cast<float>(100.0));
 			GameServer()->Tuning()->Set("air_control_speed", static_cast<float>(50.0));
 			GameServer()->Tuning()->Set("hook_fire_speed", static_cast<float>(300.0));
 			GameServer()->Tuning()->Set("hook_drag_speed", static_cast<float>(150.0));
 			GameServer()->SendTuningParams(-1);
-			break;
-		case WEAPON_SLOW:
+	}
+	if ( IsActualEvent(WEAPON_SLOW) )
+	{
 			GameServer()->Tuning()->Set("gun_speed", static_cast<float>(110.0));
 			GameServer()->Tuning()->Set("gun_lifetime", static_cast<float>(40.0));
 			GameServer()->Tuning()->Set("shotgun_speed", static_cast<float>(137.5));
@@ -211,10 +313,21 @@ void CEvent::SetTune()
 			GameServer()->Tuning()->Set("grenade_lifetime", static_cast<float>(40.0));
 			GameServer()->Tuning()->Set("laser_bounce_delay", static_cast<float>(1500.0));
 			GameServer()->SendTuningParams(-1);
-			break;
-		default:
-			ResetTune();
-			break;
+	}
+	if ( IsActualEvent(ALL) )
+	{
+			GameServer()->Tuning()->Set("gravity", static_cast<float>(0.0));
+			GameServer()->Tuning()->Set("laser_bounce_num", static_cast<float>(10.0));
+			GameServer()->Tuning()->Set("hook_length", static_cast<float>(10000.0));
+			GameServer()->Tuning()->Set("hook_fire_speed", static_cast<float>(300.0));
+			GameServer()->Tuning()->Set("gun_speed", static_cast<float>(110.0));
+			GameServer()->Tuning()->Set("gun_lifetime", static_cast<float>(40.0));
+			GameServer()->Tuning()->Set("shotgun_speed", static_cast<float>(137.5));
+			GameServer()->Tuning()->Set("shotgun_lifetime", static_cast<float>(4.0));
+			GameServer()->Tuning()->Set("grenade_speed", static_cast<float>(50.0));
+			GameServer()->Tuning()->Set("grenade_lifetime", static_cast<float>(40.0));
+			GameServer()->Tuning()->Set("laser_bounce_delay", static_cast<float>(1500.0));
+			GameServer()->SendTuningParams(-1);
 	}
 }
 void CEvent::ResetTune()
@@ -241,34 +354,30 @@ void CEvent::ResetTune()
 
 void CEvent::NextEvent()
 {
-	if ( m_ActualEvent == -1 || m_ActualEvent >= GRAVITY_0 )
-		ResetTune();
-	else if ( m_ActualEvent == SURVIVOR )
+	if ( m_ActualEvent[0] == SURVIVOR )
 		Controller()->EndRound();
 
-	if ( m_ActualEvent + 1 < END && (!Controller()->IsTeamplay() || m_ActualEvent + 1 != SURVIVOR))
-		m_ActualEvent++;
-	else if (Controller()->IsTeamplay() && m_ActualEvent + 1 == SURVIVOR)
-		m_ActualEvent++;
+	if ( m_ActualEvent[0] + 1 < END && (!Controller()->IsTeamplay() || m_ActualEvent[0] + 1 != SURVIVOR))
+		m_ActualEvent[0]++;
+	else if (Controller()->IsTeamplay() && m_ActualEvent[0] + 1 == SURVIVOR)
+		m_ActualEvent[0]++;
 	else
-		m_ActualEvent = 0;
+		m_ActualEvent[0] = 0;
 
-	m_StartEvent = time(NULL);
+	m_StartEvent[0] = time(NULL);
 	SetTune();
 }
 
 void CEvent::NextRandomEvent()
 {
-	if ( m_ActualEvent == -1 || m_ActualEvent >= GRAVITY_0 )
-		ResetTune();
-	else if ( m_ActualEvent == SURVIVOR )
+	if ( m_ActualEvent[0] == SURVIVOR )
 		Controller()->EndRound();
 
 	int NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING;
-	while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent || (NewEvent == SURVIVOR && Controller()->IsTeamplay()));
+	while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[0] || (NewEvent == SURVIVOR && Controller()->IsTeamplay()));
 
-	m_ActualEvent = NewEvent;
-	m_StartEvent = time(NULL);
+	m_ActualEvent[0] = NewEvent;
+	m_StartEvent[0] = time(NULL);
 	SetTune();
 }
 
@@ -276,9 +385,7 @@ bool CEvent::SetEvent(int event)
 {
 	if ( event >= 0 && event < END )
 	{
-		if ( m_ActualEvent == -1 || m_ActualEvent >= GRAVITY_0 )
-			ResetTune();
-		else if ( m_ActualEvent == SURVIVOR )
+		if ( m_ActualEvent[0] == SURVIVOR )
 		{
 			GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
 			Controller()->EndRound();
@@ -290,8 +397,8 @@ bool CEvent::SetEvent(int event)
 			return false;
 		}
 
-		m_ActualEvent = event;
-		m_StartEvent = time(NULL);
+		m_ActualEvent[0] = event;
+		m_StartEvent[0] = time(NULL);
 		SetTune();
 		return true;
 	}
@@ -305,7 +412,7 @@ bool CEvent::AddTime(long secondes)
 {
 	if ( secondes > 0 )
 	{
-		m_StartEvent += secondes;
+		m_StartEvent[0] += secondes;
 		return true;
 	}
 	else

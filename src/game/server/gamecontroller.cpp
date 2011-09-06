@@ -427,7 +427,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 	if(Weapon == WEAPON_SELF)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
 
-	if(GameServer()->m_pEventsGame->GetActualEvent() == SURVIVOR)
+	if(GameServer()->m_pEventsGame->IsActualEvent(SURVIVOR))
 	{
 		pVictim->GetPlayer()->SetCaptureTeam(TEAM_SPECTATORS);
 		char Text[256] = "";
@@ -899,7 +899,7 @@ void IGameController::DoWincheck()
 		}
 		else
 		{
-			if (GameServer()->m_pEventsGame->GetActualEvent() == SURVIVOR)
+			if (GameServer()->m_pEventsGame->IsActualEvent(SURVIVOR))
 			{
 				int active_player = 0;
 				int nb_player = 0;

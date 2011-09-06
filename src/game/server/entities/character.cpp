@@ -100,7 +100,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_Alive = true;
 
 	GameServer()->m_pController->OnCharacterSpawn(this);
-	if ( GameServer()->m_pEventsGame->GetActualEvent() == HAVE_ALL_WEAPON )
+	if ( GameServer()->m_pEventsGame->IsActualEvent(HAVE_ALL_WEAPON) )
 	{
 		GiveWeapon(WEAPON_RIFLE, 20);
 		GiveWeapon(WEAPON_GRENADE, 20);
@@ -237,7 +237,7 @@ void CCharacter::HandleNinja()
 void CCharacter::DoWeaponSwitch()
 {
 	// make sure we can switch
-	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got || (GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA) || GameServer()->m_pEventsGame->GetActualEvent() == WALLSHOT )
+	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got || (GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA) || GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) )
 		return;
 
 	// switch Weapon
@@ -511,7 +511,7 @@ void CCharacter::FireWeapon()
 
 	m_AttackTick = Server()->Tick();
 
-	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && GameServer()->m_pEventsGame->GetActualEvent() != UNLIMITED_AMMO) // -1 == unlimited
+	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && !GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO)) // -1 == unlimited
 		m_aWeapons[m_ActiveWeapon].m_Ammo--;
 
 	if(!m_ReloadTimer)
@@ -554,7 +554,7 @@ void CCharacter::HandleWeapons()
 				break;
 		}
 	}
-	else if ( GameServer()->m_pEventsGame->GetActualEvent() == WALLSHOT )
+	else if ( GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) )
 	{
 		if ( m_aWeapons[WEAPON_RIFLE].m_Got == false )
 			GiveWeapon(WEAPON_RIFLE, 20);
@@ -574,11 +574,11 @@ void CCharacter::HandleWeapons()
 	// fire Weapon, if wanted
 	FireWeapon();
 
-	if ( m_ActiveWeapon != WEAPON_NINJA && GameServer()->m_pEventsGame->GetActualEvent() != HAMMER && ((Server()->Tick() - m_HealthRegenStart) >= 150 * Server()->TickSpeed() / 1000) )
+	if ( m_ActiveWeapon != WEAPON_NINJA && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) && ((Server()->Tick() - m_HealthRegenStart) >= 150 * Server()->TickSpeed() / 1000) )
 	{
 		if( m_ActiveWeapon != WEAPON_HAMMER || !(m_LatestInput.m_Fire&1) )
 		{
-			if ( GameServer()->m_pEventsGame->GetActualEvent() != LIFE_ARMOR_CRAZY || m_HealthIncrase == true )
+			if ( !GameServer()->m_pEventsGame->IsActualEvent(LIFE_ARMOR_CRAZY) || m_HealthIncrase == true )
 			{
 		        	if (m_Health < 10)
 			            m_Health++;
@@ -669,7 +669,7 @@ bool CCharacter::GiveNinja()
 		m_Ninja.m_Killed = 0;
 
 		GameServer()->CreateSound(m_Pos, SOUND_PICKUP_NINJA);
-		if ( GameServer()->m_pEventsGame->GetActualEvent() != KATANA )
+		if ( !GameServer()->m_pEventsGame->IsActualEvent(KATANA) )
 			GameServer()->m_pStatistiques->AddPickUpNinja(m_pPlayer->GetSID());
 		return true;
 	}
@@ -757,7 +757,7 @@ void CCharacter::Tick()
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
 
-	if( m_Core.m_Jumped & 3 && GameServer()->m_pEventsGame->GetActualEvent() == GRAVITY_M0_5 )
+	if( m_Core.m_Jumped & 3 && GameServer()->m_pEventsGame->IsActualEvent(GRAVITY_M0_5) )
 		m_Core.m_Vel.y = GameServer()->Tuning()->m_AirJumpImpulse;
 
 	// handle death-tiles and leaving gamelayer
@@ -984,9 +984,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			return false;
 		}
 	}
-	else if ( Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && GameServer()->m_pEventsGame->GetActualEvent() != HAMMER )
+	else if ( Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) )
 		return false;
-	else if ( GameServer()->m_pEventsGame->GetActualEvent() == PROTECT_X2 )
+	else if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
 		Dmg = min(1, Dmg/2);
 
 	m_DamageTaken++;
@@ -1003,7 +1003,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		GameServer()->CreateDamageInd(m_Pos, 0, Dmg);
 	}
 
-	if(Dmg && Weapon != WEAPON_NINJA && GameServer()->m_pEventsGame->GetActualEvent() != INSTAGIB)
+	if(Dmg && Weapon != WEAPON_NINJA && !GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB))
 	{
 		if(m_Armor)
 		{
@@ -1027,7 +1027,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
 		m_Health -= Dmg;
 	}
-	else if ( Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->GetActualEvent() == INSTAGIB )
+	else if ( Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) )
 	{
 		m_Health = 0;
 		m_Armor = 0;

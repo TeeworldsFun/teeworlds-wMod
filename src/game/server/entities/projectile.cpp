@@ -68,7 +68,7 @@ void CProjectile::Tick()
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
 	CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
 	
-	if (m_Weapon == WEAPON_GRENADE && m_ExplodeTick % 2 == 0 && (GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING || GameServer()->Collision()->CheckPoint(PrevPos) == false))
+	if (m_Weapon == WEAPON_GRENADE && m_ExplodeTick % 2 == 0 && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
 	{
 		GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
 	}
@@ -76,7 +76,7 @@ void CProjectile::Tick()
 	m_ExplodeTick++;
 	m_LifeSpan--;
 	
-	if ( m_Weapon == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->GetActualEvent() == BULLET_PIERCING ) && m_LifeSpan < 0 && m_Life == false )
+	if ( m_Weapon == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) ) && m_LifeSpan < 0 && m_Life == false )
 	{
 			int ShotSpread = 2;
 
@@ -111,18 +111,18 @@ void CProjectile::Tick()
 
 	if(TargetChr || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
 	{
-		if((m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE) && (GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING || GameServer()->Collision()->CheckPoint(PrevPos) == false))
+		if((m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE) && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
 			GameServer()->CreateSound(CurPos, m_SoundImpact);
 
-		if(m_Explosive && (GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING || GameServer()->Collision()->CheckPoint(PrevPos) == false))
+		if(m_Explosive && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
 			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, false);
 
 		else if(TargetChr)
 			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
 		
-		if ((GameServer()->m_pEventsGame->GetActualEvent() != BULLET_PIERCING && GameServer()->m_pEventsGame->GetActualEvent() != BULLET_BOUNCE) || m_LifeSpan < 0)
+		if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) || m_LifeSpan < 0)
 			GameServer()->m_World.DestroyEntity(this);
-		else if ( Collide && GameServer()->m_pEventsGame->GetActualEvent() == BULLET_BOUNCE )
+		else if ( Collide && GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) )
 		{
 
 			vec2 TempPos(0.0f , 0.0f);
