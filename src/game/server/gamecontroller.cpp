@@ -438,18 +438,24 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 		GameServer()->SendChatTarget(-1, Text);
 	}
 
+	vec2 alea(0,0);
+
 	CLoot *loot = new CLoot(&GameServer()->m_World, POWERUP_HEALTH, 0);
 	loot->m_Pos = pVictim->m_Pos;
-	while (GameServer()->Collision()->CheckPoint(loot->m_Pos.x -= (rand() % (100 - 0 + 1)) + 0, loot->m_Pos.y -= (rand() % (100 - 0 + 1)) + 0));
+	while (GameServer()->Collision()->CheckPoint(loot->m_Pos.x - (alea.x = (rand() % (100 - 0 + 1)) + 0), loot->m_Pos.y - (alea.y = (rand() % (100 - 0 + 1)) + 0)));
+	loot->m_Pos -= alea;
 
 	loot = new CLoot(&GameServer()->m_World, POWERUP_ARMOR, 0);
 	loot->m_Pos = pVictim->m_Pos;
-	while (GameServer()->Collision()->CheckPoint(loot->m_Pos.x -= (rand() % (100 - 0 + 1)) + 0, loot->m_Pos.y -= (rand() % (100 - 0 + 1)) + 0));
+	while (GameServer()->Collision()->CheckPoint(loot->m_Pos.x - (alea.x = (rand() % (100 - 0 + 1)) + 0), loot->m_Pos.y - (alea.y = (rand() % (100 - 0 + 1)) + 0)));
+	loot->m_Pos -= alea;
 
 	if ( pVictim->GetActiveWeapon() != WEAPON_GUN && pVictim->GetActiveWeapon() != WEAPON_HAMMER )
 	{
 		loot = new CLoot(&GameServer()->m_World, POWERUP_WEAPON, pVictim->GetActiveWeapon());
-		while (GameServer()->Collision()->CheckPoint(loot->m_Pos.x -= (rand() % (100 - 0 + 1)) + 0, loot->m_Pos.y -= (rand() % (100 - 0 + 1)) + 0));
+		while (GameServer()->Collision()->CheckPoint(loot->m_Pos.x - (alea.x = (rand() % (100 - 0 + 1)) + 0), loot->m_Pos.y - (alea.y = (rand() % (100 - 0 + 1)) + 0)));
+		loot->m_Pos -= alea;
+
 	}
 
 	return 0;
