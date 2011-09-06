@@ -13,6 +13,7 @@
 #include "gamemodes/tdm.h"
 #include "gamemodes/ctf.h"
 #include "gamemodes/mod.h"
+#include "entities/projectile.h"
 #include "statistiques.h"
 #include "event.h"
 
@@ -162,13 +163,14 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 		}
 	}
 
-	if ( IsActualEvent(WEAPON_SLOW) )
+	if ( m_pEventsGame->IsActualEvent(WEAPON_SLOW) )
 	{
 		CProjectile *apEnts[100];
 		int Num = m_World.FindEntities(Pos, 135.0f, (CEntity**)apEnts, 100, CGameWorld::ENTTYPE_PROJECTILE);
 		for(int i = 0; i < Num; i++)
 		{
-			m_World.DestroyEntity(apEnts[i]);
+			if ( Owner != apEnts[i]->GetOwner() )
+				m_World.RemoveEntity(apEnts[i]);
 		}
 	}
 	

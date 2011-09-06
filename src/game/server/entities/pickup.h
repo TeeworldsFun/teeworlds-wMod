@@ -16,7 +16,7 @@ public:
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
 
-private:
+protected:
 	int m_Type;
 	int m_Subtype;
 	int m_SpawnTick;

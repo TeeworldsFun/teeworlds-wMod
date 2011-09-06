@@ -6,6 +6,7 @@
 #include <game/generated/protocol.h>
 
 #include "entities/pickup.h"
+#include "entities/loot.h"
 #include "gamecontroller.h"
 #include "gamecontext.h"
 #include "statistiques.h"
@@ -436,6 +437,9 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 		GameServer()->CreateSound(pVictim->m_Pos, SOUND_GRENADE_EXPLODE);
 		GameServer()->SendChatTarget(-1, Text);
 	}
+
+	CLoot *loot = new CLoot(&GameServer()->m_World, POWERUP_HEALTH, 0);
+	loot->m_Pos = pVictim->m_Pos;
 
 	return 0;
 }
