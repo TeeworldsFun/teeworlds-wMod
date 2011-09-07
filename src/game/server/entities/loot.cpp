@@ -49,7 +49,7 @@ void CLoot::Snap(int SnappingClient)
 		return;
 
 	pP->m_X = (int)m_Pos.x;
-	pP->m_Y = (int)m_Pos.y - 16;
+	pP->m_Y = (int)m_Pos.y - 8;
 	pP->m_Type = m_Type;
 	pP->m_Subtype = m_Subtype;
 }
