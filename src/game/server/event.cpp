@@ -13,8 +13,8 @@ CEvent::CEvent(CGameContext *GameServer)
 	m_StartEventTeam = 0;
 	m_StartEventRound = 0;
 	m_TwoEvent = false;
-	m_ActualEvent[0] = 0;
-	m_ActualEvent[1] = 0;
+	m_ActualEvent[0] = -1;
+	m_ActualEvent[1] = -1;
 	m_ActualEventTeam = 0;
 	m_LastSend = 0;
 }
@@ -34,7 +34,7 @@ void CEvent::Tick()
 	if ( m_TwoEvent )
 		Elapsed[1] = Server()->Tick() - m_StartEvent[1];
 
-	if ( Elapsed[0] >= 150 * Server()->TickSpeed())
+	if ( Elapsed[0] >= 150 * Server()->TickSpeed() || m_ActualEvent[0] == -1 )
 	{
 		if ( m_ActualEvent[0] == SURVIVOR )
 		{
@@ -49,7 +49,7 @@ void CEvent::Tick()
 		m_StartEvent[0] = Server()->Tick();
 		SetTune();
 	}
-	if ( m_TwoEvent && Elapsed[1] >= 150 * Server()->TickSpeed())
+	if ( m_TwoEvent && Elapsed[1] >= 150 * Server()->TickSpeed() || m_ActualEvent[0] == -1 )
 	{
 		int NewEvent = (rand() % ((ALL - 1) - NOTHING + 1)) + NOTHING;
 		while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[1] || NewEvent == m_ActualEvent[0] || (NewEvent > NOTHING && NewEvent <= KATANA) || NewEvent == WALLSHOT || (m_ActualEvent[0] == GRAVITY_0 && NewEvent == GRAVITY_M0_5) || (m_ActualEvent[0] == GRAVITY_M0_5 && NewEvent == GRAVITY_0) || (m_ActualEvent[0] == BULLET_BOUNCE && NewEvent == BULLET_PIERCING) || (m_ActualEvent[0] == BULLET_PIERCING && NewEvent == BULLET_BOUNCE) || NewEvent == SURVIVOR);
