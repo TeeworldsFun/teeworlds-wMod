@@ -447,7 +447,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 		alea.y = (rand() % 101);
 		loot->m_Pos.x = pVictim->m_Pos.x + alea.x;
 		loot->m_Pos.y = pVictim->m_Pos.y - alea.y;
-	} while (GameServer()->Collision()->CheckPoint(loot->m_Pos) || GameLayerClipped(loot->m_Pos));
+	} while (GameServer()->Collision()->CheckPoint(loot->m_Pos));
 	
 	loot = new CLoot(&GameServer()->m_World, POWERUP_ARMOR, 0);
 	do
@@ -456,7 +456,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 		alea.y = (rand() % 101);
 		loot->m_Pos.x = pVictim->m_Pos.x + alea.x;
 		loot->m_Pos.y = pVictim->m_Pos.y - alea.y;
-	} while (GameServer()->Collision()->CheckPoint(loot->m_Pos) || GameLayerClipped(loot->m_Pos));
+	} while (GameServer()->Collision()->CheckPoint(loot->m_Pos));
 
 	if ( pVictim->GetActiveWeapon() != WEAPON_GUN && pVictim->GetActiveWeapon() != WEAPON_HAMMER )
 	{
@@ -467,7 +467,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 			alea.y = (rand() % 101);
 			loot->m_Pos.x = pVictim->m_Pos.x + alea.x;
 			loot->m_Pos.y = pVictim->m_Pos.y - alea.y;
-		} while (GameServer()->Collision()->CheckPoint(loot->m_Pos) || GameLayerClipped(loot->m_Pos));
+		} while (GameServer()->Collision()->CheckPoint(loot->m_Pos));
 	}
 
 	return 0;
