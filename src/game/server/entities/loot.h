@@ -12,6 +12,7 @@ public:
 	virtual void Snap(int SnappingClient);
 
 	vec2 m_Vel;
+	int m_StartTick;
 };
 
 #endif

@@ -460,7 +460,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 
 	if ( pVictim->GetActiveWeapon() != WEAPON_GUN && pVictim->GetActiveWeapon() != WEAPON_HAMMER )
 	{
-		loot = new CLoot(&GameServer()->m_World, POWERUP_WEAPON, pVictim->GetActiveWeapon());
+		loot = new CLoot(&GameServer()->m_World, pVictim->GetActiveWeapon() == WEAPON_NINJA ? POWERUP_NINJA : POWERUP_WEAPON, pVictim->GetActiveWeapon());
 		do
 		{
 			alea.x = (rand() % 201) - 100;

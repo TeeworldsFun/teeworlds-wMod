@@ -33,7 +33,7 @@ public:
 	bool SetEventTeam(int event);
 	bool AddTimeTeam(long secondes = 150);
 
-	time_t m_StartEventRound;
+	int m_StartEventRound;
 
 private:
 	CGameContext *GameServer() const { return m_pGameServer; }
@@ -45,9 +45,9 @@ private:
 	bool m_TwoEvent;
 	int m_ActualEvent[2];
 	int m_ActualEventTeam;
-	time_t m_StartEvent[2];
-	time_t m_StartEventTeam;
-	time_t m_LastSend;
+	int m_StartEvent[2];
+	int m_StartEventTeam;
+	int m_LastSend;
 
 	CGameContext *m_pGameServer;
 	IServer *m_pServer;

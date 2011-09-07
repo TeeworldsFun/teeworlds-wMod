@@ -8,6 +8,7 @@ CLoot::CLoot(CGameWorld *pGameWorld, int Type, int SubType)
 {
 	m_SpawnTick = -1;
 	m_Vel = vec2(0,0);
+	m_StartTick = Server()->Tick();
 }
 
 void CLoot::Reset()
@@ -19,9 +20,9 @@ void CLoot::Tick()
 {
 	CPickup::Tick();
 
-	if(m_SpawnTick > 0)
+	if(m_SpawnTick > 0 || Server()->Tick() > m_StartTick+Server()->TickSpeed()*30)
 	{
-		GameWorld()->DestroyEntity(this);
+		Reset();
 	}
 	else 
 	{
