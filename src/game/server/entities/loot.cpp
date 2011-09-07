@@ -39,3 +39,18 @@ void CLoot::Tick()
 	}
 }
 
+void CLoot::Snap(int SnappingClient)
+{
+	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient))
+		return;
+
+	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, m_ID, sizeof(CNetObj_Pickup)));
+	if(!pP)
+		return;
+
+	pP->m_X = (int)m_Pos.x;
+	pP->m_Y = (int)m_Pos.y - 32;
+	pP->m_Type = m_Type;
+	pP->m_Subtype = m_Subtype;
+}
+
