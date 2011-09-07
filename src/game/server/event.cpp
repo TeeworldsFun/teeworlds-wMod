@@ -253,7 +253,7 @@ void CEvent::Tick()
 		str_append(Text, Temp, 256);
 	}
 
-	if (Server()->Tick() - m_LastSend >= Server()->TickSpeed)
+	if (Server()->Tick() - m_LastSend >= Server()->TickSpeed())
 	{
 		for ( int i = 0; i < MAX_CLIENTS; i++ )
 		{
