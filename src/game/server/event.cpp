@@ -13,9 +13,9 @@ CEvent::CEvent(CGameContext *GameServer)
 	m_StartEventTeam = 0;
 	m_StartEventRound = 0;
 	m_TwoEvent = false;
-	m_ActualEvent[0] = -1;
-	m_ActualEvent[1] = -1;
-	m_ActualEventTeam = -1;
+	m_ActualEvent[0] = 0;
+	m_ActualEvent[1] = 0;
+	m_ActualEventTeam = 0;
 	m_LastSend = 0;
 }
 
@@ -29,7 +29,7 @@ void CEvent::Tick()
 	if ( m_TwoEvent && Controller()->IsTeamplay() )
 		m_TwoEvent = false;
 
-	int Elapsed[2];
+	int Elapsed[2] = {0, 0};
 	Elapsed[0] = Server()->Tick() - m_StartEvent[0];
 	if ( m_TwoEvent )
 		Elapsed[1] = Server()->Tick() - m_StartEvent[1];
@@ -214,7 +214,7 @@ void CEvent::Tick()
 	if ( Controller()->IsTeamplay() )
 	{
 		int ElapsedTeam = Server()->Tick() - m_StartEventTeam;
-		if ( ElapsedTeam >= 300 )
+		if ( ElapsedTeam >= 300 * Server()->TickSpeed())
 		{
 			int NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING;
 			while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0) );
@@ -253,7 +253,7 @@ void CEvent::Tick()
 		str_append(Text, Temp, 256);
 	}
 
-	if (Server()->Tick() >= m_LastSend+Server()->TickSpeed())
+	if (Server()->Tick() >= m_LastSend+Server()->TickSpeed()*1)
 	{
 		for ( int i = 0; i < MAX_CLIENTS; i++ )
 		{
