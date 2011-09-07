@@ -49,7 +49,7 @@ void CEvent::Tick()
 		m_StartEvent[0] = Server()->Tick();
 		SetTune();
 	}
-	if ( m_TwoEvent && Elapsed[1] >= 150 * Server()->TickSpeed() || m_ActualEvent[0] == -1 )
+	if ( m_TwoEvent && (Elapsed[1] >= 150 * Server()->TickSpeed() || m_ActualEvent[0] == -1) )
 	{
 		int NewEvent = (rand() % ((ALL - 1) - NOTHING + 1)) + NOTHING;
 		while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[1] || NewEvent == m_ActualEvent[0] || (NewEvent > NOTHING && NewEvent <= KATANA) || NewEvent == WALLSHOT || (m_ActualEvent[0] == GRAVITY_0 && NewEvent == GRAVITY_M0_5) || (m_ActualEvent[0] == GRAVITY_M0_5 && NewEvent == GRAVITY_0) || (m_ActualEvent[0] == BULLET_BOUNCE && NewEvent == BULLET_PIERCING) || (m_ActualEvent[0] == BULLET_PIERCING && NewEvent == BULLET_BOUNCE) || NewEvent == SURVIVOR);
