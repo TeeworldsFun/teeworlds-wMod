@@ -1,5 +1,4 @@
 #include <new>
-#include <ctime>
 #include <engine/shared/config.h>
 #include "event.h"
 
@@ -15,7 +14,7 @@ CEvent::CEvent(CGameContext *GameServer)
 	m_TwoEvent = false;
 	m_ActualEvent[0] = -1;
 	m_ActualEvent[1] = -1;
-	m_ActualEventTeam = 0;
+	m_ActualEventTeam = -1;
 	m_LastSend = 0;
 }
 
@@ -49,7 +48,7 @@ void CEvent::Tick()
 		m_StartEvent[0] = Server()->Tick();
 		SetTune();
 	}
-	if ( m_TwoEvent && (Elapsed[1] >= 150 * Server()->TickSpeed() || m_ActualEvent[0] == -1) )
+	if ( m_TwoEvent && (Elapsed[1] >= 150 * Server()->TickSpeed() || m_ActualEvent[1] == -1) )
 	{
 		int NewEvent = (rand() % ((ALL - 1) - NOTHING + 1)) + NOTHING;
 		while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[1] || NewEvent == m_ActualEvent[0] || (NewEvent > NOTHING && NewEvent <= KATANA) || NewEvent == WALLSHOT || (m_ActualEvent[0] == GRAVITY_0 && NewEvent == GRAVITY_M0_5) || (m_ActualEvent[0] == GRAVITY_M0_5 && NewEvent == GRAVITY_0) || (m_ActualEvent[0] == BULLET_BOUNCE && NewEvent == BULLET_PIERCING) || (m_ActualEvent[0] == BULLET_PIERCING && NewEvent == BULLET_BOUNCE) || NewEvent == SURVIVOR);
@@ -214,7 +213,7 @@ void CEvent::Tick()
 	if ( Controller()->IsTeamplay() )
 	{
 		int ElapsedTeam = Server()->Tick() - m_StartEventTeam;
-		if ( ElapsedTeam >= 300 * Server()->TickSpeed())
+		if ( ElapsedTeam >= 300 * Server()->TickSpeed() || m_ActualEventTeam == -1 )
 		{
 			int NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING;
 			while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0) );

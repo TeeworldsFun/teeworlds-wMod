@@ -286,7 +286,7 @@ void CPlayer::SetCaptureTeam(int Team)
 {
         // clamp the team
         Team = GameServer()->m_pController->ClampTeam(Team);
-        if(m_Team == Team || (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_Team != TEAM_RED) || (m_Team != TEAM_SPECTATORS && this == GameServer()->m_pController->m_pCaptain[m_Team] && GameServer()->m_pController->GetTeamScore(m_Team) > 1) )
+        if(m_Team == Team || (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && Team != TEAM_RED) || (m_Team != TEAM_SPECTATORS && this == GameServer()->m_pController->m_pCaptain[m_Team] && GameServer()->m_pController->GetTeamScore(m_Team) > 1) )
                 return;
 
         char aBuf[512];
