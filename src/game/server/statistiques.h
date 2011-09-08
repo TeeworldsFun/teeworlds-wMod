@@ -102,15 +102,15 @@ struct Stats {
 	unsigned long m_pickup_weapon;
 	unsigned long m_pickup_ninja;
 	unsigned long m_change_weapon;
-	time_t m_time_play;
+	unsigned long m_time_play;
 	unsigned long m_message;
 	unsigned long m_killing_spree;
 	unsigned long m_max_killing_spree;
 	unsigned long m_flag_capture;
-	time_t m_last_connect;
+	unsigned long m_last_connect;
 	bool m_lock;
 
-	time_t m_start_time;
+	unsigned long m_start_time;
 	unsigned long m_actual_kill;
 };
 
@@ -155,10 +155,10 @@ public:
 	inline void AddFlagCapture(long id) { if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_flag_capture++; }
 	inline bool Lock(long id) { if ( m_statistiques[id].m_lock ) { m_statistiques[id].m_lock = false; return false; } else { m_statistiques[id].m_lock = true; return true; } }
 
-	inline bool UpgradeWeapon(long id) { if (!m_statistiques[id].m_upgrade.m_money) { return false; } m_statistiques[id].m_upgrade.m_weapon++; };
-	inline bool UpgradeLife(long id) { if (!m_statistiques[id].m_upgrade.m_money) { return false; } m_statistiques[id].m_upgrade.m_life++; };
-	inline bool UpgradeMove(long id) { if (!m_statistiques[id].m_upgrade.m_money) { return false; } m_statistiques[id].m_upgrade.m_move++; };
-	inline bool UpgradeHook(long id) { if (!m_statistiques[id].m_upgrade.m_money) { return false; } m_statistiques[id].m_upgrade.m_hook++; };
+	inline bool UpgradeWeapon(long id) { if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_weapon++; };
+	inline bool UpgradeLife(long id) { if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_life++; };
+	inline bool UpgradeMove(long id) { if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_move++; };
+	inline bool UpgradeHook(long id) { if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_hook++; };
 
 private:
 	CGameContext *GameServer() const { return m_pGameServer; }
@@ -178,12 +178,12 @@ private:
 	}
 
 	std::vector<Stats> m_statistiques;
-	time_t m_last_write;
+	bool m_write;
+	int m_last_write;
 
 	CGameContext *m_pGameServer;
 	IServer *m_pServer;
 	IGameController *m_pController;
-
 };
 
 #endif

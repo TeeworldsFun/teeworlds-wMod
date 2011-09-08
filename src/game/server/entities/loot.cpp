@@ -50,7 +50,10 @@ void CLoot::Snap(int SnappingClient)
 		return;
 
 	pP->m_X = (int)m_Pos.x;
-	pP->m_Y = (int)m_Pos.y - 8;
+	if ( !GameServer()->Collision()->CheckPoint(m_Pos.x, m_Pos.y - 8) )	
+		pP->m_Y = (int)m_Pos.y - 8;
+	else
+		pP->m_Y = (int)m_Pos.y;
 	pP->m_Type = m_Type;
 	pP->m_Subtype = m_Subtype;
 }

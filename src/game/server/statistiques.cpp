@@ -8,7 +8,7 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 	m_pServer = m_pGameServer->Server();
 	m_pController = m_pGameServer->m_pController;
 
-	m_last_write = time(NULL);
+	m_last_write = time_timestamp();
 	std::ifstream fichier("Statistiques.txt");
 	Stats stats;
 	if(fichier.is_open() && !fichier.eof())
@@ -36,6 +36,10 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 			fichier >> m_statistiques[i].m_flag_capture;
 			fichier >> m_statistiques[i].m_last_connect;
 			fichier >> m_statistiques[i].m_lock;
+			fichier >> m_statistiques[i].m_upgrade.m_weapon;
+			fichier >> m_statistiques[i].m_upgrade.m_life;
+			fichier >> m_statistiques[i].m_upgrade.m_move;
+			fichier >> m_statistiques[i].m_upgrade.m_hook;
 			m_statistiques[i].m_start_time = 0;
 			m_statistiques[i].m_actual_kill = 0;
 			UpdateStat(i);
@@ -44,12 +48,16 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 	         		break;   
 	    		}
 		}
+		m_write = true;
 	}
 
 	else
 	{
     		std::ofstream fichierOut("Statistiques.txt", std::ios::out);
-		fichierOut.close();
+		if ( !fichierOut.is_open() )
+			m_write = false;
+		else
+			m_write = true;
 	}
 	
 	UpdateRank();
@@ -62,9 +70,9 @@ CStatistiques::~CStatistiques()
 
 void CStatistiques::Tick()
 {
-	if ( difftime(time(NULL), m_last_write) >= 150 )
+	if ( difftime(time_timestamp(), m_last_write) >= 150 )
 	{
-		m_last_write = time(NULL);
+		m_last_write = time_timestamp();
 		WriteStat();
 		UpdateRank();
 	}
@@ -259,8 +267,8 @@ void CStatistiques::UpdateStat(long id)
 
 	if ( m_statistiques[id].m_start_time != 0 && !m_statistiques[id].m_lock)
 	{
-		m_statistiques[id].m_time_play += difftime(time(NULL), m_statistiques[id].m_start_time);
-		m_statistiques[id].m_start_time = time(NULL);
+		m_statistiques[id].m_time_play += difftime(time_timestamp(), m_statistiques[id].m_start_time);
+		m_statistiques[id].m_start_time = time_timestamp();
 	}
 }
 
@@ -538,7 +546,10 @@ void CStatistiques::DisplayPlayer(long id, int ClientID)
 
 void CStatistiques::WriteStat()
 {
-	std::ofstream fichier("Statistiques.txt", std::ios::out | std::ios::trunc);
+	if ( m_write == false )
+		return;
+
+	std::ofstream fichier("Statistiques.new", std::ios::out | std::ios::trunc);
 	if(fichier.is_open())
 	{
 		for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
@@ -565,7 +576,26 @@ void CStatistiques::WriteStat()
 				fichier << m_statistiques[i].m_flag_capture << " ";
 				fichier << m_statistiques[i].m_last_connect << " ";
 				fichier << m_statistiques[i].m_lock << " ";
+				fichier << m_statistiques[i].m_upgrade.m_weapon << " ";
+				fichier << m_statistiques[i].m_upgrade.m_life << " ";
+				fichier << m_statistiques[i].m_upgrade.m_move << " ";
+				fichier << m_statistiques[i].m_upgrade.m_hook << " ";
 			}
+		}
+
+		fichier.close();
+
+		std::ifstream test("Statistiques.bak");
+		if ( test.is_open() )
+		{
+			test.close();
+			if (fs_remove("Statistiques.bak"))
+				return;
+		}
+
+		if ( !fs_rename("Statistiques.txt", "Statistiques.bak") )
+		{
+			fs_rename("Statistiques.new", "Statistiques.txt");
 		}
 	}
 }

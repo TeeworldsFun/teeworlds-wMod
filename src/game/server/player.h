@@ -102,7 +102,7 @@ public:
 	} m_Latency;
 
 	unsigned long m_level;
-	time_t m_BroadcastTick;
+	int m_BroadcastTick;
 
 private:
 	CCharacter *m_pCharacter;
