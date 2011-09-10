@@ -324,12 +324,12 @@ void CCharacter::FireWeapon()
 		return;
 	}
 
-	int sound = -1;
+	bool sound = false;
 
-	if ( (Server()->Tick() - m_SoundReloadStart) >= 150 * Server()->TickSpeed() / 1000 )
+	if ( Server()->Tick() >= m_SoundReloadStart+(Server()->TickSpeed()*150)/1000 )
 	{
 		m_SoundReloadStart = Server()->Tick();
-		sound = SOUND_GRENADE_EXPLODE;
+		sound = true;
 	}
 
 	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius*0.75f;
@@ -344,8 +344,7 @@ void CCharacter::FireWeapon()
 
 			CCharacter *apEnts[MAX_CLIENTS];
 			int Hits = 0;
-			int Num = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius*0.5f, (CEntity**)apEnts,
-														MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+			int Num = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius*0.5f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 
 			for (int i = 0; i < Num; ++i)
 			{
@@ -376,8 +375,8 @@ void CCharacter::FireWeapon()
 				m_ReloadTimer = Server()->TickSpeed()/3;
 
 			GameServer()->CreateExplosion(m_Pos, m_pPlayer->GetCID(), m_ActiveWeapon, true, false);
-			if ( sound != -1 )
-				GameServer()->CreateSound(m_Pos, sound);
+			if (sound)
+				GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 
 
 		} break;
@@ -389,7 +388,7 @@ void CCharacter::FireWeapon()
 				ProjStartPos,
 				Direction,
 				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-				1, true, 0, sound, WEAPON_GUN);
+				1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN);
 
 			// pack the Projectile and send it to the client Directly
 			CNetObj_Projectile p;
@@ -402,7 +401,7 @@ void CCharacter::FireWeapon()
 
 			Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
 			
-			if ( sound != -1 )
+			if (sound)
 				GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE);
 		} break;
 
@@ -425,7 +424,7 @@ void CCharacter::FireWeapon()
 					ProjStartPos,
 					vec2(cosf(a), sinf(a))*Speed,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-					1, true, 0, sound, WEAPON_SHOTGUN);
+					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -435,7 +434,7 @@ void CCharacter::FireWeapon()
 					Msg.AddInt(((int *)&p)[i]);
 			}
 
-			if ( sound != -1 )
+			if (sound)
 				GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
 			Server()->SendMsg(&Msg, 0,m_pPlayer->GetCID());
 
@@ -461,7 +460,7 @@ void CCharacter::FireWeapon()
 					ProjStartPos,
 					vec2(cosf(a), sinf(a))*Speed,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
-					1, true, 0, sound, WEAPON_GRENADE);
+					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -473,7 +472,7 @@ void CCharacter::FireWeapon()
 					Msg.AddInt(((int *)&p)[i]);
 			}
 
-			if ( sound != -1 )
+			if (sound)
 				GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
 			Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
 
@@ -497,8 +496,8 @@ void CCharacter::FireWeapon()
 				new CLaser(GameWorld(), m_Pos, vec2(cosf(a), sinf(a))*Speed, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
 			}
 
-			if ( sound != -1 )
-			GameServer()->CreateSound(m_Pos, SOUND_RIFLE_FIRE);
+			if (sound)
+				GameServer()->CreateSound(m_Pos, SOUND_RIFLE_FIRE);
 		} break;
 
 		case WEAPON_NINJA:
@@ -510,7 +509,7 @@ void CCharacter::FireWeapon()
 			m_Ninja.m_CurrentMoveTime = g_pData->m_Weapons.m_Ninja.m_Movetime * Server()->TickSpeed() / 1000;
 			m_Ninja.m_OldVelAmount = length(m_Core.m_Vel);
 
-			if ( sound != -1 )
+			if (sound)
 				GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
 		} break;
 

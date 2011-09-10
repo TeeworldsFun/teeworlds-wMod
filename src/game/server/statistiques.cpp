@@ -59,7 +59,7 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 		else
 			m_write = true;
 	}
-	
+
 	UpdateRank();
 }
 
@@ -85,168 +85,149 @@ void CStatistiques::SetInfo(long id, const char name[], const char clan[], const
 	m_statistiques[id].m_country = country;
 }
 
-class FindChar
+long CStatistiques::GetId(const char ip[MAX_IP_LENGTH], const char a[], const char b[], const int country)
 {
-public:
-	enum {IP, NAME};
-	FindChar(int type, const char text[MAX_NAME_LENGTH], int *count, long id[10])
-	{
-		m_type = type;
-		if ( m_type == IP )
-			str_copy(m_text, text, MAX_NAME_LENGTH);
-		else
-			m_text_hash = str_quickhash(text);
+	unsigned long Name = str_quickhash(a);
+	unsigned long Clan = str_quickhash(b);
 
-		m_count = count;
-		m_id = id;
-	}
-	void operator()(Stats const& statistiques)
+	std::vector<Stats>::iterator first = m_statistiques.begin();
+	const std::vector<Stats>::iterator end = m_statistiques.end();
+
+	unsigned long occurences = 0;
+	std::vector<unsigned long> id;
+
+	for ( ; first != end; first++ )
 	{
-		if ( m_type == IP && str_comp(m_text, statistiques.m_ip) == 0 && *m_count >= 0 && *m_count < 10)
+		if ( str_comp(ip, first->m_ip) == 0 )
 		{
-			m_id[*m_count] = statistiques.m_id;
-			(*m_count)++;
-		}
-		if ( m_type == NAME && statistiques.m_name == m_text_hash && *m_count >= 0 && *m_count < 10)
-		{
-			m_id[*m_count] = statistiques.m_id;
-			(*m_count)++;
+			id.push_back(first->m_id);
+			occurences++;
 		}
 	}
-private:
-	int m_type;
-	char m_text[MAX_NAME_LENGTH];
-	unsigned long m_text_hash;
-	int *m_count;
-	long *m_id;
-};
 
-long CStatistiques::GetId(const char ip[MAX_IP_LENGTH], const char name[], const char clan[], const int country)
-{
-	unsigned long Name = str_quickhash(name);
-	unsigned long Clan = str_quickhash(clan);
-
-	int occurences_ip = 0;
-	long id_ip[10] = {-1};
-
-	FindChar FindIp(FindChar::IP, ip, &occurences_ip, id_ip);
-	std::for_each(m_statistiques.begin(), m_statistiques.end(), FindIp);
-	if ( occurences_ip == 1 && m_statistiques[id_ip[0]].m_start_time == 0 )
+	if ( occurences == 1 && m_statistiques[id[0]].m_start_time == 0 )
 	{
-		m_statistiques[id_ip[0]].m_name = Name;
-		m_statistiques[id_ip[0]].m_clan = Clan;
-		m_statistiques[id_ip[0]].m_country = country;
-		return id_ip[0];
+		m_statistiques[id[0]].m_name = Name;
+		m_statistiques[id[0]].m_clan = Clan;
+		m_statistiques[id[0]].m_country = country;
+		return id[0];
 	}
-	else if ( occurences_ip > 1 )
+	else if ( occurences > 1 )
 	{
-		for ( int i = 0; i < occurences_ip; i++ )
+		for ( unsigned long i = 0; i < occurences; i++ )
 		{
-			if ( m_statistiques[id_ip[i]].m_start_time == 0 && m_statistiques[id_ip[i]].m_name == Name && m_statistiques[id_ip[i]].m_clan == Clan && m_statistiques[id_ip[i]].m_country == country)
+			if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_name == Name && m_statistiques[id[i]].m_clan == Clan && m_statistiques[id[i]].m_country == country)
 			{
-				return id_ip[i];
+				return id[i];
 			}
 		}
 
-		for ( int i = 0; i < occurences_ip; i++ )
+		for ( unsigned long i = 0; i < occurences; i++ )
 		{
-			if ( m_statistiques[id_ip[i]].m_start_time == 0 && m_statistiques[id_ip[i]].m_name == Name && m_statistiques[id_ip[i]].m_clan == Clan )
+			if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_name == Name && m_statistiques[id[i]].m_clan == Clan )
 			{
-				m_statistiques[id_ip[i]].m_country = country;
-				return id_ip[i];
+				m_statistiques[id[i]].m_country = country;
+				return id[i];
 			}
 		}
 
-		for ( int i = 0; i < occurences_ip; i++ )
+		for ( unsigned long i = 0; i < occurences; i++ )
 		{
-			if ( m_statistiques[id_ip[i]].m_start_time == 0 && m_statistiques[id_ip[i]].m_name == Name && m_statistiques[id_ip[i]].m_country == country)
+			if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_name == Name && m_statistiques[id[i]].m_country == country)
 			{
-				m_statistiques[id_ip[i]].m_clan = Clan;
-				return id_ip[i];
+				m_statistiques[id[i]].m_clan = Clan;
+				return id[i];
 			}
 		}
 
-		for ( int i = 0; i < occurences_ip; i++ )
+		for ( unsigned long i = 0; i < occurences; i++ )
 		{
-			if ( m_statistiques[id_ip[i]].m_start_time == 0 && m_statistiques[id_ip[i]].m_name == Name )
+			if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_name == Name )
 			{
-				m_statistiques[id_ip[i]].m_clan = Clan;
-				m_statistiques[id_ip[i]].m_country = country;
-				return id_ip[i];
+				m_statistiques[id[i]].m_clan = Clan;
+				m_statistiques[id[i]].m_country = country;
+				return id[i];
 			}
 		}
 	}
 	else
 	{
-		int occurences_name = 0;
-		long id_name[10] = {-1};
+		occurences = 0;
+		id.resize(0);
+		first = m_statistiques.begin();
 
-		FindChar FindName(FindChar::NAME, name, &occurences_name, id_name);
-		std::for_each(m_statistiques.begin(), m_statistiques.end(), FindName);
-
-		if ( occurences_name == 1 && m_statistiques[id_name[0]].m_start_time == 0 )
+		for ( ; first != end; first++ )
 		{
-			str_copy(m_statistiques[id_name[0]].m_ip, ip, MAX_IP_LENGTH);
-			m_statistiques[id_name[0]].m_clan = Clan;
-			m_statistiques[id_name[0]].m_country = country;
-			return id_name[0];
+			if ( first->m_name == Name )
+			{
+				id.push_back(first->m_id);
+				occurences++;
+			}
 		}
-		else if ( occurences_name > 1 )
+
+		if ( occurences == 1 && m_statistiques[id[0]].m_start_time == 0 )
 		{
-			for ( int i = 0; i < occurences_name; i++ )
+			str_copy(m_statistiques[id[0]].m_ip, ip, MAX_IP_LENGTH);
+			m_statistiques[id[0]].m_clan = Clan;
+			m_statistiques[id[0]].m_country = country;
+			return id[0];
+		}
+		else if ( occurences > 1 )
+		{
+			for ( unsigned long i = 0; i < occurences; i++ )
 			{
-				if ( m_statistiques[id_name[i]].m_start_time == 0 && m_statistiques[id_name[i]].m_clan == Clan && m_statistiques[id_name[i]].m_country == country )
+				if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_clan == Clan && m_statistiques[id[i]].m_country == country )
 				{
-					str_copy(m_statistiques[id_name[i]].m_ip, ip, MAX_IP_LENGTH);
-					return id_name[i];
+					str_copy(m_statistiques[id[i]].m_ip, ip, MAX_IP_LENGTH);
+					return id[i];
 				}
 			}
 
-			for ( int i = 0; i < occurences_name; i++ )
+			for ( unsigned long i = 0; i < occurences; i++ )
 			{
-				if ( m_statistiques[id_name[i]].m_start_time == 0 && m_statistiques[id_name[i]].m_clan == Clan )
+				if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_clan == Clan )
 				{
-					str_copy(m_statistiques[id_name[i]].m_ip, ip, MAX_IP_LENGTH);
-					m_statistiques[id_name[i]].m_country = country;
-					return id_name[i];
+					str_copy(m_statistiques[id[i]].m_ip, ip, MAX_IP_LENGTH);
+					m_statistiques[id[i]].m_country = country;
+					return id[i];
 				}
 			}
 
-			for ( int i = 0; i < occurences_name; i++ )
+			for ( unsigned long i = 0; i < occurences; i++ )
 			{
-				if ( m_statistiques[id_name[i]].m_start_time == 0 && m_statistiques[id_name[i]].m_country == country )
+				if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_country == country )
 				{
-					str_copy(m_statistiques[id_name[i]].m_ip, ip, MAX_IP_LENGTH);
-					m_statistiques[id_name[i]].m_clan = Clan;
-					return id_name[i];
+					str_copy(m_statistiques[id[i]].m_ip, ip, MAX_IP_LENGTH);
+					m_statistiques[id[i]].m_clan = Clan;
+					return id[i];
 				}
 			}
 
-			for ( int i = 0; i < occurences_name; i++ )
+			for ( unsigned long i = 0; i < occurences; i++ )
 			{
-				if ( m_statistiques[id_name[i]].m_start_time == 0 )
+				if ( m_statistiques[id[i]].m_start_time == 0 )
 				{
-					str_copy(m_statistiques[id_name[i]].m_ip, ip, MAX_IP_LENGTH);
-					m_statistiques[id_name[i]].m_clan = Clan;
-					m_statistiques[id_name[i]].m_country = country;
-					return id_name[i];
+					str_copy(m_statistiques[id[i]].m_ip, ip, MAX_IP_LENGTH);
+					m_statistiques[id[i]].m_clan = Clan;
+					m_statistiques[id[i]].m_country = country;
+					return id[i];
 				}
 			}
 		}
 	}
-	
+
 	Stats Statistiques;
-	int id = m_statistiques.size();
+	unsigned long new_id = m_statistiques.size();
 	m_statistiques.push_back(Statistiques);
-	m_statistiques[id].m_id = id;
-	str_copy(m_statistiques[id].m_ip, ip, MAX_IP_LENGTH);
-	m_statistiques[id].m_name = Name;
-	m_statistiques[id].m_clan = Clan;
-	m_statistiques[id].m_country = country;
-	m_statistiques[id].m_lock = false;
-	UpdateStat(id);
+	m_statistiques[new_id].m_id = new_id;
+	str_copy(m_statistiques[new_id].m_ip, ip, MAX_IP_LENGTH);
+	m_statistiques[new_id].m_name = Name;
+	m_statistiques[new_id].m_clan = Clan;
+	m_statistiques[new_id].m_country = country;
+	m_statistiques[new_id].m_lock = false;
+	UpdateStat(new_id);
 	UpdateRank();
-	return id;
+	return new_id;
 }
 
 void CStatistiques::UpdateStat(long id)
@@ -529,7 +510,6 @@ void CStatistiques::DisplayPlayer(long id, int ClientID)
 	char upgr[7][50];
 
 	str_format(upgr[0], 50, "Name : %s | Level : %ld | Score : %ld", GameServer()->m_apPlayers[ClientID]->GetRealName(), m_statistiques[id].m_level, m_statistiques[id].m_score);
-
 	str_format(upgr[1], 50, "Upgrade :");
 	str_format(upgr[2], 50, "Money : %ld", m_statistiques[id].m_upgrade.m_money);
 	str_format(upgr[3], 50, "Weapon: %ld", m_statistiques[id].m_upgrade.m_weapon);

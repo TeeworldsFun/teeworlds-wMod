@@ -772,13 +772,54 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/player") == 0)
 				m_pStatistiques->DisplayPlayer(m_apPlayers[ClientID]->GetSID(), ClientID);
-			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr") == 0)
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr weapon") >= 0)
 			{
-				SendChatTarget(ClientID, "Usage : /upgr weapon | For increase storage and regenerate ammo");
-				SendChatTarget(ClientID, "Usage : /upgr life | For increase storage and regenerate life and armor");
-				SendChatTarget(ClientID, "Usage : /upgr move | For increase speed on the ground and in air");
-				SendChatTarget(ClientID, "Usage : /upgr hook | For increase the length of the hook and can hook other tee more longer");
-
+				if ( m_pStatistiques->UpgradeWeapon(m_apPlayers[ClientID]->GetSID()) )
+				{
+					SendChatTarget(ClientID, "Your account has been upgraded !");
+				}
+				else
+				{
+					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
+				}
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr life") >= 0)
+			{
+				if ( m_pStatistiques->UpgradeLife(m_apPlayers[ClientID]->GetSID()) )
+				{
+					SendChatTarget(ClientID, "Your account has been upgraded !");
+				}
+				else
+				{
+					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
+				}
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr move") >= 0)
+			{
+				if ( m_pStatistiques->UpgradeMove(m_apPlayers[ClientID]->GetSID()) )
+				{
+					SendChatTarget(ClientID, "Your account has been upgraded !");
+				}
+				else
+				{
+					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
+				}
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr hook") >= 0)
+			{
+				if ( m_pStatistiques->UpgradeHook(m_apPlayers[ClientID]->GetSID()) )
+				{
+					SendChatTarget(ClientID, "Your account has been upgraded !");
+				}
+				else
+				{
+					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
+				}
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr") >= 0)
+			{
+				SendChatTarget(ClientID, "Usage : /upgr <type>");
+				SendChatTarget(ClientID, "Type : Weapon or Life or Move or Hook");
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/lock") == 0)
 			{
