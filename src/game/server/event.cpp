@@ -245,7 +245,7 @@ void CEvent::Tick()
 				str_format(Temp, 256, "\nEvent Team : Steal Tee ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 				break;
 			case TEE_VS_ZOMBIE:
-				str_format(Temp, 256, "\nEvent Team : Tee vs Zombies ! | Remaining : %02d:%02d\nTime Left : %02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60, ((m_StartEventRound+Server()->TickSpeed()*35) - Server()->Tick()) / Server()->TickSpeed());
+				str_format(Temp, 256, "\nEvent Team : Tee vs Zombies ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 				break;
 		}
 

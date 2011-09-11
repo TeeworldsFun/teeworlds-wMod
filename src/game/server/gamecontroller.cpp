@@ -727,9 +727,19 @@ void IGameController::Snap(int SnappingClient)
 		pGameInfoObj->m_GameStateFlags |= GAMESTATEFLAG_SUDDENDEATH;
 	if(GameServer()->m_World.m_Paused)
 		pGameInfoObj->m_GameStateFlags |= GAMESTATEFLAG_PAUSED;
-	pGameInfoObj->m_RoundStartTick = m_RoundStartTick;
-	pGameInfoObj->m_WarmupTimer = m_Warmup;
-
+	if (GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE)
+	{
+		pGameInfoObj->m_RoundStartTick = m_RoundStartTick;
+		pGameInfoObj->m_WarmupTimer = m_Warmup;
+	}
+	else
+	{
+		pGameInfoObj->m_RoundStartTick = GameServer()->m_pEventsGame->m_StartEventRound;
+		if (Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*5)
+			pGameInfoObj->m_WarmupTimer = Server()->Tick() - GameServer()->m_pEventsGame->m_StartEventRound / Server()->TickSpeed();
+		else
+			pGameInfoObj->m_WarmupTimer = m_Warmup;
+	}
 	pGameInfoObj->m_ScoreLimit = g_Config.m_SvScorelimit;
 	pGameInfoObj->m_TimeLimit = g_Config.m_SvTimelimit;
 
