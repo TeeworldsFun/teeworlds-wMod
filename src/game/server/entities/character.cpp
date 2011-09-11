@@ -961,11 +961,8 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
-	if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) || From == m_pPlayer->GetCID())
+	if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) )
 		m_Core.m_Vel += Force;
-
-	if ( GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && GetPlayer()->GetTeam() != TEAM_RED && GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->GetTeam() == TEAM_RED )
-		GetPlayer()->SetCaptureTeam(TEAM_RED);
 
 	if( ((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_HEAL && Weapon == WEAPON_HAMMER) || (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE)) && GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From))
 	{
@@ -987,6 +984,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		}
 		return false;
 	}
+	else if ( GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_pPlayer->GetTeam() == TEAM_RED )
+		return false;
+
 	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From) && !g_Config.m_SvTeamdamage && GameServer()->m_pEventsGame->GetActualEventTeam() != CAN_KILL)
 		return false;
 
