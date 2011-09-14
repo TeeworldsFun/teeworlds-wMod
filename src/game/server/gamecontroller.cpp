@@ -730,18 +730,16 @@ void IGameController::Snap(int SnappingClient)
 	if (GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE)
 	{
 		pGameInfoObj->m_RoundStartTick = m_RoundStartTick;
-		pGameInfoObj->m_WarmupTimer = m_Warmup;
+		pGameInfoObj->m_TimeLimit = g_Config.m_SvTimelimit;
 	}
 	else
 	{
 		pGameInfoObj->m_RoundStartTick = GameServer()->m_pEventsGame->m_StartEventRound;
-		if (Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*5)
-			pGameInfoObj->m_WarmupTimer = Server()->Tick() - GameServer()->m_pEventsGame->m_StartEventRound / Server()->TickSpeed();
-		else
-			pGameInfoObj->m_WarmupTimer = m_Warmup;
+		pGameInfoObj->m_TimeLimit = 35 / 60;
 	}
+
+	pGameInfoObj->m_WarmupTimer = m_Warmup;
 	pGameInfoObj->m_ScoreLimit = g_Config.m_SvScorelimit;
-	pGameInfoObj->m_TimeLimit = g_Config.m_SvTimelimit;
 
 	pGameInfoObj->m_RoundNum = (str_length(g_Config.m_SvMaprotation) && g_Config.m_SvRoundsPerMap) ? g_Config.m_SvRoundsPerMap : 0;
 	pGameInfoObj->m_RoundCurrent = m_RoundCount+1;
