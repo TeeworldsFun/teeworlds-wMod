@@ -37,11 +37,12 @@ void CGameContext::Construct(int Resetting)
 	m_pVoteOptionLast = 0;
 	m_NumVoteOptions = 0;
 
+	m_pEventsGame = new CEvent(this);
+
 	if(Resetting==NO_RESET)
 	{
 		m_pVoteOptionHeap = new CHeap();
 		m_pStatistiques = new CStatistiques(this);	
-		m_pEventsGame = new CEvent(this);
 	}
 }
 
@@ -64,12 +65,13 @@ CGameContext::~CGameContext()
 		delete m_apPlayers[i];
 	}
 
+	delete m_pEventsGame;
+
 	if(!m_Resetting)
 	{
 		m_pStatistiques->WriteStat();
 		delete m_pVoteOptionHeap;
 		delete m_pStatistiques;
-		delete m_pEventsGame;
 	}
 }
 
