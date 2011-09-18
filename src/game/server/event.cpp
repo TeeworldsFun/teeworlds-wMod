@@ -5,8 +5,6 @@
 CEvent::CEvent(CGameContext *GameServer)
 {
 	m_pGameServer = GameServer;
-	m_pServer = m_pGameServer->Server();
-	m_pController = m_pGameServer->m_pController;
 	m_StartEvent[0] = 0;
 	m_StartEvent[1] = 0;
 	m_StartEventTeam = 0;

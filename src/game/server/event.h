@@ -37,8 +37,8 @@ public:
 
 private:
 	CGameContext *GameServer() const { return m_pGameServer; }
-	IServer *Server() const { return m_pServer; }
-	IGameController *Controller() const { return m_pController; }
+	IServer *Server() const { return m_pGameServer->Server(); }
+	IGameController *Controller() const { return m_pGameServer->m_pController; }
 
 	void SetTune();
 	void ResetTune();
@@ -50,7 +50,5 @@ private:
 	int m_LastSend;
 
 	CGameContext *m_pGameServer;
-	IServer *m_pServer;
-	IGameController *m_pController;
 };
 #endif
