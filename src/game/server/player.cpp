@@ -27,6 +27,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_TeamChangeTick = Server()->Tick();
 	m_level = 0;
 	m_BroadcastTick = 0;
+	m_Race = WARRIOR;
 	str_copy(m_aRealName, "", MAX_NAME_LENGTH);
 }
 

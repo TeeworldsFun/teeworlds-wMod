@@ -7,6 +7,8 @@
 #include "entities/character.h"
 #include "gamecontext.h"
 
+enum {WARRIOR, ENGINEER, ORC, MINER};
+
 // player object
 class CPlayer
 {
@@ -103,6 +105,7 @@ public:
 
 	unsigned long m_level;
 	int m_BroadcastTick;
+	int m_Race;
 
 private:
 	CCharacter *m_pCharacter;

@@ -595,7 +595,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod ***");
 	SendChatTarget(ClientID, "** Wrote by PJK **");
 	SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
-	SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /weapon , /stats and /ranks **");
+	SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /weapon , /race , /stats and /ranks **");
 	SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
 }
 
@@ -702,6 +702,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				SendChatTarget(ClientID, "/cmdlist or /help : To get commands available.");			
 				SendChatTarget(ClientID, "/info or /credits : To get informations of this mod.");
 				SendChatTarget(ClientID, "/weapon or /ammo : To get informations of the actual weapon.");
+				SendChatTarget(ClientID, "/race : To choose a race");
 				SendChatTarget(ClientID, "/stats or /ranks : To get your statistics and your rank.");
 				SendChatTarget(ClientID, "/player or /upgr : To get or to add your upgrades.");
 				SendChatTarget(ClientID, "/lock : To lock/unlock your statistics.");
@@ -761,10 +762,47 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
 				if ( pChr )
 				{
-					char a[256] = "";
-					str_format(a, 256, " Ammo of the actual weapon is : %d/%d.", pChr->GetAmmoActiveWeapon(), g_pData->m_Weapons.m_aId[pChr->GetActiveWeapon()].m_Maxammo);
-					SendChatTarget(ClientID, a);
+					char aBuf[256] = "";
+					str_format(aBuf, 256, "Ammo of the actual weapon is : %d/%d.", pChr->GetAmmoActiveWeapon(), g_pData->m_Weapons.m_aId[pChr->GetActiveWeapon()].m_Maxammo);
+					SendChatTarget(ClientID, aBuf);
 				}
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/race warrior") == 0)
+			{
+				char aBuf[256] = "";
+				str_format(aBuf, 256, "%s is now a warrior !", m_apPlayers[ClientID]->GetRealName());
+				SendChatTarget(ClientID, aBuf);
+				m_apPlayers[ClientID]->KillCharacter();
+				m_apPlayers[ClientID]->m_Race = WARRIOR;
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/race engineer") == 0)
+			{
+				char aBuf[256] = "";
+				str_format(aBuf, 256, "%s is now an engineer !", m_apPlayers[ClientID]->GetRealName());
+				SendChatTarget(ClientID, aBuf);
+				m_apPlayers[ClientID]->KillCharacter();
+				m_apPlayers[ClientID]->m_Race = ENGINEER;
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/race orc") == 0)
+			{
+				char aBuf[256] = "";
+				str_format(aBuf, 256, "%s is now an orc !", m_apPlayers[ClientID]->GetRealName());
+				SendChatTarget(ClientID, aBuf);
+				m_apPlayers[ClientID]->KillCharacter();
+				m_apPlayers[ClientID]->m_Race = ORC;
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/race miner") == 0)
+			{
+				char aBuf[256] = "";
+				str_format(aBuf, 256, "%s is now a miner !", m_apPlayers[ClientID]->GetRealName());
+				SendChatTarget(ClientID, aBuf);
+				m_apPlayers[ClientID]->KillCharacter();
+				m_apPlayers[ClientID]->m_Race = MINER;
+			}
+			else if(str_comp_nocase(pMsg->m_pMessage, "/race") >= 0)
+			{
+				SendChatTarget(ClientID, "Usage : /race <race>");
+				SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner");
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/stats") == 0)
 			{
@@ -778,7 +816,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/player") == 0)
 				m_pStatistiques->DisplayPlayer(m_apPlayers[ClientID]->GetSID(), ClientID);
-			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr weapon") >= 0)
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr weapon") == 0)
 			{
 				if ( m_pStatistiques->UpgradeWeapon(m_apPlayers[ClientID]->GetSID()) )
 				{
@@ -789,7 +827,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
 				}
 			}
-			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr life") >= 0)
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr life") == 0)
 			{
 				if ( m_pStatistiques->UpgradeLife(m_apPlayers[ClientID]->GetSID()) )
 				{
@@ -800,7 +838,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
 				}
 			}
-			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr move") >= 0)
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr move") == 0)
 			{
 				if ( m_pStatistiques->UpgradeMove(m_apPlayers[ClientID]->GetSID()) )
 				{
@@ -811,7 +849,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
 				}
 			}
-			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr hook") >= 0)
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr hook") == 0)
 			{
 				if ( m_pStatistiques->UpgradeHook(m_apPlayers[ClientID]->GetSID()) )
 				{
