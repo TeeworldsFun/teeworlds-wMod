@@ -19,7 +19,7 @@ public:
 
 	inline bool IsTwoEvent() { return m_TwoEvent; };
 	inline bool IsActualEvent(int Event) { if ( Event == m_ActualEvent[0] || (IsTwoEvent() && Event == m_ActualEvent[1]) || (m_ActualEvent[0] == ALL && Event > KATANA && Event != WALLSHOT && Event != SURVIVOR && Event != GRAVITY_M0_5 && Event != BULLET_PIERCING)) { return true; } return false; };
-	inline int GetActualEventTeam() { return m_ActualEventTeam; };
+	inline int GetActualEventTeam() { if (!Controller()->IsTeamplay()) { return 0; } return m_ActualEventTeam; };
 
 	void NextEvent();
 	void NextRandomEvent();

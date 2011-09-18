@@ -601,7 +601,7 @@ void CGameContext::OnClientConnected(int ClientID)
 {
 	// Check which team the player should be on
 	int StartTeam;
-	if ( g_Config.m_SvTournamentMode || m_pEventsGame->IsActualEvent(SURVIVOR) || m_pEventsGame->GetActualEventTeam() == T_SURVIVOR)
+	if ( g_Config.m_SvTournamentMode || m_pEventsGame->IsActualEvent(SURVIVOR) || ( m_pController->IsTeamplay() && m_pEventsGame->GetActualEventTeam() == T_SURVIVOR))
 		StartTeam = TEAM_SPECTATORS;
 	else if ( m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
 		StartTeam = TEAM_RED;
@@ -1039,7 +1039,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			return;
 		}
 
-		if((m_pEventsGame->IsActualEvent(SURVIVOR) || m_pEventsGame->GetActualEventTeam() == T_SURVIVOR ) && pMsg->m_Team != TEAM_SPECTATORS)
+		if((m_pEventsGame->IsActualEvent(SURVIVOR) || ( m_pController->IsTeamplay() && m_pEventsGame->GetActualEventTeam() == T_SURVIVOR )) && pMsg->m_Team != TEAM_SPECTATORS)
 		{
 			SendBroadcast("You can't join other team with this event, wait a winner", ClientID);
 			m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
