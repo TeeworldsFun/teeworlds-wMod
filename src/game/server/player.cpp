@@ -282,7 +282,7 @@ void CPlayer::SetTeam(int Team, bool verbose)
 	}
 }
 
-void CPlayer::SetCaptureTeam(int Team)
+void CPlayer::SetCaptureTeam(int Team, int Killer)
 {
         // clamp the team
         Team = GameServer()->m_pController->ClampTeam(Team);
@@ -290,7 +290,7 @@ void CPlayer::SetCaptureTeam(int Team)
                 return;
 
         char aBuf[512];
-	if ( GameServer()->m_pController->IsTeamplay() )
+	if ( GameServer()->m_pController->IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() >= STEAL_TEE )
 	{
 		char NameTeam[512];
 		if (GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE)
@@ -314,8 +314,10 @@ void CPlayer::SetCaptureTeam(int Team)
                 for(int i = 0; i < MAX_CLIENTS; ++i)
                 {
                         if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_SpectatorID == m_ClientID)
-                                GameServer()->m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
+                                GameServer()->m_apPlayers[i]->m_SpectatorID = Killer;
                 }
+
+		m_SpectatorID = Killer;
         }
 
 	if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE)

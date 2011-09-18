@@ -412,6 +412,19 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 			str_format(Text, 256, "%s made a chatkill to %s!", pKiller->GetRealName(), pVictim->GetPlayer()->GetRealName());
 			GameServer()->SendChatTarget(-1, Text);
 		}
+
+		if ( pKiller->GetCharacter() )
+		{
+			char Text[256] = "";
+			str_format(Text, 256, "%s had %d%% health and %d%% armor.", pKiller->GetRealName(), pKiller->GetCharacter()->GetPercentHealth(), pKiller->GetCharacter()->GetPercentArmor());
+			GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), Text);
+		}
+		else 
+		{
+			char Text[256] = "";
+			str_format(Text, 256, "%s had 0%% health and 0%% armor.", pKiller->GetRealName());
+			GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), Text);
+		}
 	}
 	
 	if ( m_pGameServer->m_pStatistiques->GetActualKill(pVictim->GetPlayer()->GetSID()) >= 5 )
@@ -428,9 +441,9 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 	if(Weapon == WEAPON_SELF)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
 
-	if(GameServer()->m_pEventsGame->IsActualEvent(SURVIVOR))
+	if(GameServer()->m_pEventsGame->IsActualEvent(SURVIVOR) || GameServer()->m_pEventsGame->GetActualEventTeam() == T_SURVIVOR)
 	{
-		pVictim->GetPlayer()->SetCaptureTeam(TEAM_SPECTATORS);
+		pVictim->GetPlayer()->SetCaptureTeam(TEAM_SPECTATORS, pKiller->GetCID());
 		char Text[256] = "";
 		str_format(Text, 256, "'%s' is killed by '%s' ! Try Again ;)", pVictim->GetPlayer()->GetRealName(), pKiller->GetRealName());
 		GameServer()->CreateExplosion(pVictim->m_Pos, pVictim->GetPlayer()->GetCID(), WEAPON_GAME, true, false);
@@ -858,7 +871,34 @@ void IGameController::DoWincheck()
 		if(IsTeamplay())
 		{
 			// check score win condition
-			if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() >= STEAL_TEE && m_ForceDoBalance == false)
+			if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() == T_SURVIVOR && m_ForceDoBalance == false )
+			{
+				m_aTeamscore[0] = GetNumPlayer(0);
+				m_aTeamscore[1] = GetNumPlayer(1);
+				int nb_player = 0;
+				for ( int i = 0; i < MAX_CLIENTS; i++ )
+				{
+					if ( GameServer()->m_apPlayers[i] )
+						nb_player++;
+				}
+
+				if ( m_aTeamscore[0] && !m_aTeamscore[1] && nb_player > 1 )
+				{
+					GameServer()->SendChatTarget(-1, "The red team win !!! Good Game !!!");
+					EndRound();
+				}
+				else if ( m_aTeamscore[1] && !m_aTeamscore[0] && nb_player > 1 )
+				{
+					GameServer()->SendChatTarget(-1, "The blue team win !!! Good Game !!!");
+					EndRound();
+				}
+				else if ( !m_aTeamscore[0] && !m_aTeamscore[1] && nb_player > 0 )
+				{
+					GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
+					EndRound();
+				}
+			}
+			else if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() >= STEAL_TEE && m_ForceDoBalance == false )
 			{
 				m_aTeamscore[0] = GetNumPlayer(0);
 				m_aTeamscore[1] = GetNumPlayer(1);

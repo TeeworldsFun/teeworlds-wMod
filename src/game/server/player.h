@@ -21,7 +21,7 @@ public:
 	void TryRespawn();
 	void Respawn();
 	void SetTeam(int Team, bool verbose);
-	void SetCaptureTeam(int Team);
+	void SetCaptureTeam(int Team, int Killer = SPEC_FREEVIEW);
 	void SetSID(long id);
 	void SetRealName(const char RealName[]) { str_copy(m_aRealName, RealName, MAX_NAME_LENGTH); };
 	int GetTeam() const { return m_Team; };

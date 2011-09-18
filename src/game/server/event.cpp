@@ -215,6 +215,11 @@ void CEvent::Tick()
 		int ElapsedTeam = Server()->Tick() - m_StartEventTeam;
 		if ( ElapsedTeam >= 300 * Server()->TickSpeed() || m_ActualEventTeam == -1 )
 		{
+			if ( m_ActualEventTeam >= T_SURVIVOR )
+			{
+				GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
+				Controller()->EndRound();
+			}
 			int NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING;
 			while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0) );
 
@@ -240,6 +245,9 @@ void CEvent::Tick()
 				break;
 			case CAN_KILL:
 				str_format(Temp, 256, "\nEvent Team : Can kill teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+				break;
+			case T_SURVIVOR:
+				str_format(Temp, 256, "\nEvent Team : Survivor ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 				break;
 			case STEAL_TEE:
 				str_format(Temp, 256, "\nEvent Team : Steal Tee ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
@@ -355,7 +363,10 @@ void CEvent::ResetTune()
 void CEvent::NextEvent()
 {
 	if ( m_ActualEvent[0] == SURVIVOR )
+	{
+		GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
 		Controller()->EndRound();
+	}
 
 	if ( m_ActualEvent[0] + 1 < END && (!Controller()->IsTeamplay() || m_ActualEvent[0] + 1 != SURVIVOR))
 		m_ActualEvent[0]++;
@@ -371,7 +382,10 @@ void CEvent::NextEvent()
 void CEvent::NextRandomEvent()
 {
 	if ( m_ActualEvent[0] == SURVIVOR )
+	{
+		GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
 		Controller()->EndRound();
+	}
 
 	int NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING;
 	while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[0] || (NewEvent == SURVIVOR && Controller()->IsTeamplay()));
@@ -423,8 +437,12 @@ bool CEvent::AddTime(long secondes)
 
 void CEvent::NextEventTeam()
 {
-	if ( m_ActualEventTeam >= STEAL_TEE )
+	if ( m_ActualEventTeam >= T_SURVIVOR )
+	{
+		if ( m_ActualEventTeam == T_SURVIVOR )
+			GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
 		Controller()->EndRound();
+	}
 
 	if ( (m_ActualEventTeam + 1 >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0) || m_ActualEventTeam + 1 >= T_END )
 		m_ActualEventTeam = 0;
@@ -439,8 +457,12 @@ void CEvent::NextEventTeam()
 
 void CEvent::NextRandomEventTeam()
 {
-	if ( m_ActualEventTeam >= STEAL_TEE )
+	if ( m_ActualEventTeam >= T_SURVIVOR )
+	{
+		if ( m_ActualEventTeam == T_SURVIVOR )
+			GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
 		Controller()->EndRound();
+	}
 
 	int NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING;
 	while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0) );
@@ -455,8 +477,12 @@ bool CEvent::SetEventTeam(int event)
 {
 	if ( event >= 0 && event < T_END )
 	{
-		if ( m_ActualEventTeam >= STEAL_TEE )
+		if ( m_ActualEventTeam >= T_SURVIVOR )
+		{
+			if ( m_ActualEventTeam == T_SURVIVOR )
+				GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
 			Controller()->EndRound();
+		}
 
 		if (event >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0)
 		{

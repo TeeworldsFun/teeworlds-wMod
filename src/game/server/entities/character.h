@@ -68,7 +68,8 @@ public:
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 	int GetActiveWeapon() { return m_ActiveWeapon; }
 	int GetAmmoActiveWeapon() { return m_aWeapons[m_ActiveWeapon].m_Ammo; }
-
+	int GetPercentHealth() { return m_Health*10; }
+	int GetPercentArmor() { return m_Armor*10; }
 private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;

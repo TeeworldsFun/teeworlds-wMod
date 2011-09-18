@@ -131,6 +131,7 @@ public:
 	inline unsigned long GetActualKill(long id) { return m_statistiques[id].m_actual_kill; }
 
 	void UpdateStat(long id);
+	void UpdateUpgrade(long id);
 	void UpdateRank();
 
 	void DisplayStat(long id, const char* Name);
@@ -155,15 +156,15 @@ public:
 	inline void AddFlagCapture(long id) { if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_flag_capture++; }
 	inline bool Lock(long id) { if ( m_statistiques[id].m_lock ) { m_statistiques[id].m_lock = false; return false; } else { m_statistiques[id].m_lock = true; return true; } }
 
-	inline bool UpgradeWeapon(long id) { if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_weapon++; return true; };
-	inline bool UpgradeLife(long id) { if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_life++; return true; };
-	inline bool UpgradeMove(long id) { if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_move++; return true; };
-	inline bool UpgradeHook(long id) { if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_hook++; return true; };
+	inline bool UpgradeWeapon(long id) { UpdateUpgrade(id); if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_weapon++; return true; };
+	inline bool UpgradeLife(long id) { UpdateUpgrade(id); if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_life++; return true; };
+	inline bool UpgradeMove(long id) { UpdateUpgrade(id); if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_move++; return true; };
+	inline bool UpgradeHook(long id) { UpdateUpgrade(id); if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_hook++; return true; };
 
 private:
 	CGameContext *GameServer() const { return m_pGameServer; }
-	IServer *Server() const { return m_pServer; }
-	IGameController *Controller() const { return m_pController; }
+	IServer *Server() const { return m_pGameServer->Server(); }
+	IGameController *Controller() const { return m_pGameServer->m_pController; }
 
 	inline void AddKillingSpree(long id)
 	{
@@ -182,8 +183,6 @@ private:
 	int m_last_write;
 
 	CGameContext *m_pGameServer;
-	IServer *m_pServer;
-	IGameController *m_pController;
 };
 
 #endif

@@ -5,8 +5,6 @@
 CStatistiques::CStatistiques(CGameContext *GameServer)
 {
 	m_pGameServer = GameServer;
-	m_pServer = m_pGameServer->Server();
-	m_pController = m_pGameServer->m_pController;
 
 	m_last_write = time_timestamp();
 	std::ifstream fichier("Statistiques.txt");
@@ -244,13 +242,17 @@ void CStatistiques::UpdateStat(long id)
 
 	m_statistiques[id].m_level = floor(((-1)+sqrt(1+(8*(m_statistiques[id].m_kill + m_statistiques[id].m_killing_spree + (m_statistiques[id].m_flag_capture * 5)))))/2);
 	m_statistiques[id].m_xp = (m_statistiques[id].m_kill + m_statistiques[id].m_killing_spree + (m_statistiques[id].m_flag_capture * 5)) - (m_statistiques[id].m_level * (m_statistiques[id].m_level + 1))/2;
-	m_statistiques[id].m_upgrade.m_money = m_statistiques[id].m_level - (m_statistiques[id].m_upgrade.m_weapon + m_statistiques[id].m_upgrade.m_life + m_statistiques[id].m_upgrade.m_move + m_statistiques[id].m_upgrade.m_hook);
 
 	if ( m_statistiques[id].m_start_time != 0 && !m_statistiques[id].m_lock)
 	{
 		m_statistiques[id].m_time_play += difftime(time_timestamp(), m_statistiques[id].m_start_time);
 		m_statistiques[id].m_start_time = time_timestamp();
 	}
+}
+
+void CStatistiques::UpdateUpgrade(long id)
+{
+	m_statistiques[id].m_upgrade.m_money = m_statistiques[id].m_level - (m_statistiques[id].m_upgrade.m_weapon + m_statistiques[id].m_upgrade.m_life + m_statistiques[id].m_upgrade.m_move + m_statistiques[id].m_upgrade.m_hook);
 }
 
 class Trier
@@ -507,6 +509,7 @@ void CStatistiques::DisplayRank(long id, const char* Name)
 
 void CStatistiques::DisplayPlayer(long id, int ClientID)
 {
+	UpdateUpgrade(id);
 	char upgr[7][50];
 
 	str_format(upgr[0], 50, "Name : %s | Level : %ld | Score : %ld", GameServer()->m_apPlayers[ClientID]->GetRealName(), m_statistiques[id].m_level, m_statistiques[id].m_score);

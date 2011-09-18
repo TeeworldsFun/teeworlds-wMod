@@ -953,7 +953,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
-	if ( GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE )
+	if ( GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && GameServer()->m_apPlayers[Killer] )
 		GetPlayer()->SetCaptureTeam(GameServer()->m_apPlayers[Killer]->GetTeam());
 	else if ( GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
 		GetPlayer()->SetCaptureTeam(TEAM_RED);
