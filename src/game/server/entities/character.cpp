@@ -383,7 +383,7 @@ void CCharacter::FireWeapon()
 					GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 			}
 			else if ( Race == MINER )
-				GameServer()->CreateExplosion(m_Pos + Direction, m_pPlayer->GetCID(), m_ActiveWeapon, true, false);
+				GameServer()->CreateExplosion((m_Pos + (Direction*10)) * -1, m_pPlayer->GetCID(), m_ActiveWeapon, false, false);
 
 		} break;
 

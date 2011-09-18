@@ -78,11 +78,9 @@ void CProjectile::Tick()
 	vec2 TempDir = normalize(CurPos - TempPos);
 
 	if (m_Smoke && m_ExplodeTick % 2 == 0 && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
-	{
 		GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
-		m_ExplodeTick++;
-	}
 
+	m_ExplodeTick++;
 	m_LifeSpan--;
 	
 	if ( m_Deploy && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
@@ -146,16 +144,8 @@ void CProjectile::FillInfo(CNetObj_Projectile *pProj)
 {
 	pProj->m_X = (int)m_Pos.x;
 	pProj->m_Y = (int)m_Pos.y;
-	if (!m_Mine)
-	{
-		pProj->m_VelX = (int)(m_Direction.x*100.0f);
-		pProj->m_VelY = (int)(m_Direction.y*100.0f);
-	}
-	else
-	{
-		pProj->m_VelX = 0;
-		pProj->m_VelY = 0;
-	}
+	pProj->m_VelX = (int)(m_Direction.x*100.0f);
+	pProj->m_VelY = (int)(m_Direction.y*100.0f);
 	pProj->m_StartTick = m_StartTick;
 	pProj->m_Type = m_Type;
 }
