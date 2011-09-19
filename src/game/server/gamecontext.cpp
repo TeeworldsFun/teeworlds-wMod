@@ -605,8 +605,6 @@ void CGameContext::OnClientConnected(int ClientID)
 	int StartTeam;
 	if ( g_Config.m_SvTournamentMode || m_pEventsGame->IsActualEvent(SURVIVOR) || ( m_pController->IsTeamplay() && m_pEventsGame->GetActualEventTeam() == T_SURVIVOR))
 		StartTeam = TEAM_SPECTATORS;
-	else if ( m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
-		StartTeam = TEAM_RED;
 	else
 		StartTeam = m_pController->GetAutoTeam(ClientID);
 

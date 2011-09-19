@@ -595,6 +595,15 @@ void IGameController::Tick()
 	{
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", "Balancing teams");
 
+		if ( GameServer()->m_pEventsGame->GetActualEventTeam() )
+		{
+			for(int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if (GameServer()->m_apPlayers[i])
+					GameServer()->m_apPlayers[i]->SetTeam(m_pController->GetAutoTeam(i));
+			}
+		}
+
 		int aT[2] = {0,0};
 		float aTScore[2] = {0,0};
 		float aPScore[MAX_CLIENTS] = {0.0f};
@@ -763,6 +772,9 @@ int IGameController::GetAutoTeam(int NotThisID)
 	// this will force the auto balancer to work overtime aswell
 	if(g_Config.m_DbgStress)
 		return 0;
+
+	if ( GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
+		return TEAM_RED;
 
 	int aNumplayers[2] = {0,0};
 	for(int i = 0; i < MAX_CLIENTS; i++)

@@ -369,7 +369,7 @@ void CEvent::NextEvent()
 	if ( m_ActualEvent[0] + 1 < END && (!Controller()->IsTeamplay() || m_ActualEvent[0] + 1 != SURVIVOR))
 		m_ActualEvent[0]++;
 	else if (Controller()->IsTeamplay() && m_ActualEvent[0] + 1 == SURVIVOR)
-		m_ActualEvent[0]++;
+		m_ActualEvent[0] += 2;
 	else
 		m_ActualEvent[0] = 0;
 

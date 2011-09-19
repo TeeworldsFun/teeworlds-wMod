@@ -383,7 +383,7 @@ void CCharacter::FireWeapon()
 					GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 			}
 			else if ( Race == MINER )
-				GameServer()->CreateExplosion((m_Pos + (Direction*10)) * -1, m_pPlayer->GetCID(), m_ActiveWeapon, false, false);
+				GameServer()->CreateExplosion((m_Pos + Direction) * -1, m_pPlayer->GetCID(), m_ActiveWeapon, false, false);
 
 		} break;
 
@@ -504,7 +504,7 @@ void CCharacter::FireWeapon()
 						ProjStartPos,
 						vec2(cosf(a), sinf(a))*Speed,
 						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
-						1, true, 0, -1, WEAPON_GRENADE, true);
+						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, true);
 
 					// pack the Projectile and send it to the client Directly
 					CNetObj_Projectile p;
