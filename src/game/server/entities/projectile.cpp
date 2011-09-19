@@ -71,10 +71,10 @@ void CProjectile::Tick()
 	if ( m_Type == WEAPON_RIFLE && !TargetChr )
 	{	
 		CCharacter *apEnts[MAX_CLIENTS];
-		int Num = m_World.FindEntities(Pos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		int Num = GameServer()->m_World.FindEntities(CurPos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 		for(int i = 0; i < Num; i++)
 		{
-			if ( Owner == apEnts[i]->GetPlayer()->GetCID() )
+			if ( m_Owner == apEnts[i]->GetPlayer()->GetCID() )
 				continue;
 			else
 			{
