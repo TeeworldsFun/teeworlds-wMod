@@ -303,7 +303,7 @@ void CCharacter::FireWeapon()
 	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 
 	bool FullAuto = false;
-	if(m_ActiveWeapon != HAMMER || Race != ENGINEER)
+	if(m_ActiveWeapon != WEAPON_HAMMER || Race != ENGINEER)
 		FullAuto = true;
 
 	// check if we gonna fire
