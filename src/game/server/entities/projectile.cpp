@@ -73,17 +73,13 @@ void CProjectile::Tick()
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
 	CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
 
-	vec2 TempPos(0.0f , 0.0f);
-	GameServer()->Collision()->IntersectLine(PrevPos, CurPos, 0, &TempPos);
-	vec2 TempDir = normalize(CurPos - TempPos);
-
 	if (m_Smoke && m_ExplodeTick % 2 == 0 && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
 		GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
 
 	m_ExplodeTick++;
 	m_LifeSpan--;
 	
-	if ( m_Deploy && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
+	if ( m_Deploy && m_Weapon == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
 	{
 		int ShotSpread = 2;
 
@@ -93,7 +89,7 @@ void CProjectile::Tick()
 		for(int i = -ShotSpread; i <= ShotSpread; ++i)
 		{
 			float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
-			float a = GetAngle(TempDir);
+			float a = GetAngle(m_Direction);
 			a += Spreading[i+2];
 			float v = 1-(absolute(i)/(float)ShotSpread);
 			float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
@@ -131,6 +127,9 @@ void CProjectile::Tick()
 			GameServer()->m_World.DestroyEntity(this);
 		else if ( Collide && (GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) || m_Bounce == true) )
 		{
+			vec2 TempPos(0.0f , 0.0f);
+			GameServer()->Collision()->IntersectLine(PrevPos, CurPos, 0, &TempPos);
+			vec2 TempDir = normalize(CurPos - TempPos);
 			GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
 			m_Pos = TempPos;
 			m_Direction = normalize(TempDir);
