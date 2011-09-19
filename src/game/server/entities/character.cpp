@@ -297,12 +297,14 @@ void CCharacter::FireWeapon()
 	if(m_ReloadTimer != 0)
 		return;
 
+	const int Race = m_pPlayer->m_Race;
+
 	DoWeaponSwitch();
 	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 
-	bool FullAuto = true;
-	/*if(m_ActiveWeapon == WEAPON_GRENADE || m_ActiveWeapon == WEAPON_SHOTGUN || m_ActiveWeapon == WEAPON_RIFLE)
-		FullAuto = true;*/
+	bool FullAuto = false;
+	if(m_ActiveWeapon != HAMMER || Race != ENGINEER)
+		FullAuto = true;
 
 	// check if we gonna fire
 	bool WillFire = false;
@@ -333,8 +335,6 @@ void CCharacter::FireWeapon()
 	}
 
 	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius*0.75f;
-
-	const int Race = m_pPlayer->m_Race;
 
 	switch(m_ActiveWeapon)
 	{
@@ -383,7 +383,7 @@ void CCharacter::FireWeapon()
 					GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 			}
 			else if ( Race == MINER )
-				GameServer()->CreateExplosion((m_Pos + Direction) * -1, m_pPlayer->GetCID(), m_ActiveWeapon, false, false);
+				GameServer()->CreateExplosion(m_Pos + (Direction * -1), m_pPlayer->GetCID(), m_ActiveWeapon, false, false);
 
 		} break;
 
