@@ -6,7 +6,7 @@
 #include "projectile.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
-		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Smoke, bool Mine, bool Deploy, bool Bounce)
+		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Smoke, bool Deploy, bool Bounce)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE)
 {
 	m_Type = Type;
@@ -22,7 +22,6 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_Explosive = Explosive;
 	m_ExplodeTick = 0;
 	m_Smoke = Smoke;
-	m_Mine = Mine;
 	m_Deploy = Deploy;
 	m_Bounce = Bounce;
 	GameWorld()->InsertEntity(this);
@@ -62,9 +61,6 @@ vec2 CProjectile::GetPos(float Time)
 
 void CProjectile::Tick()
 {
-	if ( m_Mine )
-		m_StartTick = Server()->Tick();
-
 	float Pt = (Server()->Tick()-m_StartTick-1)/(float)Server()->TickSpeed();
 	float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
 	vec2 PrevPos = GetPos(Pt);
@@ -78,12 +74,12 @@ void CProjectile::Tick()
 
 	m_ExplodeTick++;
 	
-	if ( !m_Mine )
+	if ( m_Type != WEAPON_RIFLE )
 		m_LifeSpan--;
 	else if ( m_ExplodeTick >= Server()->TickSpeed() * 30 )
-		m_LifeSpan = 0;
+		m_LifeSpan = -1;
 	
-	if ( m_Deploy && !m_Mine && m_Weapon == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
+	if ( m_Deploy && m_Type == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
 	{
 		int ShotSpread = 2;
 
@@ -150,15 +146,7 @@ void CProjectile::FillInfo(CNetObj_Projectile *pProj)
 	pProj->m_VelX = (int)(m_Direction.x*100.0f);
 	pProj->m_VelY = (int)(m_Direction.y*100.0f);
 	pProj->m_StartTick = m_StartTick;
-
-	if ( !m_Mine )
-	{
-		pProj->m_Type = m_Type;
-	}
-	else
-	{
-		pProj->m_Type = WEAPON_RIFLE;
-	}
+	pProj->m_Type = m_Type;
 }
 
 void CProjectile::Snap(int SnappingClient)

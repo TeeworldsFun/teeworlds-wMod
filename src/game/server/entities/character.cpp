@@ -423,12 +423,12 @@ void CCharacter::FireWeapon()
 			}
 			else
 			{
-				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GUN,
+				CProjectile *pProj = new CProjectile(GameWorld(), Race == MINER ? WEAPON_RIFLE : WEAPON_GUN,
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN, false, Race == MINER ? true : false);
+					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN, false);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -460,12 +460,12 @@ void CCharacter::FireWeapon()
 				a += Spreading[i+2];
 				float v = 1-(absolute(i)/(float)ShotSpread);
 				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
-				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
+				CProjectile *pProj = new CProjectile(GameWorld(), Race == MINER ? WEAPON_RIFLE : WEAPON_SHOTGUN,
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					vec2(cosf(a), sinf(a))*Speed,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, Race == ORC ? true : false, Race == MINER ? true : false, Race == ORC ? false : true);
+					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, Race == ORC ? true : false, Race == ORC ? false : true);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -520,12 +520,12 @@ void CCharacter::FireWeapon()
 			}
 			else
 			{
-				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GRENADE,
+				CProjectile *pProj = new CProjectile(GameWorld(), Race == MINER ? WEAPON_RIFLE : WEAPON_GRENADE,
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
-					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, true, Race == MINER ? true : false, false, true);
+					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, true, false, true);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
