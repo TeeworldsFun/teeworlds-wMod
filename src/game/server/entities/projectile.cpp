@@ -83,7 +83,7 @@ void CProjectile::Tick()
 	else if ( m_ExplodeTick == Server()->TickSpeed() * 30 )
 		m_LifeSpan = 0;
 	
-	if ( m_Deploy && !m_Mine && && m_Weapon == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
+	if ( m_Deploy && !m_Mine && m_Weapon == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
 	{
 		int ShotSpread = 2;
 
