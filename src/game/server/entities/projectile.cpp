@@ -38,25 +38,22 @@ vec2 CProjectile::GetPos(float Time)
 	float Curvature = 0;
 	float Speed = 0;
 
-	if ( !m_Mine )
+	switch(m_Type)
 	{
-		switch(m_Type)
-		{
-			case WEAPON_GRENADE:
-				Curvature = GameServer()->Tuning()->m_GrenadeCurvature;
-				Speed = GameServer()->Tuning()->m_GrenadeSpeed;
-				break;
+		case WEAPON_GRENADE:
+			Curvature = GameServer()->Tuning()->m_GrenadeCurvature;
+			Speed = GameServer()->Tuning()->m_GrenadeSpeed;
+			break;
 
-			case WEAPON_SHOTGUN:
-				Curvature = GameServer()->Tuning()->m_ShotgunCurvature;
-				Speed = GameServer()->Tuning()->m_ShotgunSpeed;
-				break;
+		case WEAPON_SHOTGUN:
+			Curvature = GameServer()->Tuning()->m_ShotgunCurvature;
+			Speed = GameServer()->Tuning()->m_ShotgunSpeed;
+			break;
 
-			case WEAPON_GUN:
-				Curvature = GameServer()->Tuning()->m_GunCurvature;
-				Speed = GameServer()->Tuning()->m_GunSpeed;
-				break;
-		}
+		case WEAPON_GUN:
+			Curvature = GameServer()->Tuning()->m_GunCurvature;
+			Speed = GameServer()->Tuning()->m_GunSpeed;
+			break;
 	}
 
 	return CalcPos(m_Pos, m_Direction, Curvature, Speed, Time);
@@ -65,6 +62,9 @@ vec2 CProjectile::GetPos(float Time)
 
 void CProjectile::Tick()
 {
+	if ( m_Mine )
+		m_StartTick = Server()->Tick();
+
 	float Pt = (Server()->Tick()-m_StartTick-1)/(float)Server()->TickSpeed();
 	float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
 	vec2 PrevPos = GetPos(Pt);
