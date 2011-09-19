@@ -382,13 +382,43 @@ void CCharacter::FireWeapon()
 				if (sound)
 					GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 			}
+			else if ( Race == ENGINEER )
+			{
+				/* LASER WALL */
+			}
+			else if ( Race == ORC )
+			{
+				GameServer()->CreateSound(m_Pos, SOUND_HIT);
+			}
 			else if ( Race == MINER )
+			{
 				GameServer()->CreateExplosion(m_Pos + (Direction * -1), m_pPlayer->GetCID(), m_ActiveWeapon, false, false);
+			}
 
 		} break;
 
 		case WEAPON_GUN:
 		{
+			if ( Race == WARRIOR )
+			{
+				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GUN,
+					m_pPlayer->GetCID(),
+					ProjStartPos,
+					Direction,
+					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
+					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN, false);
+
+				// pack the Projectile and send it to the client Directly
+				CNetObj_Projectile p;
+				pProj->FillInfo(&p);
+
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+				Msg.AddInt(1);
+				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+					Msg.AddInt(((int *)&p)[i]);
+
+				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
+			}
 			if ( Race == ENGINEER )
 			{
 				int ShotSpread = 2;
@@ -421,9 +451,41 @@ void CCharacter::FireWeapon()
 
 				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
 			}
-			else
+			else if ( Race == ORC )
 			{
-				CProjectile *pProj = new CProjectile(GameWorld(), Race == MINER ? WEAPON_RIFLE : WEAPON_GUN,
+				int ShotSpread = 2;
+
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+				Msg.AddInt(ShotSpread*2+1);
+
+				for(int i = -ShotSpread; i <= ShotSpread; ++i)
+				{
+					float Spreading[] = {-3.142f, -1.571f, 0, 1.571f, 3.142f};
+					float a = GetAngle(Direction);
+					a += Spreading[i+2];
+					float v = 1-(absolute(i)/(float)ShotSpread);
+					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+
+					CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GUN,
+						m_pPlayer->GetCID(),
+						ProjStartPos,
+						vec2(cosf(a), sinf(a))*Speed,
+						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
+						1, false, 0, -1, WEAPON_GUN);
+
+					// pack the Projectile and send it to the client Directly
+					CNetObj_Projectile p;
+					pProj->FillInfo(&p);
+
+					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+						Msg.AddInt(((int *)&p)[i]);
+				}
+
+				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
+			}
+			else if ( Race == MINER )
+			{
+				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_RIFLE,
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
@@ -448,31 +510,121 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_SHOTGUN:
 		{
-			int ShotSpread = 2;
-
-			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-			Msg.AddInt(ShotSpread*2+1);
-
-			for(int i = -ShotSpread; i <= ShotSpread; ++i)
+			if ( Race == WARRIOR )
 			{
-				float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
-				float a = GetAngle(Direction);
-				a += Spreading[i+2];
-				float v = 1-(absolute(i)/(float)ShotSpread);
-				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
-				CProjectile *pProj = new CProjectile(GameWorld(), Race == MINER ? WEAPON_RIFLE : WEAPON_SHOTGUN,
-					m_pPlayer->GetCID(),
-					ProjStartPos,
-					vec2(cosf(a), sinf(a))*Speed,
-					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, Race == ORC ? true : false, Race == ORC ? false : true);
+				int ShotSpread = 2;
 
-				// pack the Projectile and send it to the client Directly
-				CNetObj_Projectile p;
-				pProj->FillInfo(&p);
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+				Msg.AddInt(ShotSpread*2+1);
 
-				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
-					Msg.AddInt(((int *)&p)[i]);
+				for(int i = -ShotSpread; i <= ShotSpread; ++i)
+				{
+					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+					float a = GetAngle(Direction);
+					a += Spreading[i+2];
+					float v = 1-(absolute(i)/(float)ShotSpread);
+					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+					CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
+						m_pPlayer->GetCID(),
+						ProjStartPos,
+						vec2(cosf(a), sinf(a))*Speed,
+						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
+						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, false, true);
+
+					// pack the Projectile and send it to the client Directly
+					CNetObj_Projectile p;
+					pProj->FillInfo(&p);
+
+					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+						Msg.AddInt(((int *)&p)[i]);
+				}
+			}
+			else if ( Race == ENGINEER )
+			{
+				int ShotSpread = 2;
+
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+				Msg.AddInt(ShotSpread*2+1);
+
+				for(int i = -ShotSpread; i <= ShotSpread; ++i)
+				{
+					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+					float a = GetAngle(Direction);
+					a += Spreading[i+2];
+					float v = 1-(absolute(i)/(float)ShotSpread);
+					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+					CProjectile *pProj = new CProjectile(GameWorld(), Race == MINER ? WEAPON_RIFLE : WEAPON_SHOTGUN,
+						m_pPlayer->GetCID(),
+						ProjStartPos,
+						vec2(cosf(a), sinf(a))*Speed,
+						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
+						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, false, false, true);
+
+					// pack the Projectile and send it to the client Directly
+					CNetObj_Projectile p;
+					pProj->FillInfo(&p);
+
+					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+						Msg.AddInt(((int *)&p)[i]);
+				}
+			}
+			else if ( Race == ORC )
+			{
+				int ShotSpread = 2;
+
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+				Msg.AddInt(ShotSpread*2+1);
+
+				for(int i = -ShotSpread; i <= ShotSpread; ++i)
+				{
+					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+					float a = GetAngle(Direction);
+					a += Spreading[i+2];
+					float v = 1-(absolute(i)/(float)ShotSpread);
+					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+					CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
+						m_pPlayer->GetCID(),
+						ProjStartPos,
+						vec2(cosf(a), sinf(a))*Speed,
+						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
+						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, true);
+
+					// pack the Projectile and send it to the client Directly
+					CNetObj_Projectile p;
+					pProj->FillInfo(&p);
+
+					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+						Msg.AddInt(((int *)&p)[i]);
+				}
+			}
+			else if ( Race == MINER )
+			{
+				int ShotSpread = 2;
+
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+				Msg.AddInt(ShotSpread*2+1);
+
+				for(int i = -ShotSpread; i <= ShotSpread; ++i)
+				{
+					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+					float a = GetAngle(Direction);
+					a += Spreading[i+2];
+					float v = 1-(absolute(i)/(float)ShotSpread);
+					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+					CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_RIFLE,
+						m_pPlayer->GetCID(),
+						ProjStartPos,
+						vec2(cosf(a), sinf(a))*Speed,
+						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
+						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN);
+
+					// pack the Projectile and send it to the client Directly
+					CNetObj_Projectile p;
+					pProj->FillInfo(&p);
+
+					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+						Msg.AddInt(((int *)&p)[i]);
+				}
 			}
 
 			if (sound)
@@ -484,7 +636,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_GRENADE:
 		{
-			if ( Race <= ENGINEER )
+			if ( Race == WARRIOR )
 			{
 				int ShotSpread = 2;
 
@@ -518,14 +670,67 @@ void CCharacter::FireWeapon()
 
 				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
 			}
-			else
+			else if ( Race == ENGINEER )
 			{
-				CProjectile *pProj = new CProjectile(GameWorld(), Race == MINER ? WEAPON_RIFLE : WEAPON_GRENADE,
+				int ShotSpread = 2;
+
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+				Msg.AddInt(ShotSpread*2+1);
+
+				for(int i = -ShotSpread; i <= ShotSpread; ++i)
+				{
+					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+					float a = GetAngle(Direction);
+					a += Spreading[i+2];
+					float v = 1-(absolute(i)/(float)ShotSpread);
+					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+
+					CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GRENADE,
+						m_pPlayer->GetCID(),
+						ProjStartPos,
+						vec2(cosf(a), sinf(a))*Speed,
+						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
+						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, false, false, true);
+
+					// pack the Projectile and send it to the client Directly
+					CNetObj_Projectile p;
+					pProj->FillInfo(&p);
+
+					CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+					Msg.AddInt(1);
+					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+						Msg.AddInt(((int *)&p)[i]);
+				}
+
+				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
+			}
+			else if ( Race == ORC )
+			{
+				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GRENADE,
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
 					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
 					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, true, false, true);
+
+				// pack the Projectile and send it to the client Directly
+				CNetObj_Projectile p;
+				pProj->FillInfo(&p);
+
+				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+				Msg.AddInt(1);
+				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+					Msg.AddInt(((int *)&p)[i]);
+				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
+			}
+			else if ( RACE == MINER )
+			{
+				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_RIFLE,
+					m_pPlayer->GetCID(),
+					ProjStartPos,
+					Direction,
+					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
+					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, true);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;

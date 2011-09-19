@@ -769,7 +769,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				char aBuf[256] = "";
 				str_format(aBuf, 256, "%s is now a warrior !", m_apPlayers[ClientID]->GetRealName());
-				SendChatTarget(ClientID, aBuf);
+				SendChatTarget(-1, aBuf);
 				m_apPlayers[ClientID]->KillCharacter();
 				m_apPlayers[ClientID]->m_Race = WARRIOR;
 			}
@@ -777,7 +777,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				char aBuf[256] = "";
 				str_format(aBuf, 256, "%s is now an engineer !", m_apPlayers[ClientID]->GetRealName());
-				SendChatTarget(ClientID, aBuf);
+				SendChatTarget(-1, aBuf);
 				m_apPlayers[ClientID]->KillCharacter();
 				m_apPlayers[ClientID]->m_Race = ENGINEER;
 			}
@@ -785,7 +785,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				char aBuf[256] = "";
 				str_format(aBuf, 256, "%s is now an orc !", m_apPlayers[ClientID]->GetRealName());
-				SendChatTarget(ClientID, aBuf);
+				SendChatTarget(-1, aBuf);
 				m_apPlayers[ClientID]->KillCharacter();
 				m_apPlayers[ClientID]->m_Race = ORC;
 			}
@@ -793,7 +793,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				char aBuf[256] = "";
 				str_format(aBuf, 256, "%s is now a miner !", m_apPlayers[ClientID]->GetRealName());
-				SendChatTarget(ClientID, aBuf);
+				SendChatTarget(-1, aBuf);
 				m_apPlayers[ClientID]->KillCharacter();
 				m_apPlayers[ClientID]->m_Race = MINER;
 			}
