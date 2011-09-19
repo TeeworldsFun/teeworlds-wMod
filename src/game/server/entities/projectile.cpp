@@ -68,6 +68,21 @@ void CProjectile::Tick()
 	int Collide = GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0);
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
 	CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
+	if ( m_Type == WEAPON_RIFLE && !TargetChr )
+	{	
+		CCharacter *apEnts[MAX_CLIENTS];
+		int Num = m_World.FindEntities(Pos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		for(int i = 0; i < Num; i++)
+		{
+			if ( Owner == apEnts[i]->GetPlayer()->GetCID() )
+				continue;
+			else
+			{
+				TargetChr = apEnts[i];
+				break;
+			}
+		}
+	}
 
 	if (m_Smoke && m_ExplodeTick % 2 == 0 && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
 		GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
