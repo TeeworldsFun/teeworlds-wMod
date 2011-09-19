@@ -538,6 +538,8 @@ void CCharacter::FireWeapon()
 					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
 						Msg.AddInt(((int *)&p)[i]);
 				}
+
+				Server()->SendMsg(&Msg, 0,m_pPlayer->GetCID());
 			}
 			else if ( Race == ENGINEER )
 			{
@@ -567,6 +569,8 @@ void CCharacter::FireWeapon()
 					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
 						Msg.AddInt(((int *)&p)[i]);
 				}
+
+				Server()->SendMsg(&Msg, 0,m_pPlayer->GetCID());
 			}
 			else if ( Race == ORC )
 			{
@@ -596,6 +600,8 @@ void CCharacter::FireWeapon()
 					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
 						Msg.AddInt(((int *)&p)[i]);
 				}
+
+				Server()->SendMsg(&Msg, 0,m_pPlayer->GetCID());
 			}
 			else if ( Race == MINER )
 			{
@@ -625,12 +631,12 @@ void CCharacter::FireWeapon()
 					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
 						Msg.AddInt(((int *)&p)[i]);
 				}
+
+				Server()->SendMsg(&Msg, 0,m_pPlayer->GetCID());
 			}
 
 			if (sound)
 				GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
-
-			Server()->SendMsg(&Msg, 0,m_pPlayer->GetCID());
 
 		} break;
 
@@ -662,8 +668,6 @@ void CCharacter::FireWeapon()
 					CNetObj_Projectile p;
 					pProj->FillInfo(&p);
 
-					CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-					Msg.AddInt(1);
 					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
 						Msg.AddInt(((int *)&p)[i]);
 				}
@@ -696,8 +700,6 @@ void CCharacter::FireWeapon()
 					CNetObj_Projectile p;
 					pProj->FillInfo(&p);
 
-					CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-					Msg.AddInt(1);
 					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
 						Msg.AddInt(((int *)&p)[i]);
 				}
@@ -723,7 +725,7 @@ void CCharacter::FireWeapon()
 					Msg.AddInt(((int *)&p)[i]);
 				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
 			}
-			else if ( RACE == MINER )
+			else if ( Race == MINER )
 			{
 				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_RIFLE,
 					m_pPlayer->GetCID(),
@@ -765,6 +767,8 @@ void CCharacter::FireWeapon()
 
 				new CLaser(GameWorld(), m_Pos, vec2(cosf(a), sinf(a))*Speed, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
 			}
+
+			Server()->SendMsg(&Msg, 0,m_pPlayer->GetCID());
 
 			if (sound)
 				GameServer()->CreateSound(m_Pos, SOUND_RIFLE_FIRE);
