@@ -77,9 +77,13 @@ void CProjectile::Tick()
 		GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
 
 	m_ExplodeTick++;
-	m_LifeSpan--;
 	
-	if ( m_Deploy && m_Weapon == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
+	if ( !m_Mine )
+		m_LifeSpan--;
+	else if ( m_ExplodeTick == Server()->TickSpeed() * 30 )
+		m_LifeSpan = 0;
+	
+	if ( m_Deploy && !m_Mine && && m_Weapon == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
 	{
 		int ShotSpread = 2;
 
@@ -143,9 +147,19 @@ void CProjectile::FillInfo(CNetObj_Projectile *pProj)
 {
 	pProj->m_X = (int)m_Pos.x;
 	pProj->m_Y = (int)m_Pos.y;
-	pProj->m_VelX = (int)(m_Direction.x*100.0f);
-	pProj->m_VelY = (int)(m_Direction.y*100.0f);
-	pProj->m_StartTick = m_StartTick;
+	if ( !m_Mine )
+	{
+		pProj->m_VelX = (int)(m_Direction.x*100.0f);
+		pProj->m_VelY = (int)(m_Direction.y*100.0f);
+		pProj->m_StartTick = m_StartTick;
+	}
+	else
+	{
+		pProj->m_VelX = 0;
+		pProj->m_VelY = 0;
+		pProj->m_StartTick = Server()->Tick();
+	}
+
 	pProj->m_Type = m_Type;
 }
 
