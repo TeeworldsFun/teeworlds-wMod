@@ -471,7 +471,7 @@ void CCharacter::FireWeapon()
 						ProjStartPos,
 						vec2(cosf(a), sinf(a))*Speed,
 						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-						1, false, 0, -1, WEAPON_GUN);
+						1, true, 0, -1, WEAPON_GUN, true);
 
 					// pack the Projectile and send it to the client Directly
 					CNetObj_Projectile p;
