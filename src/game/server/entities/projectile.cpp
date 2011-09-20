@@ -89,8 +89,8 @@ void CProjectile::Tick()
 	
 	if ( m_Type != WEAPON_RIFLE )
 		m_LifeSpan--;
-	/*else if ( m_ExplodeTick >= Server()->TickSpeed() * 30 )
-		m_LifeSpan = -1;*/
+	else if ( m_ExplodeTick >= Server()->TickSpeed() * 3000 )
+		m_LifeSpan = -1;
 	
 	if ( m_Deploy && m_Type == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
 	{

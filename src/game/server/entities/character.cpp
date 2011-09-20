@@ -471,7 +471,7 @@ void CCharacter::FireWeapon()
 						ProjStartPos,
 						vec2(cosf(a), sinf(a))*Speed,
 						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-						1, true, 0, -1, WEAPON_GUN, true);
+						1, false, 0, -1, WEAPON_GUN);
 
 					// pack the Projectile and send it to the client Directly
 					CNetObj_Projectile p;
@@ -489,8 +489,7 @@ void CCharacter::FireWeapon()
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
-					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN);
+					1, 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GUN);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -559,7 +558,7 @@ void CCharacter::FireWeapon()
 						m_pPlayer->GetCID(),
 						ProjStartPos,
 						vec2(cosf(a), sinf(a))*Speed,
-						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime * 3),
+						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime * 2),
 						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, false, false, true);
 
 					// pack the Projectile and send it to the client Directly
@@ -590,7 +589,7 @@ void CCharacter::FireWeapon()
 						m_pPlayer->GetCID(),
 						ProjStartPos,
 						vec2(cosf(a), sinf(a))*Speed,
-						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime * 3),
+						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
 						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, true);
 
 					// pack the Projectile and send it to the client Directly
@@ -605,34 +604,22 @@ void CCharacter::FireWeapon()
 			}
 			else if ( Race == MINER )
 			{
-				int ShotSpread = 2;
+				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_RIFLE,
+					m_pPlayer->GetCID(),
+					ProjStartPos,
+					Direction,
+					1, 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_SHOTGUN);
+
+				// pack the Projectile and send it to the client Directly
+				CNetObj_Projectile p;
+				pProj->FillInfo(&p);
 
 				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-				Msg.AddInt(ShotSpread*2+1);
+				Msg.AddInt(1);
+				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+					Msg.AddInt(((int *)&p)[i]);
 
-				for(int i = -ShotSpread; i <= ShotSpread; ++i)
-				{
-					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
-					float a = GetAngle(Direction);
-					a += Spreading[i+2];
-					float v = 1-(absolute(i)/(float)ShotSpread);
-					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
-					CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_RIFLE,
-						m_pPlayer->GetCID(),
-						ProjStartPos,
-						vec2(cosf(a), sinf(a))*Speed,
-						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN);
-
-					// pack the Projectile and send it to the client Directly
-					CNetObj_Projectile p;
-					pProj->FillInfo(&p);
-
-					for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
-						Msg.AddInt(((int *)&p)[i]);
-				}
-
-				Server()->SendMsg(&Msg, 0,m_pPlayer->GetCID());
+				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
 			}
 
 			if (sound)
@@ -731,8 +718,7 @@ void CCharacter::FireWeapon()
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
-					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
-					1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, true);
+					1, 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GRENADE);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -742,6 +728,7 @@ void CCharacter::FireWeapon()
 				Msg.AddInt(1);
 				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
 					Msg.AddInt(((int *)&p)[i]);
+
 				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
 			}
 
@@ -755,6 +742,7 @@ void CCharacter::FireWeapon()
 			if ( Race == ORC )
 			{
 				new CLaser(GameWorld(), m_Pos, Direction, 300, m_pPlayer->GetCID());
+				m_ReloadTimer = 1;
 			}
 			else
 			{
@@ -793,7 +781,7 @@ void CCharacter::FireWeapon()
 
 	m_AttackTick = Server()->Tick();
 
-	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && !GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO) && ( Race != ORC || m_ActiveWeapon == WEAPON_RIFLE ) ) // -1 == unlimited
+	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && !GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO) && ( Race != ORC || m_ActiveWeapon != WEAPON_RIFLE ) ) // -1 == unlimited
 		m_aWeapons[m_ActiveWeapon].m_Ammo--;
 
 	if(!m_ReloadTimer)
