@@ -754,7 +754,7 @@ void CCharacter::FireWeapon()
 		{
 			if ( Race == ORC )
 			{
-				new CLaser(GameWorld(), m_Pos, Direction, 100, m_pPlayer->GetCID());
+				new CLaser(GameWorld(), m_Pos, Direction, 300, m_pPlayer->GetCID());
 			}
 			else
 			{
@@ -793,7 +793,7 @@ void CCharacter::FireWeapon()
 
 	m_AttackTick = Server()->Tick();
 
-	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && !GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO)) // -1 == unlimited
+	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && !GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO) && ( Race != ORC || m_ActiveWeapon == WEAPON_RIFLE ) ) // -1 == unlimited
 		m_aWeapons[m_ActiveWeapon].m_Ammo--;
 
 	if(!m_ReloadTimer)
