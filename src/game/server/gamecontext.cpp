@@ -84,7 +84,6 @@ void CGameContext::Clear()
 	CTuningParams Tuning = m_Tuning;
 	
 	CStatistiques *pStatistiques = m_pStatistiques;
-	CEvent *pEventsGame = m_pEventsGame;
 
 	m_Resetting = true;
 	this->~CGameContext();
@@ -98,7 +97,6 @@ void CGameContext::Clear()
 	m_Tuning = Tuning;
 	
 	m_pStatistiques = pStatistiques;
-	m_pEventsGame = pEventsGame;
 }
 
 
