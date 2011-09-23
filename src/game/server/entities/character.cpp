@@ -497,7 +497,7 @@ void CCharacter::FireWeapon()
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
-					30,
+					Server()->TickSpeed()*30,
 					1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GUN);
 
 				// pack the Projectile and send it to the client Directly
@@ -551,19 +551,19 @@ void CCharacter::FireWeapon()
 			}
 			else if ( Race == ENGINEER )
 			{
-				int ShotSpread = 36;
+				int ShotSpread = 72;
 
 				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 				Msg.AddInt(ShotSpread*2+1);
 
-				float Spreading[73] = {0};
+				float Spreading[145] = {0};
 				for (int i = -ShotSpread; i <= ShotSpread; ++i)
-					Spreading[i+36] = (i * 2.5f)*M_PIl/180;
+					Spreading[i+72] = (i * 2.5f)*M_PIl/180;
 
 				for(int i = -ShotSpread; i <= ShotSpread; ++i)
 				{
 					float a = GetAngle(Direction);
-					a += Spreading[i+36];
+					a += Spreading[i+72];
 					float v = 1-(absolute(i)/(float)ShotSpread);
 					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
 					CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
@@ -571,7 +571,7 @@ void CCharacter::FireWeapon()
 						ProjStartPos,
 						vec2(cosf(a), sinf(a))*Speed,
 						(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-						1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN);
+						1, false, 0, -1, WEAPON_SHOTGUN);
 
 					// pack the Projectile and send it to the client Directly
 					CNetObj_Projectile p;
@@ -620,7 +620,7 @@ void CCharacter::FireWeapon()
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
-					30,
+					Server()->TickSpeed()*30,
 					1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_SHOTGUN);
 
 				// pack the Projectile and send it to the client Directly
@@ -744,7 +744,7 @@ void CCharacter::FireWeapon()
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
-					30,
+					Server()->TickSpeed()*30,
 					1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GRENADE);
 
 				// pack the Projectile and send it to the client Directly
@@ -768,7 +768,7 @@ void CCharacter::FireWeapon()
 		{
 			if ( Race == ORC )
 			{
-				new CLaser(GameWorld(), m_Pos, Direction, 300, m_pPlayer->GetCID());
+				new CLaser(GameWorld(), m_Pos, Direction, 500, m_pPlayer->GetCID());
 				m_ReloadTimer = 1;
 			}
 			else if ( Race == MINER )
@@ -777,7 +777,7 @@ void CCharacter::FireWeapon()
 					m_pPlayer->GetCID(),
 					ProjStartPos,
 					Direction,
-					30,
+					Server()->TickSpeed()*30,
 					1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_RIFLE);
 
 				// pack the Projectile and send it to the client Directly
@@ -832,7 +832,11 @@ void CCharacter::FireWeapon()
 		m_aWeapons[m_ActiveWeapon].m_Ammo--;
 
 	if(!m_ReloadTimer)
-		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / 7500;
+	{
+		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 * 7.5f);
+		if ( Race == ORC )
+			m_ReloadTimer += 500 * Server()->TickSpeed() / 1000;
+	}
 
 	GameServer()->m_pStatistiques->AddFire(m_pPlayer->GetSID());
 }
@@ -1105,7 +1109,7 @@ void CCharacter::Tick()
 	if (!m_AuraProtect[0] && (m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())))
 	{
 		for ( int i = 0; i < 12; i++ )
-			m_AuraProtect[i] = new CAura(&(GameServer()->m_World), this, i * 30, 60, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
+			m_AuraProtect[i] = new CAura(&(GameServer()->m_World), m_pPlayer->GetCID(), i * 30, 60, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
 	}
 
 	else if ( m_AuraProtect[0] && !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) )
@@ -1120,7 +1124,7 @@ void CCharacter::Tick()
 		if ((GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))
 		{
 				for ( int i = 0; i < 3; i++ )
-					m_AuraCaptain[i] = new CAura(&(GameServer()->m_World), this, i * 120, 45, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
+					m_AuraCaptain[i] = new CAura(&(GameServer()->m_World), m_pPlayer->GetCID(), i * 120, 45, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
 		}
 	}
 	else if (!(GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))
@@ -1396,7 +1400,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	// check for death
-	if(m_Health <= 0 || Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || (Weapon == WEAPON_HAMMER && GameServer()->m_apPlayers[From]->m_Race == ORC))
+	if(m_Health <= 0 || Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || ((Weapon == WEAPON_HAMMER || Weapon == WEAPON_RIFLE) && GameServer()->m_apPlayers[From]->m_Race == ORC))
 	{
 		Die(From, Weapon);
 

@@ -10,14 +10,14 @@ const int PickupPhysSize = 14;
 class CAura : public CEntity
 {
 public:
-	CAura(CGameWorld *pGameWorld, CCharacter *Character, float StartDegres, int Distance, int Type);
+	CAura(CGameWorld *pGameWorld, int Owner, float StartDegres, int Distance, int Type);
 
 	virtual void Reset();
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
 
 private:
-	CCharacter *m_pCharacter;
+	int m_Owner;
 	int m_Type;
 	float m_Degres;
 	int m_Distance;

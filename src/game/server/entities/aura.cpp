@@ -4,10 +4,10 @@
 #include <game/server/gamecontext.h>
 #include "aura.h"
 
-CAura::CAura(CGameWorld *pGameWorld, CCharacter *Character, float StartDegres, int Distance, int Type)
+CAura::CAura(CGameWorld *pGameWorld, int Owner, float StartDegres, int Distance, int Type)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP)
 {
-	m_pCharacter = Character;
+	m_Owner = Owner;
 	m_Type = Type;
 	m_Degres = StartDegres;
 	m_Distance = Distance;
@@ -18,12 +18,16 @@ CAura::CAura(CGameWorld *pGameWorld, CCharacter *Character, float StartDegres, i
 
 void CAura::Reset()
 {
-
+	GameWorld()->DestroyEntity(this);
 }
 
 void CAura::Tick()
 {
-	m_Pos = m_pCharacter->m_Pos + (GetDir(m_Degres*M_PIl/180) * m_Distance);
+	if(!GameServer()->m_apPlayers[m_Owner] || !GameServer()->m_apPlayers[m_Owner]->GetCharacter())
+		Reset();
+
+	CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
+	m_Pos = pOwnerChar->m_Pos + (GetDir(m_Degres*M_PIl/180) * m_Distance);
 	if ( m_Degres + 5 < 360 )
 		m_Degres += 5;
 	else
