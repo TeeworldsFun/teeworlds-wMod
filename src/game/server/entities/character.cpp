@@ -388,7 +388,7 @@ void CCharacter::FireWeapon()
 			{
 				if (!m_LaserWall && m_pPlayer->m_NumLaserWall < 3)
 					m_LaserWall = new CLaserWall(GameWorld(), m_Pos, m_pPlayer->GetCID());
-				else
+				else if ( m_LaserWall )
 				{
 					m_LaserWall->m_Pos = m_Pos;
 					m_LaserWall->m_StartTick = Server()->Tick();
