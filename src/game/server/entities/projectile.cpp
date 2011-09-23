@@ -108,7 +108,7 @@ void CProjectile::Tick()
 				CurPos,
 				vec2(cosf(a), sinf(a))*Speed,
 				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-				1, true, 0, m_SoundImpact, m_Weapon);
+				1, m_Explosive, 0, m_SoundImpact, m_Weapon, m_Smoke);
 
 			// pack the Projectile and send it to the client Directly
 			CNetObj_Projectile p;

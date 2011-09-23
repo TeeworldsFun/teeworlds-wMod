@@ -11,6 +11,7 @@
 #include "laser.h"
 #include "projectile.h"
 #include "aura.h"
+#include "laserwall.h"
 
 //input count
 struct CInputCount
@@ -102,6 +103,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_Protect = Server()->Tick();
 	m_AuraProtect[0] = 0;
 	m_AuraCaptain[0] = 0;
+	m_LaserWall = 0;
 
 	GameServer()->m_World.InsertEntity(this);
 	m_Alive = true;
@@ -384,7 +386,14 @@ void CCharacter::FireWeapon()
 			}
 			else if ( Race == ENGINEER )
 			{
-				/* LASER WALL */
+				if (!m_LaserWall && m_pPlayer->m_NumLaserWall < 3)
+					m_LaserWall = new CLaserWall(GameWorld(), m_Pos, m_pPlayer->GetCID());
+				else
+				{
+					m_LaserWall->m_Pos = m_Pos;
+					m_LaserWall->m_StartTick = Server()->Tick();
+					m_LaserWall = 0;
+				}
 			}
 			else if ( Race == ORC )
 			{
@@ -531,16 +540,19 @@ void CCharacter::FireWeapon()
 			}
 			else if ( Race == ENGINEER )
 			{
-				int ShotSpread = 3;
+				int ShotSpread = 36;
 
 				CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-				Msg.AddInt(ShotSpread*3+1);
+				Msg.AddInt(ShotSpread*2+1);
+
+				float Spreading[73] = {0};
+				for (int i = -ShotSpread; i <= ShotSpread; ++i)
+					Spreading[i+36] = (i * 2.5f)*M_PIl/180;
 
 				for(int i = -ShotSpread; i <= ShotSpread; ++i)
 				{
-					float Spreading[] = {-0.300f, -0.185f, -0.070f, 0, 0.070f, 0.185f, 0.300f};
 					float a = GetAngle(Direction);
-					a += Spreading[i+3];
+					a += Spreading[i+36];
 					float v = 1-(absolute(i)/(float)ShotSpread);
 					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
 					CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
@@ -1333,7 +1345,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		GameServer()->CreateDamageInd(m_Pos, 0, Dmg);
 	}
 
-	if(Dmg && Weapon != WEAPON_NINJA && !GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) && (Weapon != WEAPON_HAMMER || GameServer()->m_apPlayers[From]->m_Race != ORC))
+	if(Dmg)
 	{
 		if(m_Armor)
 		{
@@ -1357,11 +1369,6 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
 		m_Health -= Dmg;
 	}
-	else if ( Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || (Weapon == WEAPON_HAMMER && GameServer()->m_apPlayers[From]->m_Race == ORC) )
-	{
-		m_Health = 0;
-		m_Armor = 0;
-	}
 
 	m_DamageTakenTick = Server()->Tick();
 
@@ -1378,7 +1385,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	// check for death
-	if(m_Health <= 0)
+	if(m_Health <= 0 || Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || (Weapon == WEAPON_HAMMER && GameServer()->m_apPlayers[From]->m_Race == ORC))
 	{
 		Die(From, Weapon);
 

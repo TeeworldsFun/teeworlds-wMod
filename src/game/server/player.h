@@ -106,6 +106,7 @@ public:
 	unsigned long m_level;
 	int m_BroadcastTick;
 	int m_Race;
+	int m_NumLaserWall;
 
 private:
 	CCharacter *m_pCharacter;

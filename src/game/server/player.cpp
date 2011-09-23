@@ -28,6 +28,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_level = 0;
 	m_BroadcastTick = 0;
 	m_Race = WARRIOR;
+	m_NumLaserWall = 0;
 	str_copy(m_aRealName, "", MAX_NAME_LENGTH);
 }
 

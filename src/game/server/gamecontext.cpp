@@ -795,7 +795,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				m_apPlayers[ClientID]->KillCharacter();
 				m_apPlayers[ClientID]->m_Race = MINER;
 			}
-			else if(str_comp_nocase(pMsg->m_pMessage, "/race") >= 0)
+			else if(str_comp_nocase(pMsg->m_pMessage, "/race") == 0)
 			{
 				SendChatTarget(ClientID, "Usage : /race <race>");
 				SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner");
@@ -856,7 +856,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
 				}
 			}
-			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr") >= 0)
+			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr") == 0)
 			{
 				SendChatTarget(ClientID, "Usage : /upgr <type>");
 				SendChatTarget(ClientID, "Type : Weapon or Life or Move or Hook");
@@ -1663,13 +1663,22 @@ void CGameContext::ConNextEventTeam(IConsole::IResult *pResult, void *pUserData)
 	if ( pSelf->m_pController->IsTeamplay() )
 		pSelf->m_pEventsGame->NextEventTeam();
 	else
+	{
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+		pSelf->SendChatTarget(-1, "The actual gametype is not with teams !");
+	}
 }
 
 void CGameContext::ConNextRandomEventTeam(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	pSelf->m_pEventsGame->NextRandomEventTeam();
+	if ( pSelf->m_pController->IsTeamplay() )
+		pSelf->m_pEventsGame->NextRandomEventTeam();
+	else
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+		pSelf->SendChatTarget(-1, "The actual gametype is not with teams !");
+	}
 }
 
 void CGameContext::ConSetEventTeam(IConsole::IResult *pResult, void *pUserData)
@@ -1681,7 +1690,10 @@ void CGameContext::ConSetEventTeam(IConsole::IResult *pResult, void *pUserData)
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid event id to set");
 	}
 	else
+	{
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+		pSelf->SendChatTarget(-1, "The actual gametype is not with teams !");
+	}
 }
 
 void CGameContext::ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserData)
@@ -1707,7 +1719,13 @@ void CGameContext::ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserDa
 void CGameContext::ConSetTwoEvent(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	pSelf->m_pEventsGame->SetTwoEvent();
+	if ( !pSelf->m_pController->IsTeamplay() )
+		pSelf->m_pEventsGame->SetTwoEvent();
+	else
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Can't activate Two Events with teams");
+		pSelf->SendChatTarget(-1, "Can't activate Two Events with teams !");
+	}
 }
 
 void CGameContext::ConListPlayer(IConsole::IResult *pResult, void *pUserData)

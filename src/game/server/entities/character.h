@@ -126,6 +126,7 @@ private:
 
 	class CAura *m_AuraProtect[12];
 	class CAura *m_AuraCaptain[3];
+	class CLaserWall *m_LaserWall;
 
 	// ninja
 	struct
