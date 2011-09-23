@@ -231,7 +231,7 @@ void CCharacter::HandleNinja()
 				if(m_NumObjectsHit < 10)
 					m_apHitObjects[m_NumObjectsHit++] = aEnts[i];
 
-				if(aEnts[i]->TakeDamage(vec2(0, 10.0f), 20, m_pPlayer->GetCID(), WEAPON_NINJA))
+				if(aEnts[i]->TakeDamage(vec2(0, 10.0f), 20, m_pPlayer->GetCID(), WEAPON_NINJA) && !GameServer()->m_pEventsGame->IsActualEvent(KATANA))
 					m_Ninja.m_Killed++;
 			}
 		}
@@ -835,7 +835,7 @@ void CCharacter::FireWeapon()
 	{
 		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 * 7.5f);
 		if ( Race == ORC )
-			m_ReloadTimer += 500 * Server()->TickSpeed() / 1000;
+			m_ReloadTimer += 175 * Server()->TickSpeed() / 1000;
 	}
 
 	GameServer()->m_pStatistiques->AddFire(m_pPlayer->GetSID());
