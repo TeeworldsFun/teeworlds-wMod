@@ -18,6 +18,7 @@ public:
 private:
 	vec2 m_From;
 	int m_Owner;
+	int m_Killed;
 };
 
 #endif

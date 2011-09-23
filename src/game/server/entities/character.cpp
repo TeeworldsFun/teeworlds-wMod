@@ -401,7 +401,18 @@ void CCharacter::FireWeapon()
 			}
 			else if ( Race == MINER )
 			{
-				GameServer()->CreateExplosion(m_Pos + (Direction * -1), m_pPlayer->GetCID(), m_ActiveWeapon, false, false);
+				GameServer()->CreateExplosion(m_Pos + (Direction * -1), m_pPlayer->GetCID(), m_ActiveWeapon, true, false);
+				float Radius = 135.0f;
+				float InnerRadius = 48.0f;
+				vec2 Diff = m_Pos - (m_Pos + (Direction * -1));
+				vec2 ForceDir(0,1);
+				float l = length(Diff);
+				if(l)
+					ForceDir = normalize(Diff);
+				l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
+				float Dmg = 6 * l;
+				if((int)Dmg)
+					TakeDamage(ForceDir*Dmg*2, 0, m_pPlayer->GetCID(), m_ActiveWeapon);
 			}
 
 		} break;

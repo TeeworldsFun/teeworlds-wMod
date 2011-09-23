@@ -25,7 +25,7 @@ void CLaserWall::Reset()
 
 void CLaserWall::Tick()
 {
-	if( GameServer()->Collision()->IntersectLine(m_From, m_Pos, 0x0, 0x0) || (m_StartTick && Server()->Tick() >= m_StartTick+Server()->TickSpeed()*30) || !GameServer()->m_apPlayers[m_Owner] || !GameServer()->m_apPlayers[m_Owner]->GetCharacter() )
+	if( m_Killed >= 5 || GameServer()->Collision()->IntersectLine(m_From, m_Pos, 0x0, 0x0) || (m_StartTick && Server()->Tick() >= m_StartTick+Server()->TickSpeed()*30) || !GameServer()->m_apPlayers[m_Owner] || !GameServer()->m_apPlayers[m_Owner]->GetCharacter() )
 	{
 		Reset();
 		return;
@@ -38,6 +38,7 @@ void CLaserWall::Tick()
 		return;
 
 	pHit->Die(m_Owner, WEAPON_HAMMER);
+	m_Killed++;
 	if(pOwnerChar)
 		pOwnerChar->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
 }
