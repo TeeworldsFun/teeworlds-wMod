@@ -12,7 +12,6 @@ class CAura : public CEntity
 public:
 	CAura(CGameWorld *pGameWorld, int Owner, float StartDegres, int Distance, int Type);
 
-	virtual void Reset();
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
 

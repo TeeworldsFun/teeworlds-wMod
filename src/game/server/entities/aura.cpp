@@ -16,17 +16,12 @@ CAura::CAura(CGameWorld *pGameWorld, int Owner, float StartDegres, int Distance,
 	GameWorld()->InsertEntity(this);
 }
 
-void CAura::Reset()
-{
-	GameWorld()->DestroyEntity(this);
-}
-
 void CAura::Tick()
 {
-	if(!GameServer()->m_apPlayers[m_Owner] || !GameServer()->m_apPlayers[m_Owner]->GetCharacter())
-		Reset();
-
 	CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
+	if(!pOwnerChar)
+		return;
+
 	m_Pos = pOwnerChar->m_Pos + (GetDir(m_Degres*M_PIl/180) * m_Distance);
 	if ( m_Degres + 5 < 360 )
 		m_Degres += 5;

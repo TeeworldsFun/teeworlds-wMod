@@ -56,6 +56,6 @@ void CLaserWall::Snap(int SnappingClient)
 	pObj->m_Y = (int)m_Pos.y;
 	pObj->m_FromX = (int)m_From.x;
 	pObj->m_FromY = (int)m_From.y;
-	pObj->m_StartTick = Server()->Tick();
+	pObj->m_StartTick = Server()->Tick() + 1;
 }
 
