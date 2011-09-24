@@ -113,9 +113,9 @@ void CGameContext::SetName(int ClientID)
 		return;
 
 	char Prefix[10] = "";
-	if (Server()->IsAuthed(ClientID) == AUTHED_MOD)
+	if (Server()->IsAuthed(ClientID) == 1)
 		str_append(Prefix, "M", 10);
-	else if (Server()->IsAuthed(ClientID) == AUTHED_ADMIN)
+	else if (Server()->IsAuthed(ClientID) == 2)
 		str_append(Prefix, "A", 10);
 	if (m_pEventsGame->GetActualEventTeam() == STEAL_TEE && (m_pController->m_Captain[TEAM_RED] == ClientID || m_pController->m_Captain[TEAM_BLUE] == ClientID) )
 		str_append(Prefix, "C", 10);
