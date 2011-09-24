@@ -5,29 +5,37 @@
 #include <game/server/event.h>
 #include "laserwall.h"
 
-CLaserWall::CLaserWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner)
+CLaserWall::CLaserWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner, bool Double)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER)
 {
 	m_From = StartPos;
 	m_Pos = m_From;
 	m_Owner = Owner;
+	m_Killed = 0;
 	m_StartTick = 0;
-	GameServer()->m_apPlayers[m_Owner]->m_NumLaserWall++;
+	m_Destroy = false;
+	m_Double = Double;
+	m_pDouble = 0;
 	GameWorld()->InsertEntity(this);
 }
 
-void CLaserWall::Reset()
+CLaserWall::~CLaserWall()
 {
-	if(GameServer()->m_apPlayers[m_Owner])
-		GameServer()->m_apPlayers[m_Owner]->m_NumLaserWall--;
-	GameServer()->m_World.DestroyEntity(this);
+	if (m_pDouble)
+	{
+		delete m_pDouble;
+		m_pDouble = 0;
+	}
 }
 
 void CLaserWall::Tick()
 {
-	if( m_Killed >= 5 || GameServer()->Collision()->IntersectLine(m_From, m_Pos, 0x0, 0x0) || (m_StartTick && Server()->Tick() >= m_StartTick+Server()->TickSpeed()*30) || !GameServer()->m_apPlayers[m_Owner] || !GameServer()->m_apPlayers[m_Owner]->GetCharacter() )
+	if ( m_Double )
+		return;
+
+	if( m_Killed >= 5 || (distance(m_From, m_Pos) && GameServer()->Collision()->IntersectLine(m_From, m_Pos, 0, 0)) || GameServer()->Collision()->CheckPoint(m_Pos) || (m_StartTick && Server()->Tick() >= m_StartTick+Server()->TickSpeed()*30) || !GameServer()->m_apPlayers[m_Owner] || !GameServer()->m_apPlayers[m_Owner]->GetCharacter() )
 	{
-		Reset();
+		m_Destroy = true;
 		return;
 	}
 
@@ -41,6 +49,15 @@ void CLaserWall::Tick()
 	m_Killed++;
 	if(pOwnerChar)
 		pOwnerChar->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
+}
+
+void CLaserWall::CreateDouble()
+{
+	if ( m_Double || m_pDouble )
+		return;
+
+	m_pDouble = new CLaserWall(&GameServer()->m_World, m_Pos, m_Owner, true);
+	m_pDouble->m_Pos = m_From;
 }
 
 void CLaserWall::Snap(int SnappingClient)

@@ -37,8 +37,8 @@ IGameController::IGameController(class CGameContext *pGameServer)
 	m_aNumSpawnPoints[1] = 0;
 	m_aNumSpawnPoints[2] = 0;
 
-	m_pCaptain[0] = 0;
-	m_pCaptain[1] = 0;
+	m_Captain[0] = -1;
+	m_Captain[1] = -1;
 }
 
 IGameController::~IGameController()
@@ -227,8 +227,8 @@ void IGameController::StartRound()
 	m_aTeamscore[TEAM_BLUE] = 0;
 	m_ForceBalanced = false;
 	m_ForceDoBalance = true;
-	m_pCaptain[0] = 0;
-	m_pCaptain[1] = 0;
+	m_Captain[0] = -1;
+	m_Captain[1] = -1;
 	Server()->DemoRecorder_HandleAutoStart();
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "start round type='%s' teamplay='%d'", m_pGameType, m_GameFlags&GAMEFLAG_TEAMS);
@@ -917,46 +917,36 @@ void IGameController::DoWincheck()
 
 				if (GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE)
 				{
-					if ( !m_pCaptain[TEAM_RED] && m_aTeamscore[TEAM_RED] > 0 )
+					if ( m_Captain[TEAM_RED] < 0 && m_aTeamscore[TEAM_RED] > 0 )
 					{
-						int CaptainId = 0;
-						while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() != TEAM_RED);
-						m_pCaptain[TEAM_RED] = GameServer()->m_apPlayers[CaptainId];
+						while (!GameServer()->m_apPlayers[m_Captain[TEAM_RED] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->GetTeam() != TEAM_RED);
 						char Text[256] = "";
-						str_format(Text, 256, "%s is the captain of the red team !", m_pCaptain[TEAM_RED]->GetRealName());
+						str_format(Text, 256, "%s is the captain of the red team !", GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->GetRealName());
 						GameServer()->SendChatTarget(-1, Text);
-						GameServer()->SendChatTarget(CaptainId, "You're the captain of the red team ! You must keep your teammate and capture all players !");
+						GameServer()->SendChatTarget(m_Captain[TEAM_RED], "You're the captain of the red team ! You must keep your teammate and capture all players !");
 					}
-					if ( !m_pCaptain[TEAM_BLUE] && m_aTeamscore[TEAM_BLUE] > 0 )
+					if ( m_Captain[TEAM_BLUE] < 0 && m_aTeamscore[TEAM_BLUE] > 0 )
 					{
-						int CaptainId = 0;
-						while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() != TEAM_BLUE);
-						m_pCaptain[TEAM_BLUE] = GameServer()->m_apPlayers[CaptainId];
+						while (!GameServer()->m_apPlayers[m_Captain[TEAM_BLUE] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_BLUE]]->GetTeam() != TEAM_BLUE);
 						char Text[256] = "";
-						str_format(Text, 256, "%s is the captain of the blue team !", m_pCaptain[TEAM_BLUE]->GetRealName());
+						str_format(Text, 256, "%s is the captain of the red team !", GameServer()->m_apPlayers[m_Captain[TEAM_BLUE]]->GetRealName());
 						GameServer()->SendChatTarget(-1, Text);
-						GameServer()->SendChatTarget(CaptainId, "You're the captain of the blue team ! You must keep your teammate and capture all players !");
+						GameServer()->SendChatTarget(m_Captain[TEAM_BLUE], "You're the captain of the red team ! You must keep your teammate and capture all players !");
 					}
 				}
-				else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_aTeamscore[TEAM_BLUE] > 1 && !m_pCaptain[TEAM_RED] && Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*5 )
+				else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_aTeamscore[TEAM_BLUE] > 1 && m_Captain[TEAM_RED] < 0 && Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*5 )
 				{
 					if ( !m_aTeamscore[TEAM_RED] )
 					{
-						int CaptainId = 0;
-						while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() == TEAM_SPECTATORS);
-						m_pCaptain[TEAM_RED] = GameServer()->m_apPlayers[CaptainId];
-						m_pCaptain[TEAM_RED]->SetTeam(TEAM_RED, false);
+						while (!GameServer()->m_apPlayers[m_Captain[TEAM_RED] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->GetTeam() == TEAM_SPECTATORS);
+						GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->SetTeam(TEAM_RED, false);
 						char Text[256] = "";
-						str_format(Text, 256, "%s is a zombie !!! Flee or be his slaves !!!", m_pCaptain[TEAM_RED]->GetRealName());
+						str_format(Text, 256, "%s is a zombie !!! Flee or be his slaves !!!", GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->GetRealName());
 						GameServer()->SendChatTarget(-1, Text);
-						GameServer()->SendChatTarget(CaptainId, "You're a zombie ! Eat some brains !");
+						GameServer()->SendChatTarget(m_Captain[TEAM_RED], "You're a zombie ! Eat some brains !");
 					}
 					else
-					{
-						int CaptainId = 0;
-						while (!GameServer()->m_apPlayers[CaptainId = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[CaptainId]->GetTeam() != TEAM_RED);
-						m_pCaptain[TEAM_RED] = GameServer()->m_apPlayers[CaptainId];
-					}
+						while (!GameServer()->m_apPlayers[m_Captain[TEAM_RED] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->GetTeam() != TEAM_RED);
 				}
 
 				if ((m_pGameServer->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && ((m_aTeamscore[0] == 0 && m_aTeamscore[1] > 1) || (m_aTeamscore[1] == 0 && m_aTeamscore[0] > 1))) || 
@@ -966,7 +956,7 @@ void IGameController::DoWincheck()
 					{
 						int Team = m_aTeamscore[TEAM_RED] ? TEAM_RED : TEAM_BLUE;
 						char Text[256] = "";
-						str_format(Text, 256, "The %s of captain %s win !", Team ? "red team" : "blue team", m_pCaptain[Team]->GetRealName());
+						str_format(Text, 256, "The %s of captain %s win !", Team ? "red team" : "blue team", GameServer()->m_apPlayers[m_Captain[Team]]->GetRealName());
 						GameServer()->SendChatTarget(-1, Text);
 					}
 					else if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )

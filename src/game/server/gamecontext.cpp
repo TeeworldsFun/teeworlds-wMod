@@ -115,7 +115,7 @@ void CGameContext::SetName(int ClientID)
 	char Prefix[10] = "";
 	if (Server()->IsAuthed(ClientID))
 		str_append(Prefix, "A", 10);
-	if (m_pEventsGame->GetActualEventTeam() == STEAL_TEE && (m_pController->m_pCaptain[TEAM_RED] == m_apPlayers[ClientID] || m_pController->m_pCaptain[TEAM_BLUE] == m_apPlayers[ClientID]) )
+	if (m_pEventsGame->GetActualEventTeam() == STEAL_TEE && (m_pController->m_Captain[TEAM_RED] == ClientID || m_pController->m_Captain[TEAM_BLUE] == ClientID) )
 		str_append(Prefix, "C", 10);
 
 	char Name[MAX_NAME_LENGTH + 10] = "";
@@ -632,10 +632,10 @@ void CGameContext::OnClientConnected(int ClientID)
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 {
-	if ( m_apPlayers[ClientID] == m_pController->m_pCaptain[TEAM_RED] )
-		m_pController->m_pCaptain[TEAM_RED] = 0;
-	else if ( m_apPlayers[ClientID] == m_pController->m_pCaptain[TEAM_BLUE] )
-		m_pController->m_pCaptain[TEAM_BLUE] = 0;
+	if ( ClientID == m_pController->m_Captain[TEAM_RED] )
+		m_pController->m_Captain[TEAM_RED] = -1;
+	else if ( ClientID == m_pController->m_Captain[TEAM_BLUE] )
+		m_pController->m_Captain[TEAM_BLUE] = -1;
 
 	AbortVoteKickOnDisconnect(ClientID);
 	m_pStatistiques->SetStopPlay(m_apPlayers[ClientID]->GetSID());

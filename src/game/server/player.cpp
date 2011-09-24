@@ -28,7 +28,6 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_level = 0;
 	m_BroadcastTick = 0;
 	m_Race = WARRIOR;
-	m_NumLaserWall = 0;
 	str_copy(m_aRealName, "", MAX_NAME_LENGTH);
 }
 
@@ -288,7 +287,7 @@ void CPlayer::SetCaptureTeam(int Team, int Killer)
 {
         // clamp the team
         Team = GameServer()->m_pController->ClampTeam(Team);
-        if(m_Team == Team || (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && Team != TEAM_RED) || (m_Team != TEAM_SPECTATORS && this == GameServer()->m_pController->m_pCaptain[m_Team] && GameServer()->m_pController->GetTeamScore(m_Team) > 1) )
+        if(m_Team == Team || (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && Team != TEAM_RED) || (m_Team != TEAM_SPECTATORS && m_ClientID == GameServer()->m_pController->m_Captain[m_Team] && GameServer()->m_pController->GetTeamScore(m_Team) > 1) )
                 return;
 
         char aBuf[512];

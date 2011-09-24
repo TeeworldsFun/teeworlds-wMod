@@ -149,7 +149,7 @@ public:
 	int GetNumPlayer(int Team);
 	int GetTeamScore(int Team) { return m_aTeamscore[Team]; };
 	int GetRoundStartTick() { return m_RoundStartTick; };
-	CPlayer *m_pCaptain[2];
+	int m_Captain[2];
 };
 
 #endif

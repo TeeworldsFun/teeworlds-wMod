@@ -65,7 +65,7 @@ void CProjectile::Tick()
 	float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
 	vec2 PrevPos = GetPos(Pt);
 	vec2 CurPos = GetPos(Ct);
-	int Collide = GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0);
+	int Collide = distance(CurPos, PrevPos) ? GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0) : GameServer()->Collision()->CheckPoint(CurPos);
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
 	CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
 	if ( m_Type == WEAPON_RIFLE && !TargetChr )

@@ -8,17 +8,21 @@
 class CLaserWall : public CEntity
 {
 public:
-	CLaserWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner);
+	CLaserWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner, bool Double);
+	~CLaserWall();
 
-	virtual void Reset();
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
+	virtual void CreateDouble();
 
 	int m_StartTick;
+	bool m_Destroy;
 private:
 	vec2 m_From;
 	int m_Owner;
 	int m_Killed;
+	bool m_Double;
+	CLaserWall *m_pDouble;
 };
 
 #endif

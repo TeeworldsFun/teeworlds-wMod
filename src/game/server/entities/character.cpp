@@ -59,6 +59,14 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 
 CCharacter::~CCharacter()
 {
+	for ( int i = 0; i < 3; i++ )
+	{
+		if (m_LaserWall[i] != 0)
+		{
+			delete m_LaserWall[i];
+			m_LaserWall[i] = 0;
+		}
+	}
 	if ( m_AuraProtect[0] != 0 )
 	{
 		for ( int i = 0; i < 12; i++ )
@@ -103,7 +111,10 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_Protect = Server()->Tick();
 	m_AuraProtect[0] = 0;
 	m_AuraCaptain[0] = 0;
-	m_LaserWall = 0;
+	m_LaserWall[0] = 0;
+	m_LaserWall[1] = 0;
+	m_LaserWall[2] = 0;
+	m_NumLaserWall = 0;
 
 	GameServer()->m_World.InsertEntity(this);
 	m_Alive = true;
@@ -330,7 +341,7 @@ void CCharacter::FireWeapon()
 
 	bool sound = false;
 
-	if ( Server()->Tick() >= m_SoundReloadStart+(Server()->TickSpeed()*150)/1000 )
+	if ( Server()->Tick() >= m_SoundReloadStart+(Server()->TickSpeed()*125)/1000 )
 	{
 		m_SoundReloadStart = Server()->Tick();
 		sound = true;
@@ -386,13 +397,24 @@ void CCharacter::FireWeapon()
 			}
 			else if ( Race == ENGINEER )
 			{
-				if (!m_LaserWall && m_pPlayer->m_NumLaserWall < 3)
-					m_LaserWall = new CLaserWall(GameWorld(), m_Pos, m_pPlayer->GetCID());
-				else if ( m_LaserWall )
+				if ( m_NumLaserWall < 3 )
 				{
-					m_LaserWall->m_Pos = m_Pos;
-					m_LaserWall->m_StartTick = Server()->Tick();
-					m_LaserWall = 0;
+					for (int i = 0; i < 3; i++)
+					{
+						if ( m_LaserWall[i] == 0 )
+						{
+							m_LaserWall[i] = new CLaserWall(GameWorld(), m_Pos, m_pPlayer->GetCID(), false);
+							break;
+						}
+						else if (m_LaserWall[i]->m_StartTick == 0)
+						{
+							m_LaserWall[i]->m_Pos = m_Pos;
+							m_LaserWall[i]->m_StartTick = Server()->Tick();
+							m_LaserWall[i]->CreateDouble();
+							m_NumLaserWall++;
+							break;
+						}
+					}
 				}
 			}
 			else if ( Race == ORC )
@@ -401,18 +423,7 @@ void CCharacter::FireWeapon()
 			}
 			else if ( Race == MINER )
 			{
-				GameServer()->CreateExplosion(m_Pos + (Direction * -1), m_pPlayer->GetCID(), m_ActiveWeapon, true, false);
-				float Radius = 135.0f;
-				float InnerRadius = 48.0f;
-				vec2 Diff = m_Pos - (m_Pos + (Direction * -1));
-				vec2 ForceDir(0,1);
-				float l = length(Diff);
-				if(l)
-					ForceDir = normalize(Diff);
-				l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
-				float Dmg = 6 * l;
-				if((int)Dmg)
-					TakeDamage(ForceDir*Dmg*2, 0, m_pPlayer->GetCID(), m_ActiveWeapon);
+				GameServer()->CreateExplosion(m_Pos + (Direction * -1), m_pPlayer->GetCID(), m_ActiveWeapon, false, false);
 			}
 
 		} break;
@@ -768,7 +779,7 @@ void CCharacter::FireWeapon()
 		{
 			if ( Race == ORC )
 			{
-				new CLaser(GameWorld(), m_Pos, Direction, 500, m_pPlayer->GetCID());
+				new CLaser(GameWorld(), m_Pos, Direction, 600, m_pPlayer->GetCID());
 				m_ReloadTimer = 1;
 			}
 			else if ( Race == MINER )
@@ -835,7 +846,7 @@ void CCharacter::FireWeapon()
 	{
 		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 * 7.5f);
 		if ( Race == ORC )
-			m_ReloadTimer += 175 * Server()->TickSpeed() / 1000;
+			m_ReloadTimer += 125 * Server()->TickSpeed() / 1000;
 	}
 
 	GameServer()->m_pStatistiques->AddFire(m_pPlayer->GetSID());
@@ -895,62 +906,7 @@ void CCharacter::HandleWeapons()
 	// fire Weapon, if wanted
 	FireWeapon();
 
-	if( (m_pPlayer->m_Race == WARRIOR || m_pPlayer->m_Race == ORC) && m_ActiveWeapon == WEAPON_HAMMER && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) && m_LatestInput.m_Fire&1 )
-	{
-		if ((Server()->Tick() - m_HealthRegenStart) >= 350 * Server()->TickSpeed() / 1000)
-		{
-			if (m_Armor > 0)
-				m_Armor--;
-		        else
-				m_Health--;
-			if (m_Health <= 0)
-				Die(m_pPlayer->GetCID(), WEAPON_WORLD);
-
-			m_HealthRegenStart = Server()->Tick();
-		}
-	}
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(LIFE_ARMOR_CRAZY) )
-	{
-		if ( (Server()->Tick() - m_HealthRegenStart) >= 150 * Server()->TickSpeed() / 1000 )
-		{
-			if ( m_HealthIncrase == true )
-			{
-	        		if (m_Health < 10)
-		        	    m_Health++;
-		        	else if (m_Armor < 10)
-		        	    m_Armor++;
-					
-				if (m_Armor == 10)
-					m_HealthIncrase = false;
-			}
-			else
-			{
-				if (m_Armor > 0)
-		           		m_Armor--;
-		        	else if (m_Health > 1)
-		            		m_Health--;
-
-				if (m_Health == 1)
-					m_HealthIncrase = true;
-			}
-
-			m_HealthRegenStart = Server()->Tick();
-		}
-	}
-	else if ( m_ActiveWeapon != WEAPON_NINJA && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) )
-	{
-		if ( (Server()->Tick() - m_HealthRegenStart) >= 150 * Server()->TickSpeed() / 1000 )
-		{
-	        	if (m_Health < 10)
-		            m_Health++;
-		        else if (m_Armor < 10)
-		            m_Armor++;
-
-			m_HealthRegenStart = Server()->Tick();
-		}
-	}
-
-	if ( m_ActiveWeapon != WEAPON_NINJA && m_ActiveWeapon != WEAPON_HAMMER && !(m_LatestInput.m_Fire&1))
+	if ( m_aWeapons[m_ActiveWeapon].m_Ammo >= 0 && !(m_LatestInput.m_Fire&1))
 	{
 		if (m_ActiveWeapon != WEAPON_GUN && (Server()->Tick() - m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart) >= 250 * Server()->TickSpeed() / 1000 && m_aWeapons[m_ActiveWeapon].m_Ammo < 20)
 		{
@@ -1106,6 +1062,16 @@ void CCharacter::Tick()
 		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 	}
 
+	for ( int i = 0; i < 3; i++ )
+	{
+		if (m_LaserWall[i] != 0 && m_LaserWall[i]->m_Destroy)
+		{
+			delete m_LaserWall[i];
+			m_LaserWall[i] = 0;
+			m_NumLaserWall--;
+		}
+	}
+
 	if (!m_AuraProtect[0] && (m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())))
 	{
 		for ( int i = 0; i < 12; i++ )
@@ -1121,17 +1087,72 @@ void CCharacter::Tick()
 
 	if ( !m_AuraCaptain[0] )
 	{
-		if ((GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))
+		if ((m_pPlayer->GetCID() == GameServer()->m_pController->m_Captain[0] || m_pPlayer->GetCID() == GameServer()->m_pController->m_Captain[1]))
 		{
 				for ( int i = 0; i < 3; i++ )
 					m_AuraCaptain[i] = new CAura(&(GameServer()->m_World), m_pPlayer->GetCID(), i * 120, 45, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
 		}
 	}
-	else if (!(GetPlayer() == GameServer()->m_pController->m_pCaptain[0] || GetPlayer() == GameServer()->m_pController->m_pCaptain[1]))
+	else if (!(m_pPlayer->GetCID() == GameServer()->m_pController->m_Captain[0] || m_pPlayer->GetCID() == GameServer()->m_pController->m_Captain[1]))
 	{
 		for ( int i = 0; i < 3; i++ )
 			delete m_AuraCaptain[i];
 		m_AuraCaptain[0] = 0;
+	}
+
+	if( m_ActiveWeapon == WEAPON_HAMMER && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) && m_LatestInput.m_Fire&1 )
+	{
+		if ((Server()->Tick() - m_HealthRegenStart) >= 350 * Server()->TickSpeed() / 1000)
+		{
+			if (m_Armor > 0)
+				m_Armor--;
+		        else
+				m_Health--;
+			if (m_Health <= 0)
+				Die(m_pPlayer->GetCID(), WEAPON_WORLD);
+
+			m_HealthRegenStart = Server()->Tick();
+		}
+	}
+	else if ( GameServer()->m_pEventsGame->IsActualEvent(LIFE_ARMOR_CRAZY) )
+	{
+		if ( (Server()->Tick() - m_HealthRegenStart) >= 150 * Server()->TickSpeed() / 1000 )
+		{
+			if ( m_HealthIncrase == true )
+			{
+	        		if (m_Health < 10)
+		        	    m_Health++;
+		        	else if (m_Armor < 10)
+		        	    m_Armor++;
+					
+				if (m_Armor == 10)
+					m_HealthIncrase = false;
+			}
+			else
+			{
+				if (m_Armor > 0)
+		           		m_Armor--;
+		        	else if (m_Health > 1)
+		            		m_Health--;
+
+				if (m_Health == 1)
+					m_HealthIncrase = true;
+			}
+
+			m_HealthRegenStart = Server()->Tick();
+		}
+	}
+	else if ( m_ActiveWeapon != WEAPON_NINJA && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) )
+	{
+		if ( (Server()->Tick() - m_HealthRegenStart) >= 150 * Server()->TickSpeed() / 1000 )
+		{
+	        	if (m_Health < 10)
+		            m_Health++;
+		        else if (m_Armor < 10)
+		            m_Armor++;
+
+			m_HealthRegenStart = Server()->Tick();
+		}
 	}
 
 	// handle Weapons
@@ -1268,6 +1289,14 @@ void CCharacter::Die(int Killer, int Weapon)
 	m_pPlayer->m_DieTick = Server()->Tick();
 
 	m_Alive = false;
+	for ( int i = 0; i < 3; i++ )
+	{
+		if (m_LaserWall[i] != 0)
+		{
+			delete m_LaserWall[i];
+			m_LaserWall[i] = 0;
+		}
+	}
 	if ( m_AuraProtect[0] != 0 )
 	{
 		for ( int i = 0; i < 12; i++ )
