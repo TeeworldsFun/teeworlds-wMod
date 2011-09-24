@@ -5,6 +5,15 @@
 #include "kernel.h"
 #include "message.h"
 
+enum
+{
+	AUTHED_NO=0,
+	AUTHED_MOD,
+	AUTHED_ADMIN,
+
+	MAX_RCONCMD_SEND=16,
+};
+
 class IServer : public IInterface
 {
 	MACRO_INTERFACE("server", 0)

@@ -49,15 +49,6 @@ public:
 	class IConsole *Console() { return m_pConsole; }
 	class IStorage *Storage() { return m_pStorage; }
 
-	enum
-	{
-		AUTHED_NO=0,
-		AUTHED_MOD,
-		AUTHED_ADMIN,
-
-		MAX_RCONCMD_SEND=16,
-	};
-
 	class CClient
 	{
 	public:
