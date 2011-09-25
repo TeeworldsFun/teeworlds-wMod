@@ -45,6 +45,8 @@ void CPlasma::Tick()
 	if(Server()->Tick() > m_EvalTick+(Server()->TickSpeed()*100)/1000.0f)
 		return;
 
+	m_EvalTick = Server()->Tick();
+
 	if(m_Energy < 0)
 	{
 		GameServer()->m_World.DestroyEntity(this);
