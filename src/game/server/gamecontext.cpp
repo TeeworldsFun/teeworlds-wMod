@@ -920,6 +920,12 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		char aCmd[VOTE_CMD_LENGTH] = {0};
 		CNetMsg_Cl_CallVote *pMsg = (CNetMsg_Cl_CallVote *)pRawMsg;
 		const char *pReason = pMsg->m_Reason[0] ? pMsg->m_Reason : "No reason given";
+		
+		if(g_Config.m_SvForceVoteReason && !pMsg->m_Reason[0]) //east: reason is needed
+		{
+			SendChatTarget(ClientID, "Give a reason!");
+			return;
+		}
 
 		if(str_comp_nocase(pMsg->m_Type, "option") == 0)
 		{
@@ -1057,6 +1063,19 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			CNetMsg_Cl_Vote *pMsg = (CNetMsg_Cl_Vote *)pRawMsg;
 			if(!pMsg->m_Vote)
 				return;
+			
+			
+			if(g_Config.m_SvShowPersonalVote)
+			{
+				char aBuf[128];
+
+				if(pMsg->m_Vote < 0) //no
+					str_format(aBuf, sizeof(aBuf), "%s voted no", Server()->ClientName(pPlayer->GetCID()));
+				else
+					str_format(aBuf, sizeof(aBuf), "%s voted yes", Server()->ClientName(pPlayer->GetCID()));
+			
+				SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+			}
 
 			pPlayer->m_Vote = pMsg->m_Vote;
 			pPlayer->m_VotePos = ++m_VotePos;
