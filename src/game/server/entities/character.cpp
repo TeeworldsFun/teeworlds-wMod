@@ -12,6 +12,7 @@
 #include "projectile.h"
 #include "aura.h"
 #include "laserwall.h"
+#include "plasma.h"
 
 //input count
 struct CInputCount
@@ -777,6 +778,36 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_RIFLE:
 		{
+			if ( Race == WARRIOR )
+			{
+				int ShotSpread = 2;
+
+				for(int i = -ShotSpread; i <= ShotSpread; ++i)
+				{
+					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+					float a = GetAngle(Direction);
+					a += Spreading[i+2];
+					float v = 1-(absolute(i)/(float)ShotSpread);
+					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+
+					new CLaser(GameWorld(), m_Pos, vec2(cosf(a), sinf(a))*Speed, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
+				}
+			}
+			else if ( Race == ENGINEER )
+			{
+				int ShotSpread = 2;
+
+				for(int i = -ShotSpread; i <= ShotSpread; ++i)
+				{
+					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+					float a = GetAngle(Direction);
+					a += Spreading[i+2];
+					float v = 1-(absolute(i)/(float)ShotSpread);
+					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+
+					new CPlasma(GameWorld(), m_Pos, vec2(cosf(a), sinf(a))*Speed, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
+				}
+			}
 			if ( Race == ORC )
 			{
 				new CLaser(GameWorld(), m_Pos, Direction, 600, m_pPlayer->GetCID());
@@ -801,21 +832,6 @@ void CCharacter::FireWeapon()
 					Msg.AddInt(((int *)&p)[i]);
 
 				Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
-			}
-			else
-			{
-				int ShotSpread = 2;
-
-				for(int i = -ShotSpread; i <= ShotSpread; ++i)
-				{
-					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
-					float a = GetAngle(Direction);
-					a += Spreading[i+2];
-					float v = 1-(absolute(i)/(float)ShotSpread);
-					float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
-
-					new CLaser(GameWorld(), m_Pos, vec2(cosf(a), sinf(a))*Speed, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
-				}
 			}
 
 			if (sound)
