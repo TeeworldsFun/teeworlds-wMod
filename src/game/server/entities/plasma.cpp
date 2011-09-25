@@ -13,6 +13,7 @@ CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEn
 	m_Energy = StartEnergy;
 	m_Dir = Direction;
 	m_Bounces = 0;
+	m_EvalTick = 0;
 	GameWorld()->InsertEntity(this);
 	Tick();
 }
@@ -41,6 +42,9 @@ void CPlasma::Reset()
 
 void CPlasma::Tick()
 {
+	if(Server()->Tick() > m_EvalTick+(Server()->TickSpeed()*100)/1000.0f)
+		return;
+
 	if(m_Energy < 0)
 	{
 		GameServer()->m_World.DestroyEntity(this);
@@ -48,7 +52,7 @@ void CPlasma::Tick()
 	}
 
 	vec2 To = m_Pos + m_Dir;
-	m_Energy -= distance(m_Pos, To) + GameServer()->Tuning()->m_LaserBounceCost;
+	m_Energy -= distance(m_Pos, To);
 
 	if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
 	{
@@ -67,6 +71,7 @@ void CPlasma::Tick()
 				m_Dir = normalize(TempDir);
 
 				m_Bounces++;
+				m_Energy -= GameServer()->Tuning()->m_LaserBounceCost;
 
 				if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
 					m_Energy = -1;
