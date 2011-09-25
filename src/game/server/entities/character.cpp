@@ -1429,7 +1429,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	// check for death
-	if(m_Health <= 0 || Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || ((Weapon == WEAPON_HAMMER || Weapon == WEAPON_RIFLE) && GameServer()->m_apPlayers[From]->m_Race == ORC))
+	if(m_Health <= 0 || Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || ((Weapon == WEAPON_HAMMER || Weapon == WEAPON_RIFLE) && GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->m_Race == ORC))
 	{
 		Die(From, Weapon);
 
