@@ -42,7 +42,7 @@ void CPlasma::Reset()
 
 void CPlasma::Tick()
 {
-	if(Server()->Tick() < m_EvalTick+(Server()->TickSpeed()*100)/1000.0f)
+	if(Server()->Tick() < m_EvalTick+(Server()->TickSpeed()*10)/1000.0f)
 		return;
 
 	m_EvalTick = Server()->Tick();
