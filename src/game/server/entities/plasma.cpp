@@ -42,18 +42,13 @@ void CPlasma::Reset()
 
 void CPlasma::Tick()
 {
-	/*if(Server()->Tick() < m_EvalTick+(Server()->TickSpeed()*10)/1000.0f)
-		return;
-
-	m_EvalTick = Server()->Tick();*/
-
 	if(m_Energy < 0)
 	{
 		GameServer()->m_World.DestroyEntity(this);
 		return;
 	}
 
-	vec2 To = m_Pos + m_Dir;
+	vec2 To = m_Pos + (m_Dir * m_Energy / 10);
 	m_Energy -= distance(m_Pos, To);
 
 	if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
