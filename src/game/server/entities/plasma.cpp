@@ -86,10 +86,7 @@ void CPlasma::Tick()
 	else
 	{
 		if(!HitCharacter(m_Pos, To))
-		{
 			m_Pos = To;
-			m_Energy = -1;
-		}
 	}
 }
 
