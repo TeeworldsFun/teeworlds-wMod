@@ -13,6 +13,7 @@ CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEn
 	m_Energy = StartEnergy;
 	m_Dir = Direction;
 	m_Bounces = 0;
+	m_Vel = 1;
 	GameWorld()->InsertEntity(this);
 	Tick();
 }
@@ -41,14 +42,15 @@ void CPlasma::Reset()
 
 void CPlasma::Tick()
 {
-	if(m_Energy < 0)
+	if(m_Energy < 0 || GameLayerClipped(m_Pos))
 	{
 		GameServer()->m_World.DestroyEntity(this);
 		return;
 	}
 
-	vec2 To = m_Pos + (m_Dir * 10);
+	vec2 To = m_Pos + (m_Dir * m_Vel);
 	m_Energy -= distance(m_Pos, To);
+	m_Vel++;
 
 	if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
 	{
