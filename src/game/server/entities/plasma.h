@@ -22,7 +22,7 @@ private:
 	float m_Energy;
 	int m_Bounces;
 	int m_Owner;
-	int m_Vel;
+	float m_Vel;
 };
 
 #endif

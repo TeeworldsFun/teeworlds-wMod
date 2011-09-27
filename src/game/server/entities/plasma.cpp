@@ -50,7 +50,7 @@ void CPlasma::Tick()
 
 	vec2 To = m_Pos + (m_Dir * m_Vel);
 	m_Energy -= distance(m_Pos, To);
-	m_Vel++;
+	m_Vel += 0.5f;
 
 	if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
 	{
