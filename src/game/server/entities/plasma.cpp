@@ -13,7 +13,6 @@ CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEn
 	m_Energy = StartEnergy;
 	m_Dir = Direction;
 	m_Bounces = 0;
-	m_EvalTick = 0;
 	GameWorld()->InsertEntity(this);
 	Tick();
 }
@@ -48,7 +47,7 @@ void CPlasma::Tick()
 		return;
 	}
 
-	vec2 To = m_Pos + (m_Dir * m_Energy / 10);
+	vec2 To = m_Pos + (m_Dir * (m_Energy / 10));
 	m_Energy -= distance(m_Pos, To);
 
 	if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
