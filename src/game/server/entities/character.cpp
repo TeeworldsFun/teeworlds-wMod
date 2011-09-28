@@ -417,6 +417,20 @@ void CCharacter::FireWeapon()
 						}
 					}
 				}
+				else
+				{
+					char aBuf[256] = "";
+					int Older = 0;
+					for ( int i = 0; i < 3; i++ )
+					{
+						if ( m_LaserWall[i] && (m_LaserWall[i]->m_StartTick < Older || Older == 0) )
+						{
+							Older = m_LaserWall[i]->m_StartTick;
+						}
+					}
+					str_format(aBuf, 256, "Can't build more laserwall for now, Wait %d secs !", (Older+Server()->TickSpeed()*30)-Server()->Tick());
+					GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
+				}
 			}
 			else if ( Race == ORC )
 			{
