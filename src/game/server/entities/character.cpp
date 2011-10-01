@@ -428,7 +428,7 @@ void CCharacter::FireWeapon()
 							Older = m_LaserWall[i]->m_StartTick;
 						}
 					}
-					str_format(aBuf, 256, "Can't build more laserwall for now, Wait %d secs !", (Older+Server()->TickSpeed()*30)-Server()->Tick());
+					str_format(aBuf, 256, "Can't build more laserwall for now, Wait %d secs !", ((Older+Server()->TickSpeed()*30)-Server()->Tick())/Server()->TickSpeed());
 					GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
 				}
 			}
@@ -870,7 +870,11 @@ void CCharacter::FireWeapon()
 	m_AttackTick = Server()->Tick();
 
 	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && !GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO) && ( Race != ORC || m_ActiveWeapon != WEAPON_RIFLE ) ) // -1 == unlimited
+	{
 		m_aWeapons[m_ActiveWeapon].m_Ammo--;
+		if ( Race == ORC )
+			m_aWeapons[m_ActiveWeapon].m_Ammo--;
+	}
 
 	if(!m_ReloadTimer)
 	{
@@ -1130,7 +1134,7 @@ void CCharacter::Tick()
 		m_AuraCaptain[0] = 0;
 	}
 
-	if( m_ActiveWeapon == WEAPON_HAMMER && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) && m_LatestInput.m_Fire&1 )
+	if( m_ActiveWeapon == WEAPON_HAMMER && (!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || m_pPlayer->m_Race == WARRIOR) && m_LatestInput.m_Fire&1 )
 	{
 		if ((Server()->Tick() - m_HealthRegenStart) >= 350 * Server()->TickSpeed() / 1000)
 		{
@@ -1400,7 +1404,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			return false;
 		}
 	}
-	else if ( Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) && m_pPlayer->m_Race == WARRIOR)
+	else if ( Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && m_pPlayer->m_Race == WARRIOR)
 		return false;
 	else if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
 		Dmg = min(1, Dmg/2);

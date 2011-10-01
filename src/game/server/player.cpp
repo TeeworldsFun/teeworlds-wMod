@@ -135,7 +135,10 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Local = 0;
 	pPlayerInfo->m_ClientID = m_ClientID;
 	pPlayerInfo->m_Score = m_Score;
-	pPlayerInfo->m_Team = m_Team;
+	if ( GameServer()->m_pEventsGame->GetActualEventTeam() == ANONYMOUS && SnappingClient != m_ClientID )
+		pPlayerInfo->m_Team = TEAM_SPECTATORS;
+	else
+		pPlayerInfo->m_Team = m_Team;
 
 	if(m_ClientID == SnappingClient)
 		pPlayerInfo->m_Local = 1;

@@ -45,6 +45,7 @@ void CEvent::Tick()
 		m_ActualEvent[0] = NewEvent;
 		m_StartEvent[0] = Server()->Tick();
 		SetTune();
+		m_LastSend = Server()->Tick() - Server()->TickSpeed()*2;
 	}
 	if ( m_TwoEvent && (Elapsed[1] >= 150 * Server()->TickSpeed() || m_ActualEvent[1] == -1) )
 	{
@@ -54,6 +55,7 @@ void CEvent::Tick()
 		m_ActualEvent[1] = NewEvent;
 		m_StartEvent[1] = Server()->Tick();
 		SetTune();
+		m_LastSend = Server()->Tick() - Server()->TickSpeed()*2;
 	}
 
 	char Text[256] = "";
@@ -228,6 +230,8 @@ void CEvent::Tick()
 			m_StartEventTeam = Server()->Tick();
 			if ( NewEvent == TEE_VS_ZOMBIE )
 				Controller()->EndRound();
+
+			m_LastSend = Server()->Tick() - Server()->TickSpeed()*2;
 		}
 		char Temp[256] = "";
 		switch (m_ActualEventTeam)
@@ -243,6 +247,9 @@ void CEvent::Tick()
 				break;
 			case CAN_KILL:
 				str_format(Temp, 256, "\nEvent Team : Can kill teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+				break;
+			case ANONYMOUS:
+				str_format(Temp, 256, "\nEvent Team : All are anonymous ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 				break;
 			case T_SURVIVOR:
 				str_format(Temp, 256, "\nEvent Team : Survivor ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
