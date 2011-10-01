@@ -824,8 +824,8 @@ void CCharacter::FireWeapon()
 			}
 			if ( Race == ORC )
 			{
-				new CLaser(GameWorld(), m_Pos, Direction, 600, m_pPlayer->GetCID());
-				m_ReloadTimer = 1;
+				new CLaser(GameWorld(), m_Pos, Direction, 500, m_pPlayer->GetCID());
+				m_ReloadTimer = 50 * Server()->TickSpeed() / 1000;
 			}
 			else if ( Race == MINER )
 			{
@@ -1407,7 +1407,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	else if ( Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && m_pPlayer->m_Race == WARRIOR)
 		return false;
 	else if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
-		Dmg = min(1, Dmg/2);
+		Dmg = max(1, Dmg/2);
 
 	m_DamageTaken++;
 
