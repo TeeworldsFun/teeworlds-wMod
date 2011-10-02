@@ -392,6 +392,10 @@ int CPlayer::HandleCamping()
 		if(m_CampTick <= Server()->Tick() + Server()->TickSpeed() * AntiCamperTime/2 && m_CampTick != -1 && !m_SentCampMsg)
 		{
 			GameServer()->SendBroadcast("Stop camping or you will die...", m_ClientID);
+			m_BroadcastTick = Server()->Tick();
+			GameServer()->SendChatTarget(m_ClientID, "Stop camping or you will die...");
+			GameServer()->SendChatTarget(m_ClientID, "Stop camping or you will die...");
+			GameServer()->SendChatTarget(m_ClientID, "Stop camping or you will die...");
 			m_SentCampMsg = true;
 			return -1;
 		}
