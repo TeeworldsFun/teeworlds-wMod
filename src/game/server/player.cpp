@@ -47,6 +47,8 @@ void CPlayer::Tick()
 
 	Server()->SetClientScore(m_ClientID, m_Score);
 
+	HandleCamping();
+
 	// do latency stuff
 	{
 		IServer::CClientInfo Info;
@@ -358,3 +360,56 @@ void CPlayer::TryRespawn()
 	m_pCharacter->Spawn(this, SpawnPos);
 	GameServer()->CreatePlayerSpawn(SpawnPos);
 }
+
+int CPlayer::HandleCamping()
+{
+	if(!m_pCharacter)
+		return 0;
+
+	if(g_Config.m_SvAnticamper && !GameServer()->m_World.m_Paused)
+	{
+		int AntiCamperTime = 10;
+
+		if(m_CampTick == -1)
+		{
+			m_CampPos = m_pCharacter->m_Pos;
+			m_CampTick = Server()->Tick() + Server()->TickSpeed() * AntiCamperTime;
+		}
+		else if(m_PlayerFlags&PLAYERFLAG_CHATTING)
+		{
+			m_CampTick++;
+			m_SentCampMsg = false;
+		}
+
+		//if player is moving/moved...
+		if((m_CampPos.x - m_pCharacter->m_Pos.x >= 100.0f || m_CampPos.x - m_pCharacter->m_Pos.x <= -100.0f)
+		|| (m_CampPos.y - m_pCharacter->m_Pos.y >= 100.0f || m_CampPos.y - m_pCharacter->m_Pos.y <= -100.0f))
+		{
+			m_CampTick = -1;
+		}
+
+		//warning if player stayed too long in a place...
+		if(m_CampTick <= Server()->Tick() + Server()->TickSpeed() * AntiCamperTime/2 && m_CampTick != -1 && !m_SentCampMsg)
+		{
+			GameServer()->SendBroadcast("Stop camping or you will die...", m_ClientID);
+			m_SentCampMsg = true;
+			return -1;
+		}
+
+		//Kill him
+		if(m_CampTick <= Server()->Tick() && m_CampTick != -1)
+		{
+			m_pCharacter->Die(m_ClientID, WEAPON_WORLD);
+			m_CampTick = -1;
+			m_SentCampMsg = false;
+			return -2;
+		}
+	}
+	else
+	{
+		m_CampTick = -1;
+		m_SentCampMsg = false;
+	}
+	return 0;
+}
+

@@ -106,6 +106,12 @@ public:
 	unsigned long m_level;
 	int m_BroadcastTick;
 	int m_Race;
+
+	//Anticamper
+	int HandleCamping();
+	int m_CampTick;
+	vec2 m_CampPos;
+	bool m_SentCampMsg;
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;

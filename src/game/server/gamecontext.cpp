@@ -920,12 +920,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		char aCmd[VOTE_CMD_LENGTH] = {0};
 		CNetMsg_Cl_CallVote *pMsg = (CNetMsg_Cl_CallVote *)pRawMsg;
 		const char *pReason = pMsg->m_Reason[0] ? pMsg->m_Reason : "No reason given";
-		
-		if(g_Config.m_SvForceVoteReason && !pMsg->m_Reason[0]) //east: reason is needed
-		{
-			SendChatTarget(ClientID, "Give a reason!");
-			return;
-		}
 
 		if(str_comp_nocase(pMsg->m_Type, "option") == 0)
 		{
@@ -959,7 +953,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 			}
 
-			if(str_comp_nocase(pReason, "No reason given") == 0 || str_length(pReason) < 3)
+			if(g_Config.m_SvForceVoteReason && (str_comp_nocase(pReason, "No reason given") == 0 || str_length(pReason) < 3))
 			{
 				SendChatTarget(ClientID, "Server does not allow voting to kick players without reason");
 				return;
