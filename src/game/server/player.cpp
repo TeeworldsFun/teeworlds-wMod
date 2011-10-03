@@ -368,14 +368,14 @@ int CPlayer::HandleCamping()
 
 	if(g_Config.m_SvAnticamper && !GameServer()->m_World.m_Paused)
 	{
-		int AntiCamperTime = 10;
+		int AntiCamperTime = 15;
 
 		if(m_CampTick == -1)
 		{
 			m_CampPos = m_pCharacter->m_Pos;
 			m_CampTick = Server()->Tick() + Server()->TickSpeed() * AntiCamperTime;
 		}
-		else if(m_PlayerFlags&PLAYERFLAG_CHATTING)
+		else if(m_PlayerFlags&PLAYERFLAG_CHATTING || m_PlayerFlags&PLAYERFLAG_IN_MENU)
 		{
 			m_CampTick++;
 			m_SentCampMsg = false;
@@ -386,6 +386,7 @@ int CPlayer::HandleCamping()
 		|| (m_CampPos.y - m_pCharacter->m_Pos.y >= 100.0f || m_CampPos.y - m_pCharacter->m_Pos.y <= -100.0f))
 		{
 			m_CampTick = -1;
+			m_SentCampMsg = false;
 		}
 
 		//warning if player stayed too long in a place...

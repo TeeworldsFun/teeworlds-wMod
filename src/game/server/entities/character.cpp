@@ -869,7 +869,7 @@ void CCharacter::FireWeapon()
 
 	m_AttackTick = Server()->Tick();
 
-	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && !GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO) && ( Race != ORC || m_ActiveWeapon != WEAPON_RIFLE ) ) // -1 == unlimited
+	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && (!GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && ( Race != ORC || m_ActiveWeapon != WEAPON_RIFLE ) ) // -1 == unlimited
 	{
 		m_aWeapons[m_ActiveWeapon].m_Ammo--;
 		if ( Race == ORC )
@@ -888,7 +888,7 @@ void CCharacter::FireWeapon()
 
 void CCharacter::HandleWeapons()
 {
-	if ( GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA && m_ActiveWeapon != WEAPON_NINJA)
+	if (GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA && m_ActiveWeapon != WEAPON_NINJA)
 	{
 		switch(GameServer()->m_pEventsGame->GetActualEvent())
 		{
@@ -920,7 +920,7 @@ void CCharacter::HandleWeapons()
 				break;
 		}
 	}
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) )
+	else if ( GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) && m_ActiveWeapon != WEAPON_NINJA )
 	{
 		if ( m_aWeapons[WEAPON_RIFLE].m_Got == false )
 			GiveWeapon(WEAPON_RIFLE, 20);
@@ -940,7 +940,7 @@ void CCharacter::HandleWeapons()
 	// fire Weapon, if wanted
 	FireWeapon();
 
-	if ( m_aWeapons[m_ActiveWeapon].m_Ammo >= 0 && !(m_LatestInput.m_Fire&1))
+	if ( m_aWeapons[m_ActiveWeapon].m_Ammo >= 0 && !(m_LatestInput.m_Fire&1) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) )
 	{
 		if (m_ActiveWeapon != WEAPON_GUN && (Server()->Tick() - m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart) >= 250 * Server()->TickSpeed() / 1000 && m_aWeapons[m_ActiveWeapon].m_Ammo < 20)
 		{

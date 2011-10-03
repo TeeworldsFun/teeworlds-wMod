@@ -140,24 +140,6 @@ void CEvent::Tick()
 			case NOTHING:
 				str_format(Temp, 256, "\nEvent 2 : Nothing. | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
 				break;
-			case HAMMER:
-				str_format(Temp, 256, "\nEvent 2 : All Get Hammer ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
-				break;
-			case GUN:
-				str_format(Temp, 256, "\nEvent 2 : All Get Gun ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
-				break;
-			case SHOTGUN:
-				str_format(Temp, 256, "\nEvent 2 : All Get Shotgun ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
-				break;
-			case GRENADE:
-				str_format(Temp, 256, "\nEvent 2 : All Get Grenade ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
-				break;
-			case RIFLE:
-				str_format(Temp, 256, "\nEvent 2 : All Get Rifle ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
-				break;
-			case KATANA:
-				str_format(Temp, 256, "\nEvent 2 : All Get Katana ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
-				break;
 			case UNLIMITED_AMMO:
 				str_format(Temp, 256, "\nEvent 2 : All Get Unlimited Ammo ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
 				break;
@@ -172,9 +154,6 @@ void CEvent::Tick()
 				break;
 			case INSTAGIB:
 				str_format(Temp, 256, "\nEvent 2 : Mode Instagib ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
-				break;
-			case WALLSHOT:
-				str_format(Temp, 256, "\nEvent 2 : Mode WallShot ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
 				break;
 			case BULLET_PIERCING:
 				str_format(Temp, 256, "\nEvent 2 : All Bullets can pierce Tee and Tiles ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
@@ -203,8 +182,8 @@ void CEvent::Tick()
 			case WEAPON_SLOW:
 				str_format(Temp, 256, "\nEvent 2 : All bullets are slow ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
 				break;
-			case ALL:
-				str_format(Temp, 256, "\nEvent 2 : All events are active ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+			default:
+				str_format(Temp, 256, "\nEvent 2 : Error ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
 				break;
 		}
 		str_append(Text, Temp, 256);
@@ -221,7 +200,7 @@ void CEvent::Tick()
 				Controller()->EndRound();
 			}
 			int NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING;
-			while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0) );
+			while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0) );
 
 			if ( m_ActualEventTeam >= STEAL_TEE )
 				Controller()->EndRound();
@@ -449,7 +428,7 @@ void CEvent::NextEventTeam()
 		Controller()->EndRound();
 	}
 
-	if ( (m_ActualEventTeam + 1 >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0) || m_ActualEventTeam + 1 >= T_END )
+	if ( (m_ActualEventTeam + 1 >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0) || m_ActualEventTeam + 1 >= T_END )
 		m_ActualEventTeam = 0;
 	else if ( m_ActualEventTeam + 1 < T_END )
 		m_ActualEventTeam++;
@@ -470,7 +449,7 @@ void CEvent::NextRandomEventTeam()
 	}
 
 	int NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING;
-	while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0) );
+	while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0) );
 
 	m_ActualEventTeam = NewEvent;
 	m_StartEventTeam = Server()->Tick();
@@ -489,9 +468,9 @@ bool CEvent::SetEventTeam(int event)
 			Controller()->EndRound();
 		}
 
-		if (event >= STEAL_TEE && str_comp(g_Config.m_SvGametype, "ctf") == 0)
+		if (event >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0)
 		{
-			GameServer()->SendChatTarget(-1, "The event Steal tee and Tee vs Zombies can't be used in wCTF");
+			GameServer()->SendChatTarget(-1, "The event Survivor and Steal tee and Tee vs Zombies can't be used in wCTF");
 			return false;
 		}
 
