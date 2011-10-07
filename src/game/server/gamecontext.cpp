@@ -582,7 +582,10 @@ void CGameContext::OnClientEnter(int ClientID)
 	//world.insert_entity(&players[client_id]);
 	m_apPlayers[ClientID]->Respawn();
 	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s =D", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
+	if ( m_pEventsGame->GetActualEventTeam() != ANONYMOUS )
+		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s =D", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
+	else
+		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the game =D", Server()->ClientName(ClientID));
 	SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d", ClientID, Server()->ClientName(ClientID), m_apPlayers[ClientID]->GetTeam());
