@@ -42,7 +42,7 @@ void CLaserWall::Tick()
 	vec2 At;
 	CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
 	CCharacter *pHit = GameServer()->m_World.IntersectCharacter(m_Pos, m_From, 0.f, At, pOwnerChar);
-	if(!pHit)
+	if(!pHit || GameServer()->m_pController->IsFriendlyFire(m_Owner, pHit->GetPlayer()->GetCID()))
 		return;
 
 	pHit->Die(m_Owner, WEAPON_HAMMER);

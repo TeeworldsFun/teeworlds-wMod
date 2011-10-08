@@ -29,6 +29,8 @@
 #include "register.h"
 #include "server.h"
 
+#include <csignal>
+
 #if defined(CONF_FAMILY_WINDOWS)
 	#define _WIN32_WINNT 0x0501
 	#define WIN32_LEAN_AND_MEAN
@@ -1220,7 +1222,7 @@ int CServer::Run()
 			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
 		}
 
-		while(m_RunServer)
+		while(m_RunServer > 0)
 		{
 			int64 t = time_get();
 			int NewTicks = 0;
@@ -1331,7 +1333,12 @@ int CServer::Run()
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
-			m_NetServer.Drop(i, "Server shutdown");
+		{
+			if ( m_RunServer != -1 )
+				m_NetServer.Drop(i, "Server shutdown");
+			else
+				m_NetServer.Drop(i, "Server is updating ... And restart quickly ;)");
+		}
 
 		m_Econ.Shutdown();
 	}
@@ -1670,6 +1677,23 @@ void CServer::SnapSetStaticsize(int ItemType, int Size)
 
 static CServer *CreateServer() { return new CServer(); }
 
+CServer *Server = 0;
+void OnShutdown(int sig)
+{
+	if (Server)
+		Server->m_RunServer = 0;
+	else
+		exit(0);
+}
+
+void OnUpdate(int sig)
+{
+	if (Server)
+		Server->m_RunServer = -1;
+	else
+		exit(0);
+}
+
 int main(int argc, const char **argv) // ignore_convention
 {
 #if defined(CONF_FAMILY_WINDOWS)
@@ -1686,6 +1710,7 @@ int main(int argc, const char **argv) // ignore_convention
 	srand(time_timestamp());
 	CServer *pServer = CreateServer();
 	IKernel *pKernel = IKernel::Create();
+	Server = pServer;
 
 	// create the components
 	IEngine *pEngine = CreateEngine("Teeworlds");
@@ -1737,6 +1762,11 @@ int main(int argc, const char **argv) // ignore_convention
 
 	pEngine->InitLogfile();
 
+	signal(SIGTERM, OnShutdown);
+	signal(SIGQUIT, OnShutdown);
+	signal(SIGHUP, OnShutdown);
+	signal(SIGINT, OnShutdown);
+	signal(SIGFPE, OnUpdate);
 	// run the server
 	dbg_msg("server", "starting...");
 	pServer->Run();
