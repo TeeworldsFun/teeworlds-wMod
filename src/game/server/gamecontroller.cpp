@@ -260,6 +260,9 @@ void IGameController::CycleMap()
 	if(m_RoundCount < g_Config.m_SvRoundsPerMap-1)
 		return;
 
+    if (!IsNormalEnd())
+        return;
+
 	// handle maprotation
 	const char *pMapRotation = g_Config.m_SvMaprotation;
 	const char *pCurrentMap = g_Config.m_SvMap;
@@ -405,7 +408,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 				GameServer()->SendChatTarget(-1, Text);
 			}
 		}
-		
+
 		if ( pVictim->GetPlayer()->m_PlayerFlags & PLAYERFLAG_CHATTING )
 		{
 			char Text[256] = "";
@@ -419,14 +422,14 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 			str_format(Text, 256, "%s had %d%% health and %d%% armor.", pKiller->GetRealName(), pKiller->GetCharacter()->GetPercentHealth(), pKiller->GetCharacter()->GetPercentArmor());
 			GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), Text);
 		}
-		else 
+		else
 		{
 			char Text[256] = "";
 			str_format(Text, 256, "%s had 0%% health and 0%% armor.", pKiller->GetRealName());
 			GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), Text);
 		}
 	}
-	
+
 	if ( m_pGameServer->m_pStatistiques->GetActualKill(pVictim->GetPlayer()->GetSID()) >= 5 )
 	{
 		char Text[256] = "";
@@ -461,7 +464,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 		loot->m_Pos.x = pVictim->m_Pos.x + alea.x;
 		loot->m_Pos.y = pVictim->m_Pos.y - alea.y;
 	} while (GameServer()->Collision()->CheckPoint(loot->m_Pos));
-	
+
 	loot = new CLoot(&GameServer()->m_World, POWERUP_ARMOR, 0);
 	do
 	{
@@ -583,13 +586,12 @@ void IGameController::Tick()
 		if ( (!IsNormalEnd() && Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*2) || Server()->Tick() > m_GameOverTick+Server()->TickSpeed()*10)
 
 		{
-			if (IsNormalEnd())
-				CycleMap();
+            CycleMap();
 			StartRound();
 			m_RoundCount++;
 		}
 	}
-					
+
 	// do team-balancing
 	if (IsTeamplay() && ((GameServer()->m_pEventsGame->GetActualEventTeam() < STEAL_TEE && m_UnbalancedTick != -1 && Server()->Tick() > m_UnbalancedTick+g_Config.m_SvTeambalanceTime*Server()->TickSpeed()*60) || (GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE && m_ForceDoBalance == true)))
 	{
@@ -659,7 +661,7 @@ void IGameController::Tick()
 				m_ForceBalanced = true;
 		}
 		m_UnbalancedTick = -1;
-		
+
 		if ( m_ForceDoBalance )
 			m_ForceDoBalance = false;
 	}
@@ -670,7 +672,7 @@ void IGameController::Tick()
 		{
 			if(!GameServer()->m_apPlayers[i] || !CanBeMovedOnBalance(i))
 				continue;
-			
+
 			GameServer()->m_apPlayers[i]->SetTeam(TEAM_BLUE, false);
 		}
 	}
@@ -681,7 +683,7 @@ void IGameController::Tick()
 			if ( GameServer()->m_apPlayers[i] )
 				GameServer()->m_apPlayers[i]->SetTeam(0, false);
 		}
-		
+
 		m_ForceDoBalance = false;
 	}
 
@@ -949,7 +951,7 @@ void IGameController::DoWincheck()
 						while (!GameServer()->m_apPlayers[m_Captain[TEAM_RED] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->GetTeam() != TEAM_RED);
 				}
 
-				if ((m_pGameServer->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && ((m_aTeamscore[0] == 0 && m_aTeamscore[1] > 1) || (m_aTeamscore[1] == 0 && m_aTeamscore[0] > 1))) || 
+				if ((m_pGameServer->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && ((m_aTeamscore[0] == 0 && m_aTeamscore[1] > 1) || (m_aTeamscore[1] == 0 && m_aTeamscore[0] > 1))) ||
 				     (m_pGameServer->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && ((m_aTeamscore[TEAM_BLUE] == 0 && m_aTeamscore[TEAM_RED] > 1) || Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*35)))
 				{
 					if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() == STEAL_TEE )
