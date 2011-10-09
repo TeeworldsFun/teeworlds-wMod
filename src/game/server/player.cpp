@@ -27,7 +27,9 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_TeamChangeTick = Server()->Tick();
 	m_level = 0;
 	m_BroadcastTick = 0;
-	m_Race = WARRIOR;
+    m_Race = WARRIOR;
+    for (int i = 0; i < NUM_WEAPONS; i++)
+        m_WeaponType[i] = WARRIOR;
 	str_copy(m_aRealName, "", MAX_NAME_LENGTH);
 }
 
@@ -255,7 +257,7 @@ void CPlayer::SetTeam(int Team, bool verbose)
 		if ( GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE )
 		{
 			str_format(aBuf, sizeof(aBuf), "'%s' joined the game", Server()->ClientName(m_ClientID));
-			GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);			
+			GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 		}
 		else if ( GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE )
 		{

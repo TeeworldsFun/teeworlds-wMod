@@ -87,7 +87,6 @@ private:
 		int m_Ammocost;
 		bool m_Got;
 		char m_Name[50];
-
 	} m_aWeapons[NUM_WEAPONS];
 
 	int m_ActiveWeapon;

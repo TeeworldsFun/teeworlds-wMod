@@ -2,7 +2,7 @@
 #define GAME_SERVER_STATISTIQUES_H
 
 #include <game/server/gamecontext.h>
-#include <fstream> 
+#include <fstream>
 #include <vector>
 
 enum { MAX_IP_LENGTH = 45 };
@@ -82,7 +82,7 @@ struct Stats {
 		m_rank.m_max_killing_spree = 0;
 		m_rank.m_flag_capture = 0;
 	}
-	
+
 	long m_id;
 	char m_ip[MAX_IP_LENGTH];
 	unsigned long m_name;
@@ -109,6 +109,7 @@ struct Stats {
 	unsigned long m_flag_capture;
 	unsigned long m_last_connect;
 	bool m_lock;
+    int m_Weapon[NUM_WEAPONS];
 
 	unsigned long m_start_time;
 	unsigned long m_actual_kill;
@@ -181,6 +182,7 @@ private:
 	std::vector<Stats> m_statistiques;
 	bool m_write;
 	int m_last_write;
+    int m_errors;
 
 	CGameContext *m_pGameServer;
 };

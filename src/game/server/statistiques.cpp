@@ -6,57 +6,58 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 {
 	m_pGameServer = GameServer;
 
+    m_errors = 0;
 	m_last_write = time_timestamp();
 	std::ifstream fichier("Statistiques.txt");
 	Stats stats;
-	if(fichier.is_open() && !fichier.eof())
+	if(!fichier.is_open() || fichier.eof())
+    {
+        fichier.close();
+
+        std::ofstream fichierOut("Statistiques.txt", std::ios::out);
+        if ( !fichierOut.is_open() )
+            m_write = false;
+        else
+            m_write = true;
+
+        fichier.open("Statistiques.bak", std::ifstream::in);
+        if (!fichier.is_open())
+            return;
+    }
+
+    for ( int i = 0; !fichier.eof(); i++ )
 	{
-		for ( int i = 0; true; i++ )
-		{
-			m_statistiques.push_back(stats);
-			m_statistiques[i].m_id = i;
-			fichier >> m_statistiques[i].m_ip;
-			fichier >> m_statistiques[i].m_name;
-			fichier >> m_statistiques[i].m_clan;
-			fichier >> m_statistiques[i].m_country;
-			fichier >> m_statistiques[i].m_kill;
-			fichier >> m_statistiques[i].m_dead;
-			fichier >> m_statistiques[i].m_suicide;
-			fichier >> m_statistiques[i].m_log_in;
-			fichier >> m_statistiques[i].m_fire;
-			fichier >> m_statistiques[i].m_pickup_weapon;
-			fichier >> m_statistiques[i].m_pickup_ninja;
-			fichier >> m_statistiques[i].m_change_weapon;
-			fichier >> m_statistiques[i].m_time_play;
-			fichier >> m_statistiques[i].m_message;
-			fichier >> m_statistiques[i].m_killing_spree;
-			fichier >> m_statistiques[i].m_max_killing_spree;
-			fichier >> m_statistiques[i].m_flag_capture;
-			fichier >> m_statistiques[i].m_last_connect;
-			fichier >> m_statistiques[i].m_lock;
-			fichier >> m_statistiques[i].m_upgrade.m_weapon;
-			fichier >> m_statistiques[i].m_upgrade.m_life;
-			fichier >> m_statistiques[i].m_upgrade.m_move;
-			fichier >> m_statistiques[i].m_upgrade.m_hook;
-			m_statistiques[i].m_start_time = 0;
-			m_statistiques[i].m_actual_kill = 0;
-			UpdateStat(i);
-			if ( fichier.eof() )
-	    		{
-	         		break;   
-	    		}
-		}
-		m_write = true;
+		m_statistiques.push_back(stats);
+		m_statistiques[i].m_id = i;
+		fichier >> m_statistiques[i].m_ip;
+		fichier >> m_statistiques[i].m_name;
+		fichier >> m_statistiques[i].m_clan;
+		fichier >> m_statistiques[i].m_country;
+		fichier >> m_statistiques[i].m_kill;
+		fichier >> m_statistiques[i].m_dead;
+		fichier >> m_statistiques[i].m_suicide;
+		fichier >> m_statistiques[i].m_log_in;
+		fichier >> m_statistiques[i].m_fire;
+		fichier >> m_statistiques[i].m_pickup_weapon;
+		fichier >> m_statistiques[i].m_pickup_ninja;
+		fichier >> m_statistiques[i].m_change_weapon;
+		fichier >> m_statistiques[i].m_time_play;
+		fichier >> m_statistiques[i].m_message;
+		fichier >> m_statistiques[i].m_killing_spree;
+		fichier >> m_statistiques[i].m_max_killing_spree;
+		fichier >> m_statistiques[i].m_flag_capture;
+		fichier >> m_statistiques[i].m_last_connect;
+		fichier >> m_statistiques[i].m_lock;
+		fichier >> m_statistiques[i].m_upgrade.m_weapon;
+		fichier >> m_statistiques[i].m_upgrade.m_life;
+		fichier >> m_statistiques[i].m_upgrade.m_move;
+		fichier >> m_statistiques[i].m_upgrade.m_hook;
+		m_statistiques[i].m_start_time = 0;
+		m_statistiques[i].m_actual_kill = 0;
+		UpdateStat(i);
 	}
 
-	else
-	{
-    		std::ofstream fichierOut("Statistiques.txt", std::ios::out);
-		if ( !fichierOut.is_open() )
-			m_write = false;
-		else
-			m_write = true;
-	}
+	m_write = true;
 
 	UpdateRank();
 }
@@ -73,6 +74,8 @@ void CStatistiques::Tick()
 		m_last_write = time_timestamp();
 		WriteStat();
 		UpdateRank();
+		//if ( m_errors >= 5 )
+            //m_write = false;
 	}
 }
 
@@ -322,7 +325,7 @@ public:
 
 void CStatistiques::UpdateRank()
 {
-	std::vector<Stats*> tri; 
+	std::vector<Stats*> tri;
 
 	for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
 	{
@@ -573,14 +576,21 @@ void CStatistiques::WriteStat()
 		{
 			test.close();
 			if (fs_remove("Statistiques.bak"))
+            {
+                m_errors++;
 				return;
+            }
 		}
 
-		if ( !fs_rename("Statistiques.txt", "Statistiques.bak") )
+		if ( fs_rename("Statistiques.txt", "Statistiques.bak") == 0 )
 		{
 			fs_rename("Statistiques.new", "Statistiques.txt");
 		}
+        else
+            m_errors++;
 	}
+    else
+        m_errors++;
 }
 
 void CStatistiques::ResetPartialStat(long id)

@@ -7,7 +7,7 @@
 #include "entities/character.h"
 #include "gamecontext.h"
 
-enum {WARRIOR, ENGINEER, ORC, MINER};
+enum {WARRIOR, ENGINEER, ORC, MINER, CUSTOM};
 
 // player object
 class CPlayer
@@ -106,6 +106,7 @@ public:
 	unsigned long m_level;
 	int m_BroadcastTick;
 	int m_Race;
+	int m_WeaponType[NUM_WEAPONS];
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;

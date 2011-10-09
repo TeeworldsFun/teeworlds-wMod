@@ -54,7 +54,7 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	str_copy(m_aWeapons[WEAPON_GUN].m_Name, "Gun", 50);
 	str_copy(m_aWeapons[WEAPON_SHOTGUN].m_Name, "Shotgun", 50);
 	str_copy(m_aWeapons[WEAPON_GRENADE].m_Name, "Grenade", 50);
-	str_copy(m_aWeapons[WEAPON_RIFLE].m_Name, "Laser", 50);
+	str_copy(m_aWeapons[WEAPON_RIFLE].m_Name, "Rifle", 50);
 	str_copy(m_aWeapons[WEAPON_NINJA].m_Name, "Katana", 50);
 }
 
@@ -311,7 +311,7 @@ void CCharacter::FireWeapon()
 	if(m_ReloadTimer != 0)
 		return;
 
-	const int Race = m_pPlayer->m_Race;
+	const int Race = m_pPlayer->m_WeaponType[m_ActiveWeapon];
 
 	DoWeaponSwitch();
 	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
@@ -389,7 +389,7 @@ void CCharacter::FireWeapon()
 			// if we Hit anything, we have to wait for the reload
 			if(Hits)
 				m_ReloadTimer = Server()->TickSpeed()/3;
-			
+
 			if ( Race == WARRIOR )
 			{
 				GameServer()->CreateExplosion(m_Pos, m_pPlayer->GetCID(), m_ActiveWeapon, true, false);
@@ -966,7 +966,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 			m_aWeapons[Weapon].m_Ammo += Ammo;
 
 		m_aWeapons[Weapon].m_Got = true;
-		
+
 		if ( m_aWeapons[Weapon].m_Ammo > 100 )
 			m_aWeapons[Weapon].m_Ammo = 100;
 
@@ -976,7 +976,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 			str_format(a, 256, "Ammo of the %s is : %d/%d.", m_aWeapons[Weapon].m_Name, m_aWeapons[Weapon].m_Ammo, g_pData->m_Weapons.m_aId[Weapon].m_Maxammo);
 			GameServer()->SendChatTarget(m_pPlayer->GetCID(), a);
 		}
-		
+
 		GameServer()->m_pStatistiques->AddPickUpWeapon(m_pPlayer->GetSID());
 		return true;
 	}
@@ -986,7 +986,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 bool CCharacter::GiveNinja()
 {
 	if ( !m_aWeapons[WEAPON_NINJA].m_Got || m_Ninja.m_Killed > 0 )
-	{ 
+	{
 		m_aWeapons[WEAPON_NINJA].m_Got = true;
 		m_aWeapons[WEAPON_NINJA].m_Ammo = -1;
 		m_LastWeapon = m_ActiveWeapon;
@@ -1158,7 +1158,7 @@ void CCharacter::Tick()
 		        	    m_Health++;
 		        	else if (m_Armor < 10)
 		        	    m_Armor++;
-					
+
 				if (m_Armor == 10)
 					m_HealthIncrase = false;
 			}
@@ -1354,6 +1354,10 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
+    int FromRace = -1;
+    if ( GameServer()->m_apPlayers[From] )
+        FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
+
 	if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) )
 		m_Core.m_Vel += Force;
 
@@ -1404,7 +1408,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			return false;
 		}
 	}
-	else if (Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && m_pPlayer->m_Race == WARRIOR && (!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || (GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->m_Race != WARRIOR)))
+	else if (Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && m_pPlayer->m_WeaponType[WEAPON_HAMMER] == WARRIOR && (!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || FromRace != WARRIOR))
 		return false;
 	else if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
 		Dmg = max(1, Dmg/2);
@@ -1463,7 +1467,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	// check for death
-	if(m_Health <= 0 || Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || ((Weapon == WEAPON_HAMMER || Weapon == WEAPON_RIFLE) && GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->m_Race == ORC))
+	if(m_Health <= 0 || Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || ((Weapon == WEAPON_HAMMER || Weapon == WEAPON_RIFLE) && FromRace == ORC))
 	{
 		Die(From, Weapon);
 
