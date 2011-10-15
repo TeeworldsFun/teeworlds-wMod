@@ -196,24 +196,28 @@ void CGameControllerCTF::Tick()
 					}
 					GameServer()->SendChat(-1, -2, aBuf);
 
-					GameServer()->m_pStatistiques->AddFlagCapture(F->m_pCarryingCharacter->GetPlayer()->GetSID());
-					F->m_pCarryingCharacter->GetPlayer()->m_Score = GameServer()->m_pStatistiques->GetScore(F->m_pCarryingCharacter->GetPlayer()->GetSID());
+                    if (GetNumPlayer(F->m_pCarryingCharacter->GetPlayer()->GetTeam()) > 1)
+                    {
+                        GameServer()->m_pStatistiques->AddFlagCapture(F->m_pCarryingCharacter->GetPlayer()->GetSID());
+                        F->m_pCarryingCharacter->GetPlayer()->m_Score = GameServer()->m_pStatistiques->GetScore(F->m_pCarryingCharacter->GetPlayer()->GetSID());
 
-					GameServer()->SetName(F->m_pCarryingCharacter->GetPlayer()->GetCID());
+                        GameServer()->SetName(F->m_pCarryingCharacter->GetPlayer()->GetCID());
 
-					if( GameServer()->m_pStatistiques->GetLevel(F->m_pCarryingCharacter->GetPlayer()->GetSID()) > F->m_pCarryingCharacter->GetPlayer()->m_level )
-					{
-						F->m_pCarryingCharacter->GetPlayer()->m_level = GameServer()->m_pStatistiques->GetLevel(F->m_pCarryingCharacter->GetPlayer()->GetSID());
-						char Text[256] = "";
-						str_format(Text, 256, "%s has a levelup ! He is level %ld now ! Good Game ;) !", F->m_pCarryingCharacter->GetPlayer()->GetRealName(), F->m_pCarryingCharacter->GetPlayer()->m_level);
-						GameServer()->SendChatTarget(-1, Text);
-					}
-					else
-					{
-						char Text[256] = "";
-						str_format(Text, 256, "XP : %d/%d", GameServer()->m_pStatistiques->GetXp(F->m_pCarryingCharacter->GetPlayer()->GetSID()),  F->m_pCarryingCharacter->GetPlayer()->m_level + 1);
-						GameServer()->SendChatTarget( F->m_pCarryingCharacter->GetPlayer()->GetCID(), Text);
-					}
+                        if( GameServer()->m_pStatistiques->GetLevel(F->m_pCarryingCharacter->GetPlayer()->GetSID()) > F->m_pCarryingCharacter->GetPlayer()->m_level )
+                        {
+                            F->m_pCarryingCharacter->GetPlayer()->m_level = GameServer()->m_pStatistiques->GetLevel(F->m_pCarryingCharacter->GetPlayer()->GetSID());
+                            char Text[256] = "";
+                            str_format(Text, 256, "%s has a levelup ! He is level %ld now ! Good Game ;) !", F->m_pCarryingCharacter->GetPlayer()->GetRealName(), F->m_pCarryingCharacter->GetPlayer()->m_level);
+                            GameServer()->SendChatTarget(-1, Text);
+                        }
+                        else
+                        {
+                            char Text[256] = "";
+                            str_format(Text, 256, "XP : %d/%d", GameServer()->m_pStatistiques->GetXp(F->m_pCarryingCharacter->GetPlayer()->GetSID()),  F->m_pCarryingCharacter->GetPlayer()->m_level + 1);
+                            GameServer()->SendChatTarget( F->m_pCarryingCharacter->GetPlayer()->GetCID(), Text);
+                        }
+                    }
+
 					for(int i = 0; i < 2; i++)
 						m_apFlags[i]->Reset();
 

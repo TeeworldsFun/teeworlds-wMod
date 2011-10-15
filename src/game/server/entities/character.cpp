@@ -172,6 +172,8 @@ void CCharacter::HandleNinja()
 		return;
 
 	int active_player = 0;
+    if ( GameServer()->m_pController->IsTeamplay() )
+        active_player++;
 	for ( int i = 0; i < MAX_CLIENTS; i++ )
 	{
 		if ( GameServer()->IsClientPlayer(i) && ( (GameServer()->m_pController->IsTeamplay() && GameServer()->m_apPlayers[i]->GetTeam() != m_pPlayer->GetTeam() && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS) || !GameServer()->m_pController->IsTeamplay() ) )

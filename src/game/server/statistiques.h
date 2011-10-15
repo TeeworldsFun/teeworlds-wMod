@@ -7,12 +7,31 @@
 
 enum { MAX_IP_LENGTH = 45 };
 
+struct StatWeapon {
+    bool m_auto_gun;
+    bool m_auto_hammer;
+    float m_speed;
+    int m_regeneration;
+    int m_stockage;
+    bool m_all_weapon;
+    int m_bounce;
+};
+
+struct StatLife {
+    float m_protection;
+    int m_start[2];
+    int m_regeneration;
+    int m_stockage;
+};
+
 struct Upgrade {
 	unsigned long m_money;
 	unsigned long m_weapon;
 	unsigned long m_life;
 	unsigned long m_move;
 	unsigned long m_hook;
+    StatWeapon m_stat_weapon;
+    StatLife m_stat_life;
 };
 
 struct Rank {
@@ -42,7 +61,7 @@ struct Stats {
 		m_level = 0;
 		m_xp = 0;
 		m_score = 0;
-    		m_kill = 0;
+        m_kill = 0;
 		m_dead = 0;
 		m_rapport = 0.0;
 		m_suicide = 0;
@@ -60,6 +79,8 @@ struct Stats {
 		m_actual_kill = 0;
 		m_last_connect = 0;
 		m_lock = false;
+        for ( int i = 0; i < NUM_WEAPONS; i++ )
+            m_Weapon[i] = WARRIOR;
 
 		m_upgrade.m_money = 0;
 		m_upgrade.m_weapon = 0;
@@ -69,7 +90,7 @@ struct Stats {
 
 		m_rank.m_level = 0;
 		m_rank.m_score = 0;
-    		m_rank.m_kill = 0;
+        m_rank.m_kill = 0;
 		m_rank.m_rapport = 0;
 		m_rank.m_log_in = 0;
 		m_rank.m_fire = 0;
@@ -151,16 +172,60 @@ public:
 	inline void AddPickUpWeapon(long id) { if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_pickup_weapon++; }
 	inline void AddPickUpNinja(long id) { if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_pickup_ninja++; }
 	inline void AddChangeWeapon(long id) { if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_change_weapon++; }
-	inline void SetStartPlay(long id) { m_statistiques[id].m_start_time = time(NULL); if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_log_in++; }
-	inline void SetStopPlay(long id) { m_statistiques[id].m_last_connect = time(NULL); if ( m_statistiques[id].m_lock ) { m_statistiques[id].m_start_time = 0; return; } AddKillingSpree(id); UpdateStat(id); m_statistiques[id].m_start_time = 0;}
+	inline void SetStartPlay(long id, int ClientID) { for (int i = 0; i < NUM_WEAPONS; i++) {GameServer()->m_apPlayers[ClientID]->m_WeaponType[i] = m_statistiques[id].m_Weapon[i];} m_statistiques[id].m_start_time = time(NULL); if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_log_in++; }
+	inline void SetStopPlay(long id, int ClientID) { for (int i = 0; i < NUM_WEAPONS; i++) {m_statistiques[id].m_Weapon[i] = GameServer()->m_apPlayers[ClientID]->m_WeaponType[i];} m_statistiques[id].m_last_connect = time(NULL); if ( m_statistiques[id].m_lock ) { m_statistiques[id].m_start_time = 0; return; } AddKillingSpree(id); UpdateStat(id); m_statistiques[id].m_start_time = 0;}
 	inline void AddMessage(long id) { if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_message++; }
 	inline void AddFlagCapture(long id) { if ( m_statistiques[id].m_lock ) { return; } m_statistiques[id].m_flag_capture++; }
 	inline bool Lock(long id) { if ( m_statistiques[id].m_lock ) { m_statistiques[id].m_lock = false; return false; } else { m_statistiques[id].m_lock = true; return true; } }
 
-	inline bool UpgradeWeapon(long id) { UpdateUpgrade(id); if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_weapon++; return true; };
-	inline bool UpgradeLife(long id) { UpdateUpgrade(id); if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_life++; return true; };
-	inline bool UpgradeMove(long id) { UpdateUpgrade(id); if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_move++; return true; };
-	inline bool UpgradeHook(long id) { UpdateUpgrade(id); if (!m_statistiques[id].m_upgrade.m_money || m_statistiques[id].m_lock) { return false; } m_statistiques[id].m_upgrade.m_hook++; return true; };
+	inline int UpgradeWeapon(long id) {
+        UpdateUpgrade(id);
+        if (!m_statistiques[id].m_upgrade.m_money)
+            return 1;
+        if (m_statistiques[id].m_lock)
+            return 2;
+        if (m_statistiques[id].m_upgrade.m_weapon >= 40)
+            return 3;
+        m_statistiques[id].m_upgrade.m_weapon++;
+        UpdateUpgrade(id);
+        return 0;
+    };
+    inline int UpgradeLife(long id) {
+        UpdateUpgrade(id);
+        if (!m_statistiques[id].m_upgrade.m_money)
+            return 1;
+        if (m_statistiques[id].m_lock)
+            return 2;
+        if (m_statistiques[id].m_upgrade.m_life >= 40)
+            return 3;
+        m_statistiques[id].m_upgrade.m_life++;
+        UpdateUpgrade(id);
+        return 0;
+    };
+	inline int UpgradeMove(long id) {
+        UpdateUpgrade(id);
+        if (!m_statistiques[id].m_upgrade.m_money)
+            return 1;
+        if (m_statistiques[id].m_lock)
+            return 2;
+        if (m_statistiques[id].m_upgrade.m_move >= 40)
+            return 3;
+        m_statistiques[id].m_upgrade.m_move++;
+        UpdateUpgrade(id);
+        return 0;
+    };
+	inline int UpgradeHook(long id) {
+        UpdateUpgrade(id);
+        if (!m_statistiques[id].m_upgrade.m_money)
+            return 1;
+        if (m_statistiques[id].m_lock)
+            return 2;
+        if (m_statistiques[id].m_upgrade.m_hook >= 40)
+            return 3;
+        m_statistiques[id].m_upgrade.m_hook++;
+        UpdateUpgrade(id);
+        return 0;
+    };
 
 private:
 	CGameContext *GameServer() const { return m_pGameServer; }

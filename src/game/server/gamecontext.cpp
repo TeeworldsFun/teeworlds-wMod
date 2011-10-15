@@ -61,7 +61,7 @@ CGameContext::~CGameContext()
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if ( m_apPlayers[i] )
-			m_pStatistiques->SetStopPlay(m_apPlayers[i]->GetSID());
+			m_pStatistiques->SetStopPlay(m_apPlayers[i]->GetSID(), i);
 		delete m_apPlayers[i];
 	}
 
@@ -577,7 +577,7 @@ void CGameContext::OnClientEnter(int ClientID)
 			ip[i] = true;
 	}
 	m_apPlayers[ClientID]->SetSID(m_pStatistiques->GetId(ip, Server()->ClientName(ClientID), Server()->ClientClan(ClientID), Server()->ClientCountry(ClientID)));
-	m_pStatistiques->SetStartPlay(m_apPlayers[ClientID]->GetSID());
+	m_pStatistiques->SetStartPlay(m_apPlayers[ClientID]->GetSID(), ClientID);
 
 	//world.insert_entity(&players[client_id]);
 	m_apPlayers[ClientID]->Respawn();
@@ -643,7 +643,7 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 		m_pController->m_Captain[TEAM_BLUE] = -1;
 
 	AbortVoteKickOnDisconnect(ClientID);
-	m_pStatistiques->SetStopPlay(m_apPlayers[ClientID]->GetSID());
+	m_pStatistiques->SetStopPlay(m_apPlayers[ClientID]->GetSID(), ClientID);
 	m_apPlayers[ClientID]->OnDisconnect(pReason);
 	delete m_apPlayers[ClientID];
 	m_apPlayers[ClientID] = 0;
@@ -728,7 +728,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
 				if (pChr)
 				{
-					/*switch(pChr->GetActiveWeapon())
+					switch(pChr->GetActiveWeapon())
 					{
 						case WEAPON_HAMMER:
 							SendChatTarget(ClientID, "- The hammer is very fast and explodes to protect us when it is used but it use our armor and health.");
@@ -748,7 +748,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 						case WEAPON_NINJA:
 							SendChatTarget(ClientID, "- The katana is the most powerful of all weapons, it transforms 50 damage in 1, can move very quickly, prevents die on death zone and kills in a single shot but it can only kill 3 tee and you can't regenerate.");
 							break;
-					}*/
+					}
 				}
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/ammo") == 0)
@@ -1120,47 +1120,87 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				m_pStatistiques->DisplayPlayer(m_apPlayers[ClientID]->GetSID(), ClientID);
 			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr weapon") == 0)
 			{
-				if ( m_pStatistiques->UpgradeWeapon(m_apPlayers[ClientID]->GetSID()) )
-				{
-					SendChatTarget(ClientID, "Your account has been upgraded !");
-				}
-				else
-				{
-					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
-				}
+			    switch (m_pStatistiques->UpgradeWeapon(m_apPlayers[ClientID]->GetSID()))
+                {
+                case 0:
+                    SendChatTarget(ClientID, "Your account has been upgraded !");
+                    break;
+
+                case 1:
+                    SendChatTarget(ClientID, "You haven't got enough money");
+                    break;
+
+                case 2:
+                    SendChatTarget(ClientID, "You have locked your account !");
+                    break;
+
+                case 3:
+                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
+                    break;
+                }
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr life") == 0)
 			{
-				if ( m_pStatistiques->UpgradeLife(m_apPlayers[ClientID]->GetSID()) )
-				{
-					SendChatTarget(ClientID, "Your account has been upgraded !");
-				}
-				else
-				{
-					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
-				}
+			    switch (m_pStatistiques->UpgradeLife(m_apPlayers[ClientID]->GetSID()))
+                {
+                case 0:
+                    SendChatTarget(ClientID, "Your account has been upgraded !");
+                    break;
+
+                case 1:
+                    SendChatTarget(ClientID, "You haven't got enough money");
+                    break;
+
+                case 2:
+                    SendChatTarget(ClientID, "You have locked your account !");
+                    break;
+
+                case 3:
+                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
+                    break;
+                }
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr move") == 0)
 			{
-				if ( m_pStatistiques->UpgradeMove(m_apPlayers[ClientID]->GetSID()) )
-				{
-					SendChatTarget(ClientID, "Your account has been upgraded !");
-				}
-				else
-				{
-					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
-				}
+			    switch (m_pStatistiques->UpgradeMove(m_apPlayers[ClientID]->GetSID()))
+                {
+                case 0:
+                    SendChatTarget(ClientID, "Your account has been upgraded !");
+                    break;
+
+                case 1:
+                    SendChatTarget(ClientID, "You haven't got enough money");
+                    break;
+
+                case 2:
+                    SendChatTarget(ClientID, "You have locked your account !");
+                    break;
+
+                case 3:
+                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
+                    break;
+                }
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr hook") == 0)
 			{
-				if ( m_pStatistiques->UpgradeHook(m_apPlayers[ClientID]->GetSID()) )
-				{
-					SendChatTarget(ClientID, "Your account has been upgraded !");
-				}
-				else
-				{
-					SendChatTarget(ClientID, "You do not have enough money or you have locked your account !");
-				}
+			    switch (m_pStatistiques->UpgradeHook(m_apPlayers[ClientID]->GetSID()))
+                {
+                case 0:
+                    SendChatTarget(ClientID, "Your account has been upgraded !");
+                    break;
+
+                case 1:
+                    SendChatTarget(ClientID, "You haven't got enough money");
+                    break;
+
+                case 2:
+                    SendChatTarget(ClientID, "You have locked your account !");
+                    break;
+
+                case 3:
+                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
+                    break;
+                }
 			}
 			else if(str_comp_nocase(pMsg->m_pMessage, "/upgr") == 0)
 			{
