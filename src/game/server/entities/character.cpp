@@ -91,6 +91,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 {
 	m_EmoteStop = -1;
 	m_LastAction = -1;
+
 	m_ActiveWeapon = WEAPON_GUN;
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
@@ -109,6 +110,13 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_ReckoningTick = 0;
 	mem_zero(&m_SendCore, sizeof(m_SendCore));
 	mem_zero(&m_ReckoningCore, sizeof(m_ReckoningCore));
+
+	m_stat_weapon = new StatWeapon;
+	*m_stat_weapon = GameServer()->m_pStatistiques->GetStatWeapon(m_pPlayer->GetSID());
+
+	m_stat_life = new StatLife;
+	*m_stat_life = GameServer()->m_pStatistiques->GetStatLife(m_pPlayer->GetSID());
+
 	m_Protect = Server()->Tick();
 	m_AuraProtect[0] = 0;
 	m_AuraCaptain[0] = 0;
@@ -1345,6 +1353,10 @@ void CCharacter::Die(int Killer, int Weapon)
 			delete m_AuraCaptain[i];
 		m_AuraCaptain[0] = 0;
 	}
+	
+	delete m_stat_weapon;
+	delete m_stat_life;
+
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());

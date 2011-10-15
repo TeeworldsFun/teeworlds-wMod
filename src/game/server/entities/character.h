@@ -80,6 +80,9 @@ private:
 	CEntity *m_apHitObjects[10];
 	int m_NumObjectsHit;
 
+	struct StatWeapon *m_stat_weapon;
+	struct StatLife *m_stat_life;
+
 	struct WeaponStat
 	{
 		int m_AmmoRegenStart;
@@ -146,7 +149,6 @@ private:
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
-
 };
 
 #endif

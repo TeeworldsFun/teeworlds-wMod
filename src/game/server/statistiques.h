@@ -30,8 +30,8 @@ struct Upgrade {
 	unsigned long m_life;
 	unsigned long m_move;
 	unsigned long m_hook;
-    StatWeapon m_stat_weapon;
-    StatLife m_stat_life;
+	StatWeapon m_stat_weapon;
+	StatLife m_stat_life;
 };
 
 struct Rank {
@@ -61,7 +61,7 @@ struct Stats {
 		m_level = 0;
 		m_xp = 0;
 		m_score = 0;
-        m_kill = 0;
+        	m_kill = 0;
 		m_dead = 0;
 		m_rapport = 0.0;
 		m_suicide = 0;
@@ -79,8 +79,8 @@ struct Stats {
 		m_actual_kill = 0;
 		m_last_connect = 0;
 		m_lock = false;
-        for ( int i = 0; i < NUM_WEAPONS; i++ )
-            m_Weapon[i] = WARRIOR;
+		for ( int i = 0; i < NUM_WEAPONS; i++ )
+			m_Weapon[i] = WARRIOR;
 
 		m_upgrade.m_money = 0;
 		m_upgrade.m_weapon = 0;
@@ -90,7 +90,7 @@ struct Stats {
 
 		m_rank.m_level = 0;
 		m_rank.m_score = 0;
-        m_rank.m_kill = 0;
+		m_rank.m_kill = 0;
 		m_rank.m_rapport = 0;
 		m_rank.m_log_in = 0;
 		m_rank.m_fire = 0;
@@ -130,7 +130,7 @@ struct Stats {
 	unsigned long m_flag_capture;
 	unsigned long m_last_connect;
 	bool m_lock;
-    int m_Weapon[NUM_WEAPONS];
+	int m_Weapon[NUM_WEAPONS];
 
 	unsigned long m_start_time;
 	unsigned long m_actual_kill;
@@ -151,6 +151,8 @@ public:
 	inline unsigned long GetXp(long id) { UpdateStat(id); return m_statistiques[id].m_xp; }
 	inline unsigned long GetScore(long id) { UpdateStat(id); return m_statistiques[id].m_score; }
 	inline unsigned long GetActualKill(long id) { return m_statistiques[id].m_actual_kill; }
+	inline StatWeapon GetStatWeapon(long id) { return m_statistiques[id].m_upgrade.m_stat_weapon; }
+	inline StatLife GetStatLife(long id) { return m_statistiques[id].m_upgrade.m_stat_life; }
 
 	void UpdateStat(long id);
 	void UpdateUpgrade(long id);

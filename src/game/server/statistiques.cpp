@@ -259,25 +259,25 @@ void CStatistiques::UpdateUpgrade(long id)
 	m_statistiques[id].m_upgrade.m_money = m_statistiques[id].m_level - (m_statistiques[id].m_upgrade.m_weapon + m_statistiques[id].m_upgrade.m_life + m_statistiques[id].m_upgrade.m_move + m_statistiques[id].m_upgrade.m_hook);
 
 	if ( m_statistiques[id].m_upgrade.m_weapon >= 1 )
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_gun = true;
+		m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_gun = true;
 	if ( m_statistiques[id].m_upgrade.m_weapon >= 2 )
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_hammer = true;
-    if ( m_statistiques[id].m_upgrade.m_weapon >= 36 )
-    {
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_speed = 1 + ((int)(m_statistiques[id].m_upgrade.m_weapon/3) * 0.5f);
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_regeneration = (int)((m_statistiques[id].m_upgrade.m_weapon - 1)/3);
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_stockage = 10 + (int)(((m_statistiques[id].m_upgrade.m_weapon - 1)/3) * 5);
-    }
-    else if ( m_statistiques[id].m_upgrade.m_weapon > 36 )
-    {
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_speed = 1 + ((int)(m_statistiques[id].m_upgrade.m_weapon/3) * 0.5f);
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_regeneration = -1;
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_stockage = -1;
-        if ( m_statistiques[id].m_upgrade.m_weapon > 38 )
-                m_statistiques[id].m_upgrade.m_stat_weapon.m_all_weapon = true;
-        if ( m_statistiques[id].m_upgrade.m_weapon > 39 )
-                m_statistiques[id].m_upgrade.m_stat_weapon.m_bounce = true;
-    }
+		m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_hammer = true;
+	if ( m_statistiques[id].m_upgrade.m_weapon >= 36 )
+	{
+		m_statistiques[id].m_upgrade.m_stat_weapon.m_speed = 1 + ((int)(m_statistiques[id].m_upgrade.m_weapon/3) * 0.5f);
+		m_statistiques[id].m_upgrade.m_stat_weapon.m_regeneration = (int)((m_statistiques[id].m_upgrade.m_weapon - 1)/3);
+		m_statistiques[id].m_upgrade.m_stat_weapon.m_stockage = 10 + (int)(((m_statistiques[id].m_upgrade.m_weapon - 1)/3) * 5);
+	}
+	else if ( m_statistiques[id].m_upgrade.m_weapon > 36 )
+	{
+		m_statistiques[id].m_upgrade.m_stat_weapon.m_speed = 1 + ((int)(m_statistiques[id].m_upgrade.m_weapon/3) * 0.5f);
+		m_statistiques[id].m_upgrade.m_stat_weapon.m_regeneration = -1;
+		m_statistiques[id].m_upgrade.m_stat_weapon.m_stockage = -1;
+		if ( m_statistiques[id].m_upgrade.m_weapon > 38 )
+			m_statistiques[id].m_upgrade.m_stat_weapon.m_all_weapon = true;
+		if ( m_statistiques[id].m_upgrade.m_weapon > 39 )
+			m_statistiques[id].m_upgrade.m_stat_weapon.m_bounce = true;
+	}
 }
 
 class Trier
