@@ -6,22 +6,22 @@
 
 class CPlayers : public CComponent
 {
-	void RenderHand(class CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset);
-	void RenderPlayer(
-		const CNetObj_Character *pPrevChar,
-		const CNetObj_Character *pPlayerChar,
-		const CNetObj_PlayerInfo *pPrevInfo,
-		const CNetObj_PlayerInfo *pPlayerInfo
-	);
-	void RenderHook(
-		const CNetObj_Character *pPrevChar,
-		const CNetObj_Character *pPlayerChar,
-		const CNetObj_PlayerInfo *pPrevInfo,
-		const CNetObj_PlayerInfo *pPlayerInfo
-	);
+    void RenderHand(class CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset);
+    void RenderPlayer(
+        const CNetObj_Character *pPrevChar,
+        const CNetObj_Character *pPlayerChar,
+        const CNetObj_PlayerInfo *pPrevInfo,
+        const CNetObj_PlayerInfo *pPlayerInfo
+    );
+    void RenderHook(
+        const CNetObj_Character *pPrevChar,
+        const CNetObj_Character *pPlayerChar,
+        const CNetObj_PlayerInfo *pPrevInfo,
+        const CNetObj_PlayerInfo *pPlayerInfo
+    );
 
 public:
-	virtual void OnRender();
+    virtual void OnRender();
 };
 
 #endif

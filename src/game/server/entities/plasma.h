@@ -8,21 +8,21 @@
 class CPlasma : public CEntity
 {
 public:
-	CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner);
+    CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner);
 
-	virtual void Reset();
-	virtual void Tick();
-	virtual void Snap(int SnappingClient);
+    virtual void Reset();
+    virtual void Tick();
+    virtual void Snap(int SnappingClient);
 
 protected:
-	bool HitCharacter(vec2 From, vec2 To);
+    bool HitCharacter(vec2 From, vec2 To);
 
 private:
-	vec2 m_Dir;
-	float m_Energy;
-	int m_Bounces;
-	int m_Owner;
-	float m_Vel;
+    vec2 m_Dir;
+    float m_Energy;
+    int m_Bounces;
+    int m_Owner;
+    float m_Vel;
 };
 
 #endif

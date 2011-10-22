@@ -7,37 +7,40 @@
 
 class CBinds : public CComponent
 {
-	char m_aaKeyBindings[KEY_LAST][128];
+    char m_aaKeyBindings[KEY_LAST][128];
 
-	int GetKeyID(const char *pKeyName);
+    int GetKeyID(const char *pKeyName);
 
-	static void ConBind(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnbind(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnbindAll(IConsole::IResult *pResult, void *pUserData);
-	static void ConDumpBinds(IConsole::IResult *pResult, void *pUserData);
-	class IConsole *GetConsole() const { return Console(); }
+    static void ConBind(IConsole::IResult *pResult, void *pUserData);
+    static void ConUnbind(IConsole::IResult *pResult, void *pUserData);
+    static void ConUnbindAll(IConsole::IResult *pResult, void *pUserData);
+    static void ConDumpBinds(IConsole::IResult *pResult, void *pUserData);
+    class IConsole *GetConsole() const
+    {
+        return Console();
+    }
 
-	static void ConfigSaveCallback(class IConfig *pConfig, void *pUserData);
+    static void ConfigSaveCallback(class IConfig *pConfig, void *pUserData);
 
 public:
-	CBinds();
+    CBinds();
 
-	class CBindsSpecial : public CComponent
-	{
-	public:
-		CBinds *m_pBinds;
-		virtual bool OnInput(IInput::CEvent Event);
-	};
+    class CBindsSpecial : public CComponent
+    {
+    public:
+        CBinds *m_pBinds;
+        virtual bool OnInput(IInput::CEvent Event);
+    };
 
-	CBindsSpecial m_SpecialBinds;
+    CBindsSpecial m_SpecialBinds;
 
-	void Bind(int KeyID, const char *pStr);
-	void SetDefaults();
-	void UnbindAll();
-	const char *Get(int KeyID);
-	const char *GetKey(const char *pBindStr);
+    void Bind(int KeyID, const char *pStr);
+    void SetDefaults();
+    void UnbindAll();
+    const char *Get(int KeyID);
+    const char *GetKey(const char *pBindStr);
 
-	virtual void OnConsoleInit();
-	virtual bool OnInput(IInput::CEvent Event);
+    virtual void OnConsoleInit();
+    virtual bool OnInput(IInput::CEvent Event);
 };
 #endif

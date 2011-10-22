@@ -10,16 +10,16 @@ const int PickupPhysSize = 14;
 class CPickup : public CEntity
 {
 public:
-	CPickup(CGameWorld *pGameWorld, int Type, int SubType = 0);
+    CPickup(CGameWorld *pGameWorld, int Type, int SubType = 0);
 
-	virtual void Reset();
-	virtual void Tick();
-	virtual void Snap(int SnappingClient);
+    virtual void Reset();
+    virtual void Tick();
+    virtual void Snap(int SnappingClient);
 
 protected:
-	int m_Type;
-	int m_Subtype;
-	int m_SpawnTick;
+    int m_Type;
+    int m_Subtype;
+    int m_SpawnTick;
 };
 
 #endif

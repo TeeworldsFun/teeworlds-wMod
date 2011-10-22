@@ -4,12 +4,12 @@
 
 
 CGameControllerDM::CGameControllerDM(class CGameContext *pGameServer)
-: IGameController(pGameServer)
+    : IGameController(pGameServer)
 {
-	m_pGameType = "wDM|Fun|Mod";
+    m_pGameType = "wDM|Fun|Mod";
 }
 
 void CGameControllerDM::Tick()
 {
-	IGameController::Tick();
+    IGameController::Tick();
 }

@@ -36,8 +36,8 @@ THE SOFTWARE.
 FT_BEGIN_HEADER
 
 
-  typedef struct  PCF_Public_FaceRec_
-  {
+typedef struct  PCF_Public_FaceRec_
+{
     FT_FaceRec    root;
     FT_StreamRec  gzip_stream;
     FT_Stream     gzip_source;
@@ -45,7 +45,7 @@ FT_BEGIN_HEADER
     char*         charset_encoding;
     char*         charset_registry;
 
-  } PCF_Public_FaceRec, *PCF_Public_Face;
+} PCF_Public_FaceRec, *PCF_Public_Face;
 
 
 FT_END_HEADER

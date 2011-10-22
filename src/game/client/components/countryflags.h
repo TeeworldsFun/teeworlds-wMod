@@ -9,32 +9,35 @@
 class CCountryFlags : public CComponent
 {
 public:
-	struct CCountryFlag
-	{
-		int m_CountryCode;
-		char m_aCountryCodeString[8];
-		int m_Texture;
+    struct CCountryFlag
+    {
+        int m_CountryCode;
+        char m_aCountryCodeString[8];
+        int m_Texture;
 
-		bool operator<(const CCountryFlag &Other) { return str_comp(m_aCountryCodeString, Other.m_aCountryCodeString) < 0; }
-	};
+        bool operator<(const CCountryFlag &Other)
+        {
+            return str_comp(m_aCountryCodeString, Other.m_aCountryCodeString) < 0;
+        }
+    };
 
-	void OnInit();
+    void OnInit();
 
-	int Num() const;
-	const CCountryFlag *GetByCountryCode(int CountryCode) const;
-	const CCountryFlag *GetByIndex(int Index) const;
-	//int Find(int CountryCode) const;
+    int Num() const;
+    const CCountryFlag *GetByCountryCode(int CountryCode) const;
+    const CCountryFlag *GetByIndex(int Index) const;
+    //int Find(int CountryCode) const;
 
 private:
-	enum
-	{
-		CODE_LB=-1,
-		CODE_UB=999,
-		CODE_RANGE=CODE_UB-CODE_LB+1,
-	};
-	sorted_array<CCountryFlag> m_aCountryFlags;
-	int m_CodeIndexLUT[CODE_RANGE];
+    enum
+    {
+        CODE_LB=-1,
+        CODE_UB=999,
+        CODE_RANGE=CODE_UB-CODE_LB+1,
+    };
+    sorted_array<CCountryFlag> m_aCountryFlags;
+    int m_CodeIndexLUT[CODE_RANGE];
 
-	void LoadCountryflagsIndexfile();
+    void LoadCountryflagsIndexfile();
 };
 #endif

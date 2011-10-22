@@ -5,14 +5,14 @@
 class CLoot : public CPickup
 {
 public:
-	CLoot(CGameWorld *pGameWorld, int Type, int SubType = 0);
+    CLoot(CGameWorld *pGameWorld, int Type, int SubType = 0);
 
-	virtual void Reset();
-	virtual void Tick();
-	virtual void Snap(int SnappingClient);
+    virtual void Reset();
+    virtual void Tick();
+    virtual void Snap(int SnappingClient);
 
-	vec2 m_Vel;
-	int m_StartTick;
+    vec2 m_Vel;
+    int m_StartTick;
 };
 
 #endif

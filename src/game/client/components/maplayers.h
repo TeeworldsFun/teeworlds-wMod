@@ -6,21 +6,21 @@
 
 class CMapLayers : public CComponent
 {
-	CLayers *m_pLayers;	// todo refactor: maybe remove it and access it through client*
-	int m_Type;
+    CLayers *m_pLayers;	// todo refactor: maybe remove it and access it through client*
+    int m_Type;
 
-	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup);
-	static void EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser);
+    void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup);
+    static void EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser);
 public:
-	enum
-	{
-		TYPE_BACKGROUND=0,
-		TYPE_FOREGROUND,
-	};
+    enum
+    {
+        TYPE_BACKGROUND=0,
+        TYPE_FOREGROUND,
+    };
 
-	CMapLayers(int Type);
-	virtual void OnInit();
-	virtual void OnRender();
+    CMapLayers(int Type);
+    virtual void OnInit();
+    virtual void OnRender();
 };
 
 #endif

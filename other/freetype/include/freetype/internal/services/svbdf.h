@@ -28,22 +28,22 @@ FT_BEGIN_HEADER
 
 #define FT_SERVICE_ID_BDF  "bdf"
 
-  typedef FT_Error
-  (*FT_BDF_GetCharsetIdFunc)( FT_Face       face,
-                              const char*  *acharset_encoding,
-                              const char*  *acharset_registry );
+typedef FT_Error
+(*FT_BDF_GetCharsetIdFunc)( FT_Face       face,
+                            const char*  *acharset_encoding,
+                            const char*  *acharset_registry );
 
-  typedef FT_Error
-  (*FT_BDF_GetPropertyFunc)( FT_Face           face,
-                             const char*       prop_name,
-                             BDF_PropertyRec  *aproperty );
+typedef FT_Error
+(*FT_BDF_GetPropertyFunc)( FT_Face           face,
+                           const char*       prop_name,
+                           BDF_PropertyRec  *aproperty );
 
 
-  FT_DEFINE_SERVICE( BDF )
-  {
+FT_DEFINE_SERVICE( BDF )
+{
     FT_BDF_GetCharsetIdFunc  get_charset_id;
     FT_BDF_GetPropertyFunc   get_property;
-  };
+};
 
 #ifndef FT_CONFIG_OPTION_PIC
 
@@ -53,7 +53,7 @@ FT_BEGIN_HEADER
     get_charset_id_, get_property_                                       \
   };
 
-#else /* FT_CONFIG_OPTION_PIC */ 
+#else /* FT_CONFIG_OPTION_PIC */
 
 #define FT_DEFINE_SERVICE_BDFRec(class_, get_charset_id_, get_property_) \
   void                                                                   \
@@ -61,11 +61,11 @@ FT_BEGIN_HEADER
   {                                                                      \
     clazz->get_charset_id = get_charset_id_;                             \
     clazz->get_property = get_property_;                                 \
-  } 
+  }
 
-#endif /* FT_CONFIG_OPTION_PIC */ 
+#endif /* FT_CONFIG_OPTION_PIC */
 
-  /* */
+/* */
 
 
 FT_END_HEADER

@@ -6,7 +6,7 @@
 class CBot : public CPlayer
 {
 public:
-	CBot(CGameContext *pGameServer, int ClientID, int Team);
+    CBot(CGameContext *pGameServer, int ClientID, int Team);
 private:
 };
 

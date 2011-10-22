@@ -6,15 +6,15 @@ static const int MASTERSERVER_PORT = 8300;
 
 enum ServerType
 {
-	SERVERTYPE_INVALID = -1,
-	SERVERTYPE_NORMAL,
-	SERVERTYPE_LEGACY
+    SERVERTYPE_INVALID = -1,
+    SERVERTYPE_NORMAL,
+    SERVERTYPE_LEGACY
 };
 
 struct CMastersrvAddr
 {
-	unsigned char m_aIp[16];
-	unsigned char m_aPort[2];
+    unsigned char m_aIp[16];
+    unsigned char m_aPort[2];
 };
 
 static const unsigned char SERVERBROWSE_HEARTBEAT[] = {255, 255, 255, 255, 'b', 'e', 'a', '2'};
@@ -38,8 +38,8 @@ static const unsigned char SERVERBROWSE_FWERROR[] = {255, 255, 255, 255, 'f', 'w
 
 struct CMastersrvAddrLegacy
 {
-	unsigned char m_aIp[4];
-	unsigned char m_aPort[2];
+    unsigned char m_aIp[4];
+    unsigned char m_aPort[2];
 };
 
 static const unsigned char SERVERBROWSE_HEARTBEAT_LEGACY[] = {255, 255, 255, 255, 'b', 'e', 'a', 't'};

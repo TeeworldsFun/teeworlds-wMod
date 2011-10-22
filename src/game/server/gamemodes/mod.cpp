@@ -3,18 +3,18 @@
 #include "mod.h"
 
 CGameControllerMOD::CGameControllerMOD(class CGameContext *pGameServer)
-: IGameController(pGameServer)
+    : IGameController(pGameServer)
 {
-	// Exchange this to a string that identifies your game mode.
-	// DM, TDM and CTF are reserved for teeworlds original modes.
-	m_pGameType = "wMOD|wDM|Fun";
+    // Exchange this to a string that identifies your game mode.
+    // DM, TDM and CTF are reserved for teeworlds original modes.
+    m_pGameType = "wMOD|wDM|Fun";
 
-	//m_GameFlags = GAMEFLAG_TEAMS; // GAMEFLAG_TEAMS makes it a two-team gamemode
+    //m_GameFlags = GAMEFLAG_TEAMS; // GAMEFLAG_TEAMS makes it a two-team gamemode
 }
 
 void CGameControllerMOD::Tick()
 {
-	// this is the main part of the gamemode, this function is run every tick
+    // this is the main part of the gamemode, this function is run every tick
 
-	IGameController::Tick();
+    IGameController::Tick();
 }

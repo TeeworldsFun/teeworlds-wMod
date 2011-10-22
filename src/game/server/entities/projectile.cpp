@@ -6,166 +6,166 @@
 #include "projectile.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
-		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Smoke, bool Deploy, bool Bounce)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE)
+                         int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Smoke, bool Deploy, int Bounce)
+    : CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE)
 {
-	m_Type = Type;
-	m_Pos = Pos;
-	m_Direction = Dir;
-	m_LifeSpan = Span;
-	m_Owner = Owner;
-	m_Force = Force;
-	m_Damage = Damage;
-	m_SoundImpact = SoundImpact;
-	m_Weapon = Weapon;
-	m_StartTick = Server()->Tick();
-	m_Explosive = Explosive;
-	m_ExplodeTick = 0;
-	m_Smoke = Smoke;
-	m_Deploy = Deploy;
-	m_Bounce = Bounce;
-	GameWorld()->InsertEntity(this);
+    m_Type = Type;
+    m_Pos = Pos;
+    m_Direction = Dir;
+    m_LifeSpan = Span;
+    m_Owner = Owner;
+    m_Force = Force;
+    m_Damage = Damage;
+    m_SoundImpact = SoundImpact;
+    m_Weapon = Weapon;
+    m_StartTick = Server()->Tick();
+    m_Explosive = Explosive;
+    m_ExplodeTick = 0;
+    m_Smoke = Smoke;
+    m_Deploy = Deploy;
+    m_Bounce = Bounce;
+    GameWorld()->InsertEntity(this);
 }
 
 void CProjectile::Reset()
 {
-	GameServer()->m_World.DestroyEntity(this);
+    GameServer()->m_World.DestroyEntity(this);
 }
 
 vec2 CProjectile::GetPos(float Time)
 {
-	float Curvature = 0;
-	float Speed = 0;
+    float Curvature = 0;
+    float Speed = 0;
 
-	switch(m_Type)
-	{
-		case WEAPON_GRENADE:
-			Curvature = GameServer()->Tuning()->m_GrenadeCurvature;
-			Speed = GameServer()->Tuning()->m_GrenadeSpeed;
-			break;
+    switch(m_Type)
+    {
+    case WEAPON_GRENADE:
+        Curvature = GameServer()->Tuning()->m_GrenadeCurvature;
+        Speed = GameServer()->Tuning()->m_GrenadeSpeed;
+        break;
 
-		case WEAPON_SHOTGUN:
-			Curvature = GameServer()->Tuning()->m_ShotgunCurvature;
-			Speed = GameServer()->Tuning()->m_ShotgunSpeed;
-			break;
+    case WEAPON_SHOTGUN:
+        Curvature = GameServer()->Tuning()->m_ShotgunCurvature;
+        Speed = GameServer()->Tuning()->m_ShotgunSpeed;
+        break;
 
-		case WEAPON_GUN:
-			Curvature = GameServer()->Tuning()->m_GunCurvature;
-			Speed = GameServer()->Tuning()->m_GunSpeed;
-			break;
-	}
+    case WEAPON_GUN:
+        Curvature = GameServer()->Tuning()->m_GunCurvature;
+        Speed = GameServer()->Tuning()->m_GunSpeed;
+        break;
+    }
 
-	return CalcPos(m_Pos, m_Direction, Curvature, Speed, Time);
+    return CalcPos(m_Pos, m_Direction, Curvature, Speed, Time);
 }
 
 
 void CProjectile::Tick()
 {
-	float Pt = (Server()->Tick()-m_StartTick-1)/(float)Server()->TickSpeed();
-	float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
-	vec2 PrevPos = GetPos(Pt);
-	vec2 CurPos = GetPos(Ct);
-	int Collide = distance(CurPos, PrevPos) ? GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0) : GameServer()->Collision()->CheckPoint(CurPos);
-	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
-	CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
-	if ( m_Type == WEAPON_RIFLE && !TargetChr )
-	{	
-		CCharacter *apEnts[MAX_CLIENTS] = {0};
-		int Num = GameServer()->m_World.FindEntities(CurPos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-		for(int i = 0; i < Num; i++)
-		{
-			if ( OwnerChar != apEnts[i] )
-			{
-				TargetChr = apEnts[i];
-				break;
-			}
-		}
-	}
+    float Pt = (Server()->Tick()-m_StartTick-1)/(float)Server()->TickSpeed();
+    float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
+    vec2 PrevPos = GetPos(Pt);
+    vec2 CurPos = GetPos(Ct);
+    int Collide = distance(CurPos, PrevPos) ? GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0) : GameServer()->Collision()->CheckPoint(CurPos);
+    CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
+    CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
+    if ( m_Type == WEAPON_RIFLE && !TargetChr )
+    {
+        CCharacter *apEnts[MAX_CLIENTS] = {0};
+        int Num = GameServer()->m_World.FindEntities(CurPos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+        for(int i = 0; i < Num; i++)
+        {
+            if ( OwnerChar != apEnts[i] && (!GameServer()->m_pController->IsTeamplay() || OwnerChar->GetPlayer()->GetTeam() != apEnts[i]->GetPlayer()->GetTeam()))
+            {
+                TargetChr = apEnts[i];
+                break;
+            }
+        }
+    }
 
-	if (m_Smoke && m_ExplodeTick % 2 == 0 && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false) && !Collide)
-		GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
+    if (m_Smoke && m_ExplodeTick % 2 == 0 && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false) && !Collide)
+        GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
 
-	m_ExplodeTick++;
-	m_LifeSpan--;
-	
-	if ( m_Deploy && m_Type == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
-	{
-		int ShotSpread = 2;
+    m_ExplodeTick++;
+    m_LifeSpan--;
 
-		CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-		Msg.AddInt(ShotSpread*2+1);
+    if ( m_Deploy && m_Type == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
+    {
+        int ShotSpread = 2;
 
-		for(int i = -ShotSpread; i <= ShotSpread; ++i)
-		{
-			float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
-			float a = GetAngle(m_Direction);
-			a += Spreading[i+2];
-			float v = 1-(absolute(i)/(float)ShotSpread);
-			float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+        CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+        Msg.AddInt(ShotSpread*2+1);
 
-			CProjectile *pProj = new CProjectile(GameWorld(), m_Weapon,
-				m_Owner,
-				CurPos,
-				vec2(cosf(a), sinf(a))*Speed,
-				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-				1, m_Explosive, 0, m_SoundImpact, m_Weapon, m_Smoke);
+        for(int i = -ShotSpread; i <= ShotSpread; ++i)
+        {
+            float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+            float a = GetAngle(m_Direction);
+            a += Spreading[i+2];
+            float v = 1-(absolute(i)/(float)ShotSpread);
+            float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
 
-			// pack the Projectile and send it to the client Directly
-			CNetObj_Projectile p;
-			pProj->FillInfo(&p);
+            CProjectile *pProj = new CProjectile(GameWorld(), m_Weapon,
+                                                 m_Owner,
+                                                 CurPos,
+                                                 vec2(cosf(a), sinf(a))*Speed,
+                                                 (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
+                                                 1, m_Explosive, 0, m_SoundImpact, m_Weapon, m_Smoke);
 
-			for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
-				Msg.AddInt(((int *)&p)[i]);
-		}
+            // pack the Projectile and send it to the client Directly
+            CNetObj_Projectile p;
+            pProj->FillInfo(&p);
 
-		Server()->SendMsg(&Msg, 0, m_Owner);
-	}
+            for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
+                Msg.AddInt(((int *)&p)[i]);
+        }
 
-	if(TargetChr || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
-	{
-		if(Collide && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
-			GameServer()->CreateSound(CurPos, m_SoundImpact);
+        Server()->SendMsg(&Msg, 0, m_Owner);
+    }
 
-		if(m_Explosive && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
-			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, false);
+    if(TargetChr || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
+    {
+        if(Collide && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
+            GameServer()->CreateSound(CurPos, m_SoundImpact);
 
-		else if(TargetChr)
-			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
-		
-		if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) && !m_Bounce ) || m_LifeSpan < 0)
-			GameServer()->m_World.DestroyEntity(this);
-		else if ( Collide && (GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) || m_Bounce == true) )
-		{
-			vec2 TempPos(0.0f , 0.0f);
-			GameServer()->Collision()->IntersectLine(PrevPos, CurPos, 0, &TempPos);
-			vec2 TempDir = normalize(CurPos - TempPos);
-			GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
-			m_Pos = TempPos;
-			m_Direction = normalize(TempDir);
-			m_StartTick = Server()->Tick();
-			m_Bounce = false;
-		}
-	}
+        if(m_Explosive && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
+            GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, false);
+
+        else if(TargetChr)
+            TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
+
+        if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) && !m_Bounce ) || m_LifeSpan < 0)
+            GameServer()->m_World.DestroyEntity(this);
+        else if ( Collide && (GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) || m_Bounce) )
+        {
+            vec2 TempPos(0.0f , 0.0f);
+            GameServer()->Collision()->IntersectLine(PrevPos, CurPos, 0, &TempPos);
+            vec2 TempDir = normalize(CurPos - TempPos) * 4;
+            GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
+            m_Pos = TempPos;
+            m_Direction = normalize(TempDir);
+            m_StartTick = Server()->Tick();
+            m_Bounce--;
+        }
+    }
 }
 
 void CProjectile::FillInfo(CNetObj_Projectile *pProj)
 {
-	pProj->m_X = (int)m_Pos.x;
-	pProj->m_Y = (int)m_Pos.y;
-	pProj->m_VelX = (int)(m_Direction.x*100.0f);
-	pProj->m_VelY = (int)(m_Direction.y*100.0f);
-	pProj->m_StartTick = m_StartTick;
-	pProj->m_Type = m_Type;
+    pProj->m_X = (int)m_Pos.x;
+    pProj->m_Y = (int)m_Pos.y;
+    pProj->m_VelX = (int)(m_Direction.x*100.0f);
+    pProj->m_VelY = (int)(m_Direction.y*100.0f);
+    pProj->m_StartTick = m_StartTick;
+    pProj->m_Type = m_Type;
 }
 
 void CProjectile::Snap(int SnappingClient)
 {
-	float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
+    float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
 
-	if(NetworkClipped(SnappingClient, GetPos(Ct)))
-		return;
+    if(NetworkClipped(SnappingClient, GetPos(Ct)))
+        return;
 
-	CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_ID, sizeof(CNetObj_Projectile)));
-	if(pProj)
-		FillInfo(pProj);
+    CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_ID, sizeof(CNetObj_Projectile)));
+    if(pProj)
+        FillInfo(pProj);
 }

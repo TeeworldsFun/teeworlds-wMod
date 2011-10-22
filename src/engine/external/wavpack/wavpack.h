@@ -43,7 +43,8 @@ typedef unsigned int    uint;
 /* WavPack 4.0 files, and is the preamble to every block in both the .wv */
 /* and .wvc files. */
 
-typedef struct {
+typedef struct
+{
     char ckID [4];
     uint32_t ckSize;
     short version;
@@ -84,7 +85,7 @@ typedef struct {
 #define IGNORED_FLAGS   0x18000000      /* reserved, but ignore if encountered */
 #define NEW_SHAPING     0x20000000      /* use IIR filter for negative shaping */
 #define UNKNOWN_FLAGS   0x80000000      /* also reserved, but refuse decode if */
-                                        /*  encountered */
+/*  encountered */
 
 #define MONO_DATA (MONO_FLAG | FALSE_STEREO)
 
@@ -95,7 +96,8 @@ typedef struct {
 
 /* This is an internal representation of metadata. */
 
-typedef struct {
+typedef struct
+{
     int32_t byte_length;
     void *data;
     uchar id;
@@ -133,7 +135,8 @@ typedef struct {
 /* the encoding engine and during decoding to provide fle information back to */
 /* the higher level functions. Not all fields are used in both modes. */
 
-typedef struct {
+typedef struct
+{
     int bits_per_sample, bytes_per_sample;
     int num_channels, float_norm_exp;
     uint32_t flags, sample_rate, channel_mask;
@@ -174,7 +177,8 @@ typedef struct {
 
 typedef int32_t (*read_stream)(void *, int32_t);
 
-typedef struct bs {
+typedef struct bs
+{
     uchar *buf, *end, *ptr;
     void (*wrap)(struct bs *bs);
     uint32_t file_bytes, sr;
@@ -185,23 +189,27 @@ typedef struct bs {
 #define MAX_NTERMS 16
 #define MAX_TERM 8
 
-struct decorr_pass {
+struct decorr_pass
+{
     short term, delta, weight_A, weight_B;
     int32_t samples_A [MAX_TERM], samples_B [MAX_TERM];
 };
 
-struct entropy_data {
+struct entropy_data
+{
     uint32_t median [3], slow_level, error_limit;
 };
 
-struct words_data {
+struct words_data
+{
     uint32_t bitrate_delta [2], bitrate_acc [2];
     uint32_t pend_data, holding_one, zeros_acc;
     int holding_zero, pend_count;
     struct entropy_data c [2];
 };
 
-typedef struct {
+typedef struct
+{
     WavpackHeader wphdr;
     Bitstream wvbits;
 
@@ -212,7 +220,7 @@ typedef struct {
 
     uchar int32_sent_bits, int32_zeros, int32_ones, int32_dups;
     uchar float_flags, float_shift, float_max_exp, float_norm_exp;
- 
+
     struct decorr_pass decorr_passes [MAX_NTERMS];
 
 } WavpackStream;
@@ -232,7 +240,8 @@ typedef struct {
 /* files. It is recommended that direct access to this structure be minimized */
 /* and the provided utilities used instead. */
 
-typedef struct {
+typedef struct
+{
     WavpackConfig config;
     WavpackStream stream;
 
@@ -347,7 +356,7 @@ int process_metadata (WavpackContext *wpc, WavpackMetadata *wpmd);
 int read_entropy_vars (WavpackStream *wps, WavpackMetadata *wpmd);
 int read_hybrid_profile (WavpackStream *wps, WavpackMetadata *wpmd);
 int32_t get_words (int32_t *buffer, int nsamples, uint32_t flags,
-                struct words_data *w, Bitstream *bs);
+                   struct words_data *w, Bitstream *bs);
 int32_t exp2s (int log);
 int restore_weight (signed char weight);
 

@@ -8,11 +8,11 @@
 class CMsgPacker : public CPacker
 {
 public:
-	CMsgPacker(int Type)
-	{
-		Reset();
-		AddInt(Type);
-	}
+    CMsgPacker(int Type)
+    {
+        Reset();
+        AddInt(Type);
+    }
 };
 
 #endif
