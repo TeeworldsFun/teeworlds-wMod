@@ -993,7 +993,7 @@ void CCharacter::HandleWeapons()
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
     int Stockage = m_stat_weapon->m_stockage;
-    if ( Weapon == WEAPON_GUN && Stokage != -1 )
+    if ( Weapon == WEAPON_GUN && Stockage != -1 )
         Stockage *= 2;
 
     if((m_aWeapons[Weapon].m_Ammo < Stockage && m_aWeapons[Weapon].m_Ammo != -1) || !m_aWeapons[Weapon].m_Got)
