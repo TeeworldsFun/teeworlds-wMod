@@ -228,6 +228,7 @@ long CStatistiques::GetId(const char ip[MAX_IP_LENGTH], const char a[], const ch
     m_statistiques[new_id].m_country = country;
     m_statistiques[new_id].m_lock = false;
     UpdateStat(new_id);
+    UpdateUpgrade(new_id);
     UpdateRank();
     return new_id;
 }
@@ -267,28 +268,35 @@ void CStatistiques::UpdateUpgrade(long id)
     if ( m_statistiques[id].m_upgrade.m_hook > 40 )
         m_statistiques[id].m_upgrade.m_hook = 40;
 
-    if ( m_statistiques[id].m_upgrade.m_weapon >= 1 )
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_gun = true;
-    if ( m_statistiques[id].m_upgrade.m_weapon >= 2 )
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_hammer = true;
-    if ( m_statistiques[id].m_upgrade.m_weapon >= 3 )
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_ninja = true;
-    if ( m_statistiques[id].m_upgrade.m_weapon >= 2 && m_statistiques[id].m_upgrade.m_weapon <= 36 )
+    m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_gun = m_statistiques[id].m_upgrade.m_weapon >= 1 ? true : false;
+    m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_hammer = m_statistiques[id].m_upgrade.m_weapon >= 2 ? true : false;
+    m_statistiques[id].m_upgrade.m_stat_weapon.m_auto_ninja = m_statistiques[id].m_upgrade.m_weapon >= 3 ? true : false;
+    if ( m_statistiques[id].m_upgrade.m_weapon <= 0 )
+    {
+        m_statistiques[id].m_upgrade.m_stat_weapon.m_speed = 1;
+        m_statistiques[id].m_upgrade.m_stat_weapon.m_regeneration = 0;
+        m_statistiques[id].m_upgrade.m_stat_weapon.m_stockage = 10;
+    }
+    else if ( m_statistiques[id].m_upgrade.m_weapon <= 36 )
     {
         m_statistiques[id].m_upgrade.m_stat_weapon.m_speed = 1 + ((int)(m_statistiques[id].m_upgrade.m_weapon/3) * 0.5f);
         m_statistiques[id].m_upgrade.m_stat_weapon.m_regeneration = (int)((m_statistiques[id].m_upgrade.m_weapon - 1)/3);
-        m_statistiques[id].m_upgrade.m_stat_weapon.m_stockage = 10 + (int)(((m_statistiques[id].m_upgrade.m_weapon - 1)/3) * 5);
+        m_statistiques[id].m_upgrade.m_stat_weapon.m_stockage = 10 + (int)(((m_statistiques[id].m_upgrade.m_weapon - 2)/3) * 5);
     }
     else if ( m_statistiques[id].m_upgrade.m_weapon > 36 )
     {
         m_statistiques[id].m_upgrade.m_stat_weapon.m_speed = 1 + ((int)(m_statistiques[id].m_upgrade.m_weapon/3) * 0.5f);
         m_statistiques[id].m_upgrade.m_stat_weapon.m_regeneration = -1;
         m_statistiques[id].m_upgrade.m_stat_weapon.m_stockage = -1;
-        if ( m_statistiques[id].m_upgrade.m_weapon > 38 )
-            m_statistiques[id].m_upgrade.m_stat_weapon.m_all_weapon = true;
-        if ( m_statistiques[id].m_upgrade.m_weapon > 39 )
-            m_statistiques[id].m_upgrade.m_stat_weapon.m_bounce = 1;
     }
+    if ( m_statistiques[id].m_upgrade.m_weapon > 38 )
+        m_statistiques[id].m_upgrade.m_stat_weapon.m_all_weapon = true;
+    else
+        m_statistiques[id].m_upgrade.m_stat_weapon.m_all_weapon = false;
+    if ( m_statistiques[id].m_upgrade.m_weapon > 39 )
+        m_statistiques[id].m_upgrade.m_stat_weapon.m_bounce = 1;
+    else
+        m_statistiques[id].m_upgrade.m_stat_weapon.m_bounce = 0;
 
     m_statistiques[id].m_upgrade.m_stat_life.m_protection = 1 + ((int)((m_statistiques[id].m_upgrade.m_life + 3)/4) / 10.0f);
     m_statistiques[id].m_upgrade.m_stat_life.m_start_armor = (int)(m_statistiques[id].m_upgrade.m_life + 2)/4;
@@ -301,7 +309,7 @@ void CStatistiques::UpdateUpgrade(long id)
     else
     {
         m_statistiques[id].m_upgrade.m_stat_life.m_stockage[0] = 15;
-        m_statistiques[id].m_upgrade.m_stat_life.m_stockage[1] = (10 + (int)(m_statistiques[id].m_upgrade.m_life / 4)) - 15;
+        m_statistiques[id].m_upgrade.m_stat_life.m_stockage[1] = (10 + (int)(m_statistiques[id].m_upgrade.m_life / 4)) - 5;
     }
 }
 

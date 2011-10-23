@@ -993,7 +993,7 @@ void CCharacter::HandleWeapons()
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
     int Stockage = m_stat_weapon->m_stockage;
-    if ( Weapon == WEAPON_GUN )
+    if ( Weapon == WEAPON_GUN && Stokage != -1 )
         Stockage *= 2;
 
     if((m_aWeapons[Weapon].m_Ammo < Stockage && m_aWeapons[Weapon].m_Ammo != -1) || !m_aWeapons[Weapon].m_Got)
@@ -1224,7 +1224,7 @@ void CCharacter::Tick()
         {
             if (m_Health < m_stat_life->m_stockage[0])
                 m_Health++;
-            else if (m_Armor < m_stat_life->m_stockage[0])
+            else if (m_Armor < m_stat_life->m_stockage[1])
                 m_Armor++;
 
             m_HealthRegenStart = Server()->Tick();
