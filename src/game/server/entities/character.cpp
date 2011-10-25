@@ -1175,7 +1175,7 @@ void CCharacter::Tick()
         m_AuraCaptain[0] = 0;
     }
 
-    if (m_ActiveWeapon == WEAPON_HAMMER && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) && m_LatestInput.m_Fire&1)
+    if (m_ActiveWeapon == WEAPON_HAMMER && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) && m_LatestInput.m_Fire&1 && m_pPlayer->m_WeaponType[WEAPON_HAMMER] != ENGINEER && m_stat_weapon->m_auto_hammer )
     {
         if ((Server()->Tick() - m_HealthRegenStart) >= 350 * Server()->TickSpeed() / 1000)
         {
@@ -1409,7 +1409,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
     if( ((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_HEAL && Weapon == WEAPON_HAMMER) || (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE)) && GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From))
     {
-        int heal = 5;
+        int heal = 3;
         if(m_Health < m_stat_life->m_stockage[0])
         {
             m_Health += heal;
@@ -1425,6 +1425,10 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
             if ( m_Armor > m_stat_life->m_stockage[0] )
                 m_Armor = m_stat_life->m_stockage[0];
         }
+
+	char Text[256] = "";
+        str_format(Text, 256, "Healing %s : %d%% health and %d%% armor.", Server()->ClientName(m_pPlayer->GetCID()), GetPercentHealth(), GetPercentArmor());
+        GameServer()->SendChatTarget(From, Text);
         return false;
     }
     else if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_pPlayer->GetTeam() == TEAM_RED)

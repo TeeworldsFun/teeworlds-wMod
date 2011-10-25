@@ -684,7 +684,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 SendChatTarget(ClientID, "/info or /credits : To get informations of this mod.");
                 SendChatTarget(ClientID, "/weapon or /ammo : To get informations of the actual weapon.");
                 SendChatTarget(ClientID, "/race : To choose a race");
-                SendChatTarget(ClientID, "/stats or /ranks : To get your statistics and your rank.");
+                SendChatTarget(ClientID, "/stats or /ranks : To get your statistics or your rank.");
                 SendChatTarget(ClientID, "/player or /upgr : To get or to add your upgrades.");
                 SendChatTarget(ClientID, "/lock : To lock/unlock your statistics.");
                 SendChatTarget(ClientID, "/reset_stats or /reset_all_stats : To reset partially or all your statistics.");
@@ -1095,6 +1095,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             {
                 SendChat(ClientID, Team, pMsg->m_pMessage);
                 m_pStatistiques->DisplayRank(m_apPlayers[ClientID]->GetSID(), Server()->ClientName(ClientID));
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/bestof") == 0)
+            {
+                SendChat(ClientID, Team, pMsg->m_pMessage);
+                m_pStatistiques->DisplayBestOf();
             }
             else if(str_comp_nocase(pMsg->m_pMessage, "/player") == 0)
                 m_pStatistiques->DisplayPlayer(m_apPlayers[ClientID]->GetSID(), ClientID);

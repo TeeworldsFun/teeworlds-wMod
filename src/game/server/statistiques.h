@@ -188,6 +188,7 @@ public:
     void DisplayStat(long id, const char* Name);
     void DisplayRank(long id, const char* Name);
     void DisplayPlayer(long id, int ClientID);
+    void DisplayBestOf();
 
     void WriteStat();
 
@@ -393,6 +394,7 @@ private:
     }
 
     std::vector<Stats> m_statistiques;
+    std::vector<Stats*> m_tri[14];
     bool m_write;
     int m_last_write;
     int m_errors;

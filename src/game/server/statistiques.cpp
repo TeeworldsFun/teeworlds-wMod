@@ -60,6 +60,14 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 
     m_write = true;
 
+    for ( int i = 0; i < 14; i++ )
+    {
+	for ( unsigned long j = 0; j < m_statistiques.size(); j++ )
+	{
+       	    m_tri[i].push_back(&m_statistiques[j]);
+    	}
+    }
+
     UpdateRank();
 }
 
@@ -380,103 +388,108 @@ public:
 
 void CStatistiques::UpdateRank()
 {
-    std::vector<Stats*> tri;
-
-    for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
+    if ( m_tri[0].size() != m_statistiques.size() )
     {
-        tri.push_back(&m_statistiques[i]);
+        for ( int i = 0; i < 14; i++ )
+        {
+            m_tri[i].resize(0);
+	    for ( unsigned long j = 0; j < m_statistiques.size(); j++ )
+	    {
+                m_tri[i].push_back(&m_statistiques[j]);
+            }
+        }
     }
 
     Trier FoncteurTri(0);
-    for ( int i = 0; i < Trier::FLAG_CAPTURE + 1; i++ )
+    for ( int i = 0; i < 14; i++ )
     {
         FoncteurTri.m_type = i;
-        sort(tri.begin(), tri.end(), FoncteurTri);
+        sort(m_tri[i].begin(), m_tri[i].end(), FoncteurTri);
 
         switch (i)
         {
         case Trier::LEVEL:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_level = j + 1;
+                m_tri[i][j]->m_rank.m_level = j + 1;
             }
             break;
         case Trier::SCORE:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_score = j + 1;
+                m_tri[i][j]->m_rank.m_score = j + 1;
             }
             break;
         case Trier::KILL:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_kill = j + 1;
+                m_tri[i][j]->m_rank.m_kill = j + 1;
             }
             break;
         case Trier::RAPPORT:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_rapport = j + 1;
+                m_tri[i][j]->m_rank.m_rapport = j + 1;
             }
             break;
         case Trier::LOG_IN:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_log_in = j + 1;
+                m_tri[i][j]->m_rank.m_log_in = j + 1;
             }
             break;
         case Trier::FIRE:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_fire = j + 1;
+                m_tri[i][j]->m_rank.m_fire = j + 1;
             }
             break;
         case Trier::PICKUP_WEAPON:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_pickup_weapon = j + 1;
+                m_tri[i][j]->m_rank.m_pickup_weapon = j + 1;
             }
             break;
         case Trier::PICKUP_NINJA:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_pickup_ninja = j + 1;
+                m_tri[i][j]->m_rank.m_pickup_ninja = j + 1;
             }
             break;
         case Trier::CHANGE_WEAPON:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_change_weapon = j + 1;
+                m_tri[i][j]->m_rank.m_change_weapon = j + 1;
             }
             break;
         case Trier::TIME_PLAY:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_time_play = j + 1;
+                m_tri[i][j]->m_rank.m_time_play = j + 1;
             }
             break;
         case Trier::MESSAGE:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_message = j + 1;
+                m_tri[i][j]->m_rank.m_message = j + 1;
             }
             break;
         case Trier::KILLING_SPREE:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_killing_spree = j + 1;
+                m_tri[i][j]->m_rank.m_killing_spree = j + 1;
             }
             break;
         case Trier::MAX_KILLING_SPREE:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_max_killing_spree = j + 1;
+                m_tri[i][j]->m_rank.m_max_killing_spree = j + 1;
             }
             break;
         case Trier::FLAG_CAPTURE:
-            for ( unsigned long j = 0; j < tri.size(); j++ )
+            for ( unsigned long j = 0; j < m_tri[i].size(); j++ )
             {
-                tri[j]->m_rank.m_flag_capture = j + 1;
+                m_tri[i][j]->m_rank.m_flag_capture = j + 1;
             }
             break;
         }
@@ -519,7 +532,7 @@ void CStatistiques::DisplayStat(long id, const char* Name)
         str_format(a, 256, "%s | %s | %s", stats[i * 3], stats[(i * 3) + 1], stats[(i * 3) + 2]);
         GameServer()->SendChatTarget(-1, a);
     }
-}
+} 
 
 const char* Suffix(unsigned long number)
 {
@@ -561,6 +574,40 @@ void CStatistiques::DisplayRank(long id, const char* Name)
     for ( int i = 0; i < 5; i++ )
     {
         str_format(a, 256, "%s | %s | %s", ranks[i * 3], ranks[(i * 3) + 1], ranks[(i * 3) + 2]);
+        GameServer()->SendChatTarget(-1, a);
+    }
+}
+
+void CStatistiques::DisplayBestOf()
+{
+    char a[256] = "";
+    char stats[15][50];
+
+    str_format(stats[0], 50, "Best of :");
+    str_format(stats[1], 50, "Level : %ld", m_tri[0][0]->m_level);
+    str_format(stats[2], 50, "Score : %ld", m_tri[1][0]->m_score);
+
+    str_format(stats[3], 50, "Killed : %ld", m_tri[2][0]->m_kill);
+    str_format(stats[4], 50, "Rapport K/D : %lf", m_tri[3][0]->m_rapport);
+    str_format(stats[5], 50, "Log-in : %ld", m_tri[4][0]->m_log_in);
+
+    str_format(stats[6], 50, "Fire : %ld", m_tri[5][0]->m_fire);
+    str_format(stats[7], 50, "Pick-Up Weapon : %ld", m_tri[6][0]->m_pickup_weapon);
+    str_format(stats[8], 50, "Pick-Up Ninja : %ld", m_tri[7][0]->m_pickup_ninja);
+
+    str_format(stats[9], 50, "Switch Weapon : %ld", m_tri[8][0]->m_change_weapon);
+    str_format(stats[10], 50, "Time Play : %ld min", m_tri[9][0]->m_time_play / 60);
+    str_format(stats[11], 50, "Msg Sent : %ld", m_tri[10][0]->m_message);
+
+    str_format(stats[12], 50, "Total Killing Spree : %ld", m_tri[11][0]->m_killing_spree);
+    str_format(stats[13], 50, "Max Killing Spree : %ld", m_tri[12][0]->m_max_killing_spree);
+    str_format(stats[14], 50, "Flag Capture : %ld", m_tri[13][0]->m_flag_capture);
+
+    str_format(a, 256, "%s %s | %s", stats[0], stats[1], stats[2]);
+
+    for ( int i = 1; i < 5; i++ )
+    {
+        str_format(a, 256, "%s | %s | %s", stats[i * 3], stats[(i * 3) + 1], stats[(i * 3) + 2]);
         GameServer()->SendChatTarget(-1, a);
     }
 }
