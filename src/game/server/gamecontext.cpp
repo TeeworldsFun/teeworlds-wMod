@@ -459,7 +459,7 @@ void CGameContext::OnTick()
                 bool aVoteChecked[MAX_CLIENTS] = {0};
                 for(int i = 0; i < MAX_CLIENTS; i++)
                 {
-                    if(!m_apPlayers[i] || m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS || aVoteChecked[i])	// don't count in votes by spectators
+                    if(!m_apPlayers[i] || (m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS && (!m_pController->IsTeamplay() || m_pEventsGame->GetActualEventTeam() != T_SURVIVOR) && !m_pEventsGame->IsActualEvent(SURVIVOR)) || aVoteChecked[i])	// don't count in votes by spectators
                         continue;
 
                     int ActVote = m_apPlayers[i]->m_Vote;
@@ -486,7 +486,7 @@ void CGameContext::OnTick()
                         No++;
                 }
 
-                if(Yes >= Total/2+1)
+                if(Yes >= Total/2+1 || (time_get() > m_VoteCloseTime && Yes >= Total/2) || (time_get() > m_VoteCloseTime && No == 0))
                     m_VoteEnforce = VOTE_ENFORCE_YES;
                 else if(No >= (Total+1)/2)
                     m_VoteEnforce = VOTE_ENFORCE_NO;
@@ -1611,11 +1611,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
         CNetMsg_Cl_ChangeInfo *pMsg = (CNetMsg_Cl_ChangeInfo *)pRawMsg;
         pPlayer->m_LastChangeInfo = Server()->Tick();
 
-		// set infos
-		char aOldName[MAX_NAME_LENGTH];
-		str_copy(aOldName, Server()->ClientName(ClientID), sizeof(aOldName));
-		Server()->SetClientName(ClientID, pMsg->m_pName);
-		if(str_comp(aOldName, Server()->ClientName(ClientID)) != 0)
+        // set infos
+        char aOldName[MAX_NAME_LENGTH];
+        str_copy(aOldName, Server()->ClientName(ClientID), sizeof(aOldName));
+        Server()->SetClientName(ClientID, pMsg->m_pName);
+        if(str_comp(aOldName, Server()->ClientName(ClientID)) != 0)
         {
             char aChatText[256];
             str_format(aChatText, sizeof(aChatText), "'%s' changed name to '%s'", aOldName, Server()->ClientName(ClientID));

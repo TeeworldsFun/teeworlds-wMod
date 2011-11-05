@@ -506,7 +506,7 @@ void IGameController::DoWarmup(int Seconds)
         m_Warmup = Seconds*Server()->TickSpeed();
 }
 
-bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2)
+bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2, int Weapon)
 {
     if(ClientID1 == ClientID2)
         return false;
@@ -514,6 +514,18 @@ bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2)
     if(IsTeamplay())
     {
         if(!GameServer()->m_apPlayers[ClientID1] || !GameServer()->m_apPlayers[ClientID2])
+            return false;
+
+        if (GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_KILL)
+            return false;
+
+        if((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_KILL && Weapon == WEAPON_HAMMER) ||
+            (GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_KILL && Weapon == WEAPON_GUN) ||
+            (GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_KILL && Weapon == WEAPON_SHOTGUN) ||
+            (GameServer()->m_pEventsGame->GetActualEventTeam() == GRENADE_KILL && Weapon == WEAPON_GRENADE) ||
+            (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_KILL && Weapon == WEAPON_RIFLE) ||
+            (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_KILL && Weapon == WEAPON_NINJA)
+        )
             return false;
 
         if(GameServer()->m_apPlayers[ClientID1]->GetTeam() == GameServer()->m_apPlayers[ClientID2]->GetTeam())

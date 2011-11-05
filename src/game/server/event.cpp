@@ -27,166 +27,142 @@ void CEvent::Tick()
         m_TwoEvent = false;
 
     int Elapsed[2] = {0, 0};
-    Elapsed[0] = Server()->Tick() - m_StartEvent[0];
-    if ( m_TwoEvent )
-        Elapsed[1] = Server()->Tick() - m_StartEvent[1];
+    char Text[256] = "";
 
-    if ( Elapsed[0] >= 150 * Server()->TickSpeed() || m_ActualEvent[0] == -1 )
+    for ( int i = 0; i < 2; i++ )
     {
-        if ( m_ActualEvent[0] == SURVIVOR )
+        if ( i == 1 && !m_TwoEvent )
+            break;
+
+        Elapsed[i] = Server()->Tick() - m_StartEvent[i];
+
+        if ( Elapsed[i] >= 150 * Server()->TickSpeed() || m_ActualEvent[i] == -1 )
         {
-            GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
-            Controller()->EndRound();
+            int NewEvent = 0;
+            if ( m_ActualEvent[0] == SURVIVOR )
+            {
+                GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
+                Controller()->EndRound();
+            }
+
+            if ( i == 0 )
+                while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[0] || (m_TwoEvent && NewEvent == m_ActualEvent[1]) || (NewEvent == SURVIVOR && Controller()->IsTeamplay()));
+            else
+                while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[1]
+                || NewEvent == m_ActualEvent[0] || (NewEvent >= HAMMER && NewEvent <= KATANA) || NewEvent == WALLSHOT
+                || (m_ActualEvent[0] == GRAVITY_0 && NewEvent == GRAVITY_M0_5) || (m_ActualEvent[0] == GRAVITY_M0_5 && NewEvent == GRAVITY_0)
+                || (m_ActualEvent[0] == BULLET_BOUNCE && NewEvent == BULLET_PIERCING) || (m_ActualEvent[0] == BULLET_PIERCING && NewEvent == BULLET_BOUNCE)
+                || ((NewEvent >= RACE_WARRIOR && NewEvent <= RACE_RANDOM) && (m_ActualEvent[0] >= RACE_WARRIOR && m_ActualEvent[0] <= RACE_RANDOM)) || NewEvent == SURVIVOR);
+
+            m_ActualEvent[i] = NewEvent;
+            m_StartEvent[i] = Server()->Tick();
+            SetTune();
+            m_LastSend = Server()->Tick() - Server()->TickSpeed()*2;
         }
 
-        int NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING;
-        while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[0] || (NewEvent == SURVIVOR && Controller()->IsTeamplay()));
+        char aBuf[256] = "";
+        char Prefix[10] = "";
 
-        m_ActualEvent[0] = NewEvent;
-        m_StartEvent[0] = Server()->Tick();
-        SetTune();
-        m_LastSend = Server()->Tick() - Server()->TickSpeed()*2;
-    }
-    if ( m_TwoEvent && (Elapsed[1] >= 150 * Server()->TickSpeed() || m_ActualEvent[1] == -1) )
-    {
-        int NewEvent = (rand() % ((ALL - 1) - NOTHING + 1)) + NOTHING;
-        while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[1] || NewEvent == m_ActualEvent[0] || (NewEvent > NOTHING && NewEvent <= KATANA) || NewEvent == WALLSHOT || (m_ActualEvent[0] == GRAVITY_0 && NewEvent == GRAVITY_M0_5) || (m_ActualEvent[0] == GRAVITY_M0_5 && NewEvent == GRAVITY_0) || (m_ActualEvent[0] == BULLET_BOUNCE && NewEvent == BULLET_PIERCING) || (m_ActualEvent[0] == BULLET_PIERCING && NewEvent == BULLET_BOUNCE) || NewEvent == SURVIVOR);
+        if ( i == 0 )
+            str_copy(Prefix, "Event", 10);
+        else
+            str_copy(Prefix, "\nEvent 2", 10);
 
-        m_ActualEvent[1] = NewEvent;
-        m_StartEvent[1] = Server()->Tick();
-        SetTune();
-        m_LastSend = Server()->Tick() - Server()->TickSpeed()*2;
-    }
-
-    char Text[256] = "";
-    switch(m_ActualEvent[0])
-    {
-    case NOTHING:
-        str_format(Text, 256, "Event : Nothing. | Remaining : %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case HAMMER:
-        str_format(Text, 256, "Event : All Get Hammer ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case GUN:
-        str_format(Text, 256, "Event : All Get Gun ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case SHOTGUN:
-        str_format(Text, 256, "Event : All Get Shotgun ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case GRENADE:
-        str_format(Text, 256, "Event : All Get Grenade ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case RIFLE:
-        str_format(Text, 256, "Event : All Get Rifle ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case KATANA:
-        str_format(Text, 256, "Event : All Get Katana ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case UNLIMITED_AMMO:
-        str_format(Text, 256, "Event : All Get Unlimited Ammo ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case LIFE_ARMOR_CRAZY:
-        str_format(Text, 256, "Event : All Get Life and Armor Crazy ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case SURVIVOR:
-        str_format(Text, 256, "Event : Mode Survivor ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case PROTECT_X2:
-        str_format(Text, 256, "Event : All Get Protect X2 ! | Remaining : %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case INSTAGIB:
-        str_format(Text, 256, "Event : Mode Instagib ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case WALLSHOT:
-        str_format(Text, 256, "Event : Mode WallShot ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case BULLET_PIERCING:
-        str_format(Text, 256, "Event : All Bullets can pierce Tee and Tiles ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case BULLET_BOUNCE:
-        str_format(Text, 256, "Event : All Bullets can bounce ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case HAVE_ALL_WEAPON:
-        str_format(Text, 256, "Event : All get all weapons when respawn ! | Remaininig %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case GRAVITY_0:
-        str_format(Text, 256, "Event : Gravity modified to 0 ! | Remaining : %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case GRAVITY_M0_5:
-        str_format(Text, 256, "Event : Gravity modified to -0.5 ! | Remaining : %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case BOUNCE_10:
-        str_format(Text, 256, "Event : Laser Bounce Num modified to 10 ! | Remaining : %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case HOOK_VERY_LONG:
-        str_format(Text, 256, "Event : Hook Length is now very long ! | Remaining : %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case SPEED_X10:
-        str_format(Text, 256, "Event : All Get Speed X10 ! | Remaining : %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case WEAPON_SLOW:
-        str_format(Text, 256, "Event : All bullets are slow ! | Remaining : %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    case ALL:
-        str_format(Text, 256, "Event : All events are active ! | Remaining : %02d:%02d", (150 - Elapsed[0]/Server()->TickSpeed()) / 60, (150 - Elapsed[0]/Server()->TickSpeed()) % 60);
-        break;
-    }
-
-    if ( IsTwoEvent() )
-    {
-        char Temp[256] = "";
-        switch(m_ActualEvent[1])
+        switch(m_ActualEvent[i])
         {
         case NOTHING:
-            str_format(Temp, 256, "\nEvent 2 : Nothing. | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Nothing. | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case HAMMER:
+            str_format(aBuf, 256, "%s : All Get Hammer ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case GUN:
+            str_format(aBuf, 256, "%s : All Get Gun ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case SHOTGUN:
+            str_format(aBuf, 256, "%s : All Get Shotgun ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case GRENADE:
+            str_format(aBuf, 256, "%s : All Get Grenade ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case RIFLE:
+            str_format(aBuf, 256, "%s : All Get Rifle ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case KATANA:
+            str_format(aBuf, 256, "%s : All Get Katana ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case UNLIMITED_AMMO:
-            str_format(Temp, 256, "\nEvent 2 : All Get Unlimited Ammo ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Unlimited Ammo ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case LIFE_ARMOR_CRAZY:
-            str_format(Temp, 256, "\nEvent 2 : All Get Life and Armor Crazy ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Life and Armor Crazy ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case SURVIVOR:
-            str_format(Temp, 256, "\nEvent 2 : Mode Survivor ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Mode Survivor ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case PROTECT_X2:
-            str_format(Temp, 256, "\nEvent 2 : All Get Protect X2 ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Protect X2 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case INSTAGIB:
-            str_format(Temp, 256, "\nEvent 2 : Mode Instagib ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Mode Instagib ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case WALLSHOT:
+            str_format(aBuf, 256, "%s : Mode WallShot ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case BULLET_PIERCING:
-            str_format(Temp, 256, "\nEvent 2 : All Bullets can pierce Tee and Tiles ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Bullets can pierce Tee and Tiles ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case BULLET_BOUNCE:
-            str_format(Temp, 256, "\nEvent 2 : All Bullets can bounce ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Bullets can bounce ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case HAVE_ALL_WEAPON:
-            str_format(Temp, 256, "\nEvent 2 : All get all weapons when respawn ! | Remaininig %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All get all weapons when respawn ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case GRAVITY_0:
-            str_format(Temp, 256, "\nEvent 2 : Gravity modified to 0 ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Gravity modified to 0 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case GRAVITY_M0_5:
-            str_format(Temp, 256, "\nEvent 2 : Gravity modified to -0.5 ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Gravity modified to -0.5 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case BOUNCE_10:
-            str_format(Temp, 256, "\nEvent 2 : Laser Bounce Num modified to 10 ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Laser Bounce Num modified to 10 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case HOOK_VERY_LONG:
-            str_format(Temp, 256, "\nEvent 2 : Hook Length is now very long ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Hook Length is now very long ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case SPEED_X10:
-            str_format(Temp, 256, "\nEvent 2 : All Get Speed X10 ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Speed X10 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case WEAPON_SLOW:
-            str_format(Temp, 256, "\nEvent 2 : All bullets are slow ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All bullets are slow ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
-        default:
-            str_format(Temp, 256, "\nEvent 2 : Error ! | Remaining : %02d:%02d", (150 - Elapsed[1]/Server()->TickSpeed()) / 60, (150 - Elapsed[1]/Server()->TickSpeed()) % 60);
+        case RACE_WARRIOR:
+            str_format(aBuf, 256, "%s : All be race Warrior ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case RACE_ENGINEER:
+            str_format(aBuf, 256, "%s : All be race Engineer ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case RACE_ORC:
+            str_format(aBuf, 256, "%s : All be race Orc ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case RACE_MINER:
+            str_format(aBuf, 256, "%s : All be race Miner ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case RACE_RANDOM:
+            str_format(aBuf, 256, "%s : All have race Random ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case JUMP_UNLIMITED:
+            str_format(aBuf, 256, "%s : All can always jump ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case JUMP_X3:
+            str_format(aBuf, 256, "%s : All can jump higher ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case ALL:
+            str_format(aBuf, 256, "%s : All events are active ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         }
-        str_append(Text, Temp, 256);
+
+        str_append(Text, aBuf, 256);
     }
 
     if ( Controller()->IsTeamplay() )
@@ -221,8 +197,41 @@ void CEvent::Tick()
         case HAMMER_HEAL:
             str_format(Temp, 256, "\nEvent Team : Hammer Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
             break;
+        case GUN_HEAL:
+            str_format(Temp, 256, "\nEvent Team : Gun Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case SHOTGUN_HEAL:
+            str_format(Temp, 256, "\nEvent Team : Shotgun Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case GRENADE_HEAL:
+            str_format(Temp, 256, "\nEvent Team : Grenade Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
         case RIFLE_HEAL:
             str_format(Temp, 256, "\nEvent Team : Rifle Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case KATANA_HEAL:
+            str_format(Temp, 256, "\nEvent Team : Katana Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case CAN_HEAL:
+            str_format(Temp, 256, "\nEvent Team : Can heal teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case HAMMER_KILL:
+            str_format(Temp, 256, "\nEvent Team : Hammer Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case GUN_KILL:
+            str_format(Temp, 256, "\nEvent Team : Gun Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case SHOTGUN_KILL:
+            str_format(Temp, 256, "\nEvent Team : Shotgun Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case GRENADE_KILL:
+            str_format(Temp, 256, "\nEvent Team : Grenade Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case RIFLE_KILL:
+            str_format(Temp, 256, "\nEvent Team : Rifle Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+            break;
+        case KATANA_KILL:
+            str_format(Temp, 256, "\nEvent Team : Katana Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
             break;
         case CAN_KILL:
             str_format(Temp, 256, "\nEvent Team : Can kill teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);

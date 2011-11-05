@@ -62,10 +62,10 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 
     for ( int i = 0; i < 14; i++ )
     {
-	for ( unsigned long j = 0; j < m_statistiques.size(); j++ )
-	{
-       	    m_tri[i].push_back(&m_statistiques[j]);
-    	}
+        for ( unsigned long j = 0; j < m_statistiques.size(); j++ )
+        {
+            m_tri[i].push_back(&m_statistiques[j]);
+        }
     }
 
     UpdateRank();
@@ -393,8 +393,8 @@ void CStatistiques::UpdateRank()
         for ( int i = 0; i < 14; i++ )
         {
             m_tri[i].resize(0);
-	    for ( unsigned long j = 0; j < m_statistiques.size(); j++ )
-	    {
+            for ( unsigned long j = 0; j < m_statistiques.size(); j++ )
+            {
                 m_tri[i].push_back(&m_statistiques[j]);
             }
         }
@@ -532,7 +532,7 @@ void CStatistiques::DisplayStat(long id, const char* Name)
         str_format(a, 256, "%s | %s | %s", stats[i * 3], stats[(i * 3) + 1], stats[(i * 3) + 2]);
         GameServer()->SendChatTarget(-1, a);
     }
-} 
+}
 
 const char* Suffix(unsigned long number)
 {
@@ -604,6 +604,7 @@ void CStatistiques::DisplayBestOf()
     str_format(stats[14], 50, "Flag Capture : %ld", m_tri[13][0]->m_flag_capture);
 
     str_format(a, 256, "%s %s | %s", stats[0], stats[1], stats[2]);
+    GameServer()->SendChatTarget(-1, a);
 
     for ( int i = 1; i < 5; i++ )
     {

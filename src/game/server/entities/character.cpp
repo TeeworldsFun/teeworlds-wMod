@@ -329,7 +329,19 @@ void CCharacter::FireWeapon()
     if(m_ReloadTimer != 0)
         return;
 
-    const int Race = m_pPlayer->m_WeaponType[m_ActiveWeapon];
+    int Race = 0;
+    if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_WARRIOR) )
+        Race = WARRIOR;
+    else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ENGINEER) )
+        Race = ENGINEER;
+    else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ORC) )
+        Race = ORC;
+    else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_MINER) )
+        Race = MINER;
+    else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
+        Race = (rand() % (RACE_MINER - RACE_WARRIOR)) + RACE_WARRIOR;
+    else
+        Race = m_pPlayer->m_WeaponType[m_ActiveWeapon];
 
     DoWeaponSwitch();
     vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
@@ -1400,14 +1412,31 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
-    int FromRace = -1;
-    if ( GameServer()->m_apPlayers[From] )
+    int FromRace = 0;
+    if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_WARRIOR) )
+        FromRace = WARRIOR;
+    else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ENGINEER) )
+        FromRace = ENGINEER;
+    else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ORC) )
+        FromRace = ORC;
+    else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_MINER) )
+        FromRace = MINER;
+    else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
+        FromRace = (rand() % (RACE_MINER - RACE_WARRIOR)) + RACE_WARRIOR;
+    else if ( GameServer()->m_apPlayers[From] )
         FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
 
     if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) )
         m_Core.m_Vel += Force;
 
-    if( ((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_HEAL && Weapon == WEAPON_HAMMER) || (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE)) && GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From))
+    if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) &&
+         ((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_HEAL && Weapon == WEAPON_HAMMER) ||
+         (GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_HEAL && Weapon == WEAPON_GUN) ||
+         (GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_HEAL && Weapon == WEAPON_SHOTGUN) ||
+         (GameServer()->m_pEventsGame->GetActualEventTeam() == GRENADE_HEAL && Weapon == WEAPON_GRENADE) ||
+         (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE) ||
+         (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_HEAL && Weapon == WEAPON_NINJA))
+      )
     {
         int heal = 3;
         if(m_Health < m_stat_life->m_stockage[0])
@@ -1426,7 +1455,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
                 m_Armor = m_stat_life->m_stockage[0];
         }
 
-	char Text[256] = "";
+        char Text[256] = "";
         str_format(Text, 256, "Healing %s : %d%% health and %d%% armor.", Server()->ClientName(m_pPlayer->GetCID()), GetPercentHealth(), GetPercentArmor());
         GameServer()->SendChatTarget(From, Text);
         return false;
@@ -1434,7 +1463,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
     else if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_pPlayer->GetTeam() == TEAM_RED)
         return false;
 
-    if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From) && !g_Config.m_SvTeamdamage && GameServer()->m_pEventsGame->GetActualEventTeam() != CAN_KILL)
+    if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) && !g_Config.m_SvTeamdamage)
         return false;
 
     if ( m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed()))
