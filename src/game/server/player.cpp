@@ -33,6 +33,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
     m_Race = WARRIOR;
     for (int i = 0; i < NUM_WEAPONS; i++)
         m_WeaponType[i] = WARRIOR;
+    m_Mine = 0;
 }
 
 CPlayer::~CPlayer()

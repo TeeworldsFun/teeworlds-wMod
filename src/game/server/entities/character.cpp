@@ -339,7 +339,7 @@ void CCharacter::FireWeapon()
     else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_MINER) )
         Race = MINER;
     else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
-        Race = (rand() % (RACE_MINER - RACE_WARRIOR)) + RACE_WARRIOR;
+        Race = (rand() % (MINER - WARRIOR)) + WARRIOR;
     else
         Race = m_pPlayer->m_WeaponType[m_ActiveWeapon];
 
@@ -364,11 +364,30 @@ void CCharacter::FireWeapon()
         return;
 
     // check for ammo
-    if(!m_aWeapons[m_ActiveWeapon].m_Ammo)
+    if(!m_aWeapons[m_ActiveWeapon].m_Ammo ||
+       (Race == MINER && m_pPlayer->m_Mine >= 100) ||
+       ((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_RIFLE && m_pPlayer->m_Mine >= 100) ||
+       (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3))
     {
         // 125ms is a magical limit of how fast a human can click
         m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
         GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+        if (Race == MINER && m_pPlayer->m_Mine >= 100)
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), "You can't put more mines for now. Limit = 100");
+        if (GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && m_pPlayer->m_Mine >= 100)
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), "You can't fire more for now. For this event, Limit = 100");
+        if (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3)
+        {
+            char aBuf[256] = "";
+            int Older = 0;
+            for ( int i = 0; i < 3; i++ )
+            {
+                if ( m_LaserWall[i] && (m_LaserWall[i]->m_StartTick < Older || Older == 0) )
+                    Older = m_LaserWall[i]->m_StartTick;
+            }
+            str_format(aBuf, 256, "Can't build more laserwall for now, Wait %d secs !", ((Older+Server()->TickSpeed()*30)-Server()->Tick())/Server()->TickSpeed());
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
+        }
         return;
     }
 
@@ -450,20 +469,6 @@ void CCharacter::FireWeapon()
                         break;
                     }
                 }
-            }
-            else
-            {
-                char aBuf[256] = "";
-                int Older = 0;
-                for ( int i = 0; i < 3; i++ )
-                {
-                    if ( m_LaserWall[i] && (m_LaserWall[i]->m_StartTick < Older || Older == 0) )
-                    {
-                        Older = m_LaserWall[i]->m_StartTick;
-                    }
-                }
-                str_format(aBuf, 256, "Can't build more laserwall for now, Wait %d secs !", ((Older+Server()->TickSpeed()*30)-Server()->Tick())/Server()->TickSpeed());
-                GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
             }
         }
         else if ( Race == ORC )
@@ -940,17 +945,17 @@ void CCharacter::HandleWeapons()
             break;
         case SHOTGUN:
             if ( m_aWeapons[WEAPON_SHOTGUN].m_Got == false )
-                GiveWeapon(WEAPON_SHOTGUN, 20);
+                GiveWeapon(WEAPON_SHOTGUN, 10);
             m_ActiveWeapon = WEAPON_SHOTGUN;
             break;
         case GRENADE:
             if ( m_aWeapons[WEAPON_GRENADE].m_Got == false )
-                GiveWeapon(WEAPON_GRENADE, 20);
+                GiveWeapon(WEAPON_GRENADE, 10);
             m_ActiveWeapon = WEAPON_GRENADE;
             break;
         case RIFLE:
             if ( m_aWeapons[WEAPON_RIFLE].m_Got == false )
-                GiveWeapon(WEAPON_RIFLE, 20);
+                GiveWeapon(WEAPON_RIFLE, 10);
             m_ActiveWeapon = WEAPON_RIFLE;
             break;
         case KATANA:
@@ -958,12 +963,15 @@ void CCharacter::HandleWeapons()
                 GiveNinja();
             m_ActiveWeapon = WEAPON_NINJA;
             break;
+        case ALL:
+            m_ActiveWeapon = WEAPON_GUN;
+            break;
         }
     }
     else if ( GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) && m_ActiveWeapon != WEAPON_NINJA )
     {
         if ( m_aWeapons[WEAPON_RIFLE].m_Got == false )
-            GiveWeapon(WEAPON_RIFLE, 20);
+            GiveWeapon(WEAPON_RIFLE, 10);
         m_ActiveWeapon = WEAPON_RIFLE;
     }
 
@@ -980,14 +988,21 @@ void CCharacter::HandleWeapons()
     // fire Weapon, if wanted
     FireWeapon();
 
-    if ( m_aWeapons[m_ActiveWeapon].m_Ammo >= 0 && !(m_LatestInput.m_Fire&1) && (!GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) || m_ActiveWeapon == WEAPON_GUN) && m_stat_weapon->m_regeneration > 0)
+    if ( m_aWeapons[m_ActiveWeapon].m_Ammo >= 0 && !(m_LatestInput.m_Fire&1) && ((!GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && m_stat_weapon->m_regeneration > 0)|| m_ActiveWeapon == WEAPON_GUN) )
     {
         int Stockage = floor((m_stat_weapon->m_regeneration + 1) / 2) * 10;
-        if (m_ActiveWeapon == WEAPON_GUN)
-            Stockage *= 2;
-        int Vitesse = 1000 - ((m_stat_weapon->m_regeneration - 1)) * 100;
+        int Vitesse = 1000 - ((m_stat_weapon->m_regeneration - 1) * 100);
         if (!Vitesse)
             Vitesse = 50;
+
+        if (m_ActiveWeapon == WEAPON_GUN)
+        {
+            if (!Stockage)
+                Stockage = 10;
+            Stockage *= 2;
+            if ( m_stat_weapon->m_regeneration == 0 )
+                Vitesse = 1000;
+        }
         if (m_ActiveWeapon != WEAPON_GUN && (Server()->Tick() - m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart) >= Vitesse * Server()->TickSpeed() / 1000 && m_aWeapons[m_ActiveWeapon].m_Ammo < Stockage)
         {
             m_aWeapons[m_ActiveWeapon].m_Ammo++;
@@ -1008,7 +1023,17 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
     if ( Weapon == WEAPON_GUN && Stockage != -1 )
         Stockage *= 2;
 
-    if((m_aWeapons[Weapon].m_Ammo < Stockage && m_aWeapons[Weapon].m_Ammo != -1) || !m_aWeapons[Weapon].m_Got)
+    if ( m_aWeapons[Weapon].m_Ammo != -1 && Ammo == -2 )
+    {
+        m_aWeapons[Weapon].m_Ammo = Stockage;
+        if ( Weapon == m_ActiveWeapon && m_aWeapons[Weapon].m_Ammo != -1 )
+        {
+            char a[256] = "";
+            str_format(a, 256, "Ammo of the %s is : %d/%d.", m_aWeapons[Weapon].m_Name, m_aWeapons[Weapon].m_Ammo, Stockage);
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), a);
+        }
+    }
+    else if((m_aWeapons[Weapon].m_Ammo < Stockage && m_aWeapons[Weapon].m_Ammo != -1) || !m_aWeapons[Weapon].m_Got)
     {
         if (!m_aWeapons[Weapon].m_Got)
             m_aWeapons[Weapon].m_Ammo = min(Stockage, Ammo);
@@ -1170,6 +1195,7 @@ void CCharacter::Tick()
         for ( int i = 0; i < 12; i++ )
             delete m_AuraProtect[i];
         m_AuraProtect[0] = 0;
+        m_Protect = 0;
     }
 
     if ( !m_AuraCaptain[0] )
@@ -1435,7 +1461,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
          (GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_HEAL && Weapon == WEAPON_SHOTGUN) ||
          (GameServer()->m_pEventsGame->GetActualEventTeam() == GRENADE_HEAL && Weapon == WEAPON_GRENADE) ||
          (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE) ||
-         (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_HEAL && Weapon == WEAPON_NINJA))
+         (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_HEAL && Weapon == WEAPON_NINJA) ||
+         GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL)
       )
     {
         int heal = 3;
@@ -1468,8 +1495,6 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
     if ( m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed()))
         return false;
-    else
-        m_Protect = 0;
 
     if(From == m_pPlayer->GetCID())
         return false;
@@ -1577,7 +1602,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
 void CCharacter::Snap(int SnappingClient)
 {
-    if(NetworkClipped(SnappingClient))
+    if(NetworkClipped(SnappingClient) || (m_pPlayer->GetCID() != SnappingClient && GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) >= 15))
         return;
 
     CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));

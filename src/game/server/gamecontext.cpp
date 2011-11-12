@@ -2124,14 +2124,14 @@ void CGameContext::ConGiveShotgun(IConsole::IResult *pResult, void *pUserData)
             {
                 if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
                 {
-                    pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 20);
+                    pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 10);
                     pSelf->SendChatTarget(i, "An admin give to you a shotgun !");
                 }
             }
         }
         else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
         {
-            pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 20);
+            pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 10);
             pSelf->SendChatTarget(id, "An admin give to you a shotgun !");
         }
         else
@@ -2154,15 +2154,15 @@ void CGameContext::ConGiveGrenade(IConsole::IResult *pResult, void *pUserData)
             {
                 if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
                 {
-                    if(pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 20))
-                        pSelf->SendChatTarget(i, "An admin give to you 20 ammos for/with a launch-grenade !");
+                    if(pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 10))
+                        pSelf->SendChatTarget(i, "An admin give to you a launch-grenade !");
                 }
             }
         }
         else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
         {
-            if(pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 20))
-                pSelf->SendChatTarget(id, "An admin give to you 20 ammos for/with a launch-grenade !");
+            if(pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 10))
+                pSelf->SendChatTarget(id, "An admin give to you a launch-grenade !");
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
@@ -2184,15 +2184,15 @@ void CGameContext::ConGiveRifle(IConsole::IResult *pResult, void *pUserData)
             {
                 if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
                 {
-                    if (pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 20))
-                        pSelf->SendChatTarget(i, "An admin give to you 20 ammos for/with a rifle !");
+                    if (pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 10))
+                        pSelf->SendChatTarget(i, "An admin give to you  a rifle !");
                 }
             }
         }
         else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
         {
-            if (pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 20))
-                pSelf->SendChatTarget(id, "An admin give to you 20 ammos for/with a rifle !");
+            if (pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 10))
+                pSelf->SendChatTarget(id, "An admin give to you a rifle !");
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");

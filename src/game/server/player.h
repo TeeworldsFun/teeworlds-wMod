@@ -114,6 +114,7 @@ public:
     int m_BroadcastTick;
     int m_Race;
     int m_WeaponType[NUM_WEAPONS];
+    int m_Mine;
 private:
     CCharacter *m_pCharacter;
     CGameContext *m_pGameServer;

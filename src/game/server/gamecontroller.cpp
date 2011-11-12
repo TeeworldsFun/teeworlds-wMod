@@ -403,6 +403,21 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
                 str_format(Text, 256, "WARNING : %s must be stopped !!! %ld kills !!! ;)", Server()->ClientName(pKiller->GetCID()), m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()));
                 GameServer()->SendChatTarget(-1, Text);
             }
+            if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) < 4)
+            {
+                char bonus_note[3][32] = {"handle x1.5 and fly unlimited", "all weapons except katana", "invisibility"};
+                char Text[256] = "";
+                str_format(Text, 256, "You've get %s !", bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
+                GameServer()->SendChatTarget(pKiller->GetCID(), Text);
+
+                if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 2)
+                {
+                    pKiller->GetCharacter()->GiveWeapon(WEAPON_GUN, -2);
+                    pKiller->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, -2);
+                    pKiller->GetCharacter()->GiveWeapon(WEAPON_GRENADE, -2);
+                    pKiller->GetCharacter()->GiveWeapon(WEAPON_RIFLE, -2);
+                }
+            }
         }
 
         if ( pVictim->GetPlayer()->m_PlayerFlags & PLAYERFLAG_CHATTING )
@@ -495,7 +510,7 @@ void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 
     // give default weapons
     pChr->GiveWeapon(WEAPON_HAMMER, -1);
-    pChr->GiveWeapon(WEAPON_GUN, 100);
+    pChr->GiveWeapon(WEAPON_GUN, 10);
 }
 
 void IGameController::DoWarmup(int Seconds)
