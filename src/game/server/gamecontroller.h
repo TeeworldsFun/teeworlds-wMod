@@ -4,6 +4,7 @@
 #define GAME_SERVER_GAMECONTROLLER_H
 
 #include <base/vmath.h>
+#include <game/generated/protocol.h>
 
 /*
 	Class: Game Controller
@@ -16,6 +17,8 @@ class IGameController
     int m_aNumSpawnPoints[3];
 
     bool m_ForceDoBalance;
+
+    bool m_GameWeapon[NUM_WEAPONS];
 
     class CGameContext *m_pGameServer;
     class IServer *m_pServer;
@@ -112,6 +115,10 @@ public:
     		bool?
     */
     virtual bool OnEntity(int Index, vec2 Pos);
+    bool IsWeaponEntity(int Weapon)
+    {
+        return m_GameWeapon[Weapon];
+    };
 
     /*
     	Function: on_CCharacter_spawn

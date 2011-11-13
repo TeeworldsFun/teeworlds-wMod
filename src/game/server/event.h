@@ -14,19 +14,13 @@ public:
     ~CEvent();
     void Tick();
 
-    //ONLY FOR EVENT BEFORE KATANA !!!
-    inline int GetActualEvent()
-    {
-        return m_ActualEvent[0];
-    };
-
     inline bool IsTwoEvent()
     {
         return m_TwoEvent;
     };
     inline bool IsActualEvent(int Event)
     {
-        if ( Event == m_ActualEvent[0] || (IsTwoEvent() && Event == m_ActualEvent[1]) || (m_ActualEvent[0] == ALL && (Event > KATANA || Event < SHOTGUN) && Event != WALLSHOT && Event != SURVIVOR && Event != GRAVITY_M0_5 && Event != BULLET_PIERCING && (Event <= RACE_WARRIOR || Event > RACE_RANDOM)))
+        if (Event == m_ActualEvent[0] || (IsTwoEvent() && Event == m_ActualEvent[1]) || (m_ActualEvent[0] == ALL && (Event > KATANA || Event < SHOTGUN) && Event != WALLSHOT && Event != SURVIVOR && Event != GRAVITY_M0_5 && Event != BULLET_PIERCING && (Event <= RACE_WARRIOR || Event > RACE_RANDOM)))
         {
             return true;
         }
@@ -81,6 +75,7 @@ private:
         return m_pGameServer->m_pController;
     }
 
+    bool CanBeUsed(int NewEvent, int Type = 0);
     void SetTune();
     void ResetTune();
     bool m_TwoEvent;

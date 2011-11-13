@@ -45,8 +45,9 @@ void CLaserWall::Tick()
     if(!pHit || GameServer()->m_pController->IsFriendlyFire(m_Owner, pHit->GetPlayer()->GetCID(), WEAPON_RIFLE) || pHit->m_Protect != 0)
         return;
 
-    pHit->Die(m_Owner, WEAPON_HAMMER);
-    m_Killed++;
+    if (pHit->TakeDamage(vec2(0,0), 100, m_Owner, WEAPON_HAMMER))
+        m_Killed++;
+
     if(pOwnerChar)
         pOwnerChar->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
 }

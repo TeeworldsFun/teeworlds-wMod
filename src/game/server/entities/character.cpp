@@ -276,7 +276,14 @@ void CCharacter::HandleNinja()
 void CCharacter::DoWeaponSwitch()
 {
     // make sure we can switch
-    if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got || (GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA) || GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) )
+    if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got ||
+            GameServer()->m_pEventsGame->IsActualEvent(HAMMER) ||
+            GameServer()->m_pEventsGame->IsActualEvent(GUN) ||
+            GameServer()->m_pEventsGame->IsActualEvent(SHOTGUN) ||
+            GameServer()->m_pEventsGame->IsActualEvent(GRENADE) ||
+            GameServer()->m_pEventsGame->IsActualEvent(RIFLE) ||
+            GameServer()->m_pEventsGame->IsActualEvent(KATANA) ||
+            GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) )
         return;
 
     // switch Weapon
@@ -365,9 +372,9 @@ void CCharacter::FireWeapon()
 
     // check for ammo
     if(!m_aWeapons[m_ActiveWeapon].m_Ammo ||
-       (Race == MINER && m_pPlayer->m_Mine >= 100) ||
-       ((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_RIFLE && m_pPlayer->m_Mine >= 100) ||
-       (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3))
+            (Race == MINER && m_pPlayer->m_Mine >= 100) ||
+            ((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_RIFLE && m_pPlayer->m_Mine >= 100) ||
+            (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3))
     {
         // 125ms is a magical limit of how fast a human can click
         m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
@@ -933,46 +940,42 @@ void CCharacter::FireWeapon()
 
 void CCharacter::HandleWeapons()
 {
-    if (GameServer()->m_pEventsGame->GetActualEvent() >= HAMMER && GameServer()->m_pEventsGame->GetActualEvent() <= KATANA && m_ActiveWeapon != WEAPON_NINJA)
+    if (m_ActiveWeapon != WEAPON_NINJA)
     {
-        switch(GameServer()->m_pEventsGame->GetActualEvent())
-        {
-        case HAMMER:
+        if (GameServer()->m_pEventsGame->IsActualEvent(HAMMER))
             m_ActiveWeapon = WEAPON_HAMMER;
-            break;
-        case GUN:
+        if (GameServer()->m_pEventsGame->IsActualEvent(GUN))
             m_ActiveWeapon = WEAPON_GUN;
-            break;
-        case SHOTGUN:
+        if (GameServer()->m_pEventsGame->IsActualEvent(SHOTGUN))
+        {
             if ( m_aWeapons[WEAPON_SHOTGUN].m_Got == false )
                 GiveWeapon(WEAPON_SHOTGUN, 10);
             m_ActiveWeapon = WEAPON_SHOTGUN;
-            break;
-        case GRENADE:
+        }
+        if (GameServer()->m_pEventsGame->IsActualEvent(GRENADE))
+        {
             if ( m_aWeapons[WEAPON_GRENADE].m_Got == false )
                 GiveWeapon(WEAPON_GRENADE, 10);
             m_ActiveWeapon = WEAPON_GRENADE;
-            break;
-        case RIFLE:
+        }
+        if (GameServer()->m_pEventsGame->IsActualEvent(RIFLE))
+        {
             if ( m_aWeapons[WEAPON_RIFLE].m_Got == false )
                 GiveWeapon(WEAPON_RIFLE, 10);
             m_ActiveWeapon = WEAPON_RIFLE;
-            break;
-        case KATANA:
+        }
+        if (GameServer()->m_pEventsGame->IsActualEvent(KATANA))
+        {
             if ( m_aWeapons[WEAPON_NINJA].m_Got == false )
                 GiveNinja();
             m_ActiveWeapon = WEAPON_NINJA;
-            break;
-        case ALL:
-            m_ActiveWeapon = WEAPON_GUN;
-            break;
         }
-    }
-    else if ( GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) && m_ActiveWeapon != WEAPON_NINJA )
-    {
-        if ( m_aWeapons[WEAPON_RIFLE].m_Got == false )
-            GiveWeapon(WEAPON_RIFLE, 10);
-        m_ActiveWeapon = WEAPON_RIFLE;
+        else if (GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT))
+        {
+            if ( m_aWeapons[WEAPON_RIFLE].m_Got == false )
+                GiveWeapon(WEAPON_RIFLE, 10);
+            m_ActiveWeapon = WEAPON_RIFLE;
+        }
     }
 
     //ninja
@@ -1456,13 +1459,13 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
         m_Core.m_Vel += Force;
 
     if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) &&
-         ((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_HEAL && Weapon == WEAPON_HAMMER) ||
-         (GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_HEAL && Weapon == WEAPON_GUN) ||
-         (GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_HEAL && Weapon == WEAPON_SHOTGUN) ||
-         (GameServer()->m_pEventsGame->GetActualEventTeam() == GRENADE_HEAL && Weapon == WEAPON_GRENADE) ||
-         (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE) ||
-         (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_HEAL && Weapon == WEAPON_NINJA) ||
-         GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL)
+            ((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_HEAL && Weapon == WEAPON_HAMMER) ||
+             (GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_HEAL && Weapon == WEAPON_GUN) ||
+             (GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_HEAL && Weapon == WEAPON_SHOTGUN) ||
+             (GameServer()->m_pEventsGame->GetActualEventTeam() == GRENADE_HEAL && Weapon == WEAPON_GRENADE) ||
+             (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE) ||
+             (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_HEAL && Weapon == WEAPON_NINJA) ||
+             GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL)
       )
     {
         int heal = 3;

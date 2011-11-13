@@ -31,9 +31,9 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 
 void CProjectile::Reset()
 {
-    GameServer()->m_World.DestroyEntity(this);
-    if ((m_Type == WEAPON_RIFLE || (GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE))) && GameServer()->m_apPlayers[m_Owner])
+    if ((m_Type == WEAPON_RIFLE || GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && GameServer()->m_apPlayers[m_Owner])
         GameServer()->m_apPlayers[m_Owner]->m_Mine -= GameServer()->m_apPlayers[m_Owner]->m_Mine > 0 ? 1 : 0;
+    GameServer()->m_World.DestroyEntity(this);
 }
 
 vec2 CProjectile::GetPos(float Time)
@@ -138,9 +138,9 @@ void CProjectile::Tick()
 
         if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) && !m_Bounce ) || m_LifeSpan < 0)
         {
-            GameServer()->m_World.DestroyEntity(this);
             if ((m_Type == WEAPON_RIFLE || (GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE))) && GameServer()->m_apPlayers[m_Owner])
                 GameServer()->m_apPlayers[m_Owner]->m_Mine -= GameServer()->m_apPlayers[m_Owner]->m_Mine > 0 ? 1 : 0;
+            GameServer()->m_World.DestroyEntity(this);
         }
         else if ( Collide && (GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) || m_Bounce) )
         {

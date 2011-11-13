@@ -45,14 +45,7 @@ void CEvent::Tick()
                 Controller()->EndRound();
             }
 
-            if ( i == 0 )
-                while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[0] || (m_TwoEvent && NewEvent == m_ActualEvent[1]) || (NewEvent == SURVIVOR && Controller()->IsTeamplay()));
-            else
-                while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[1]
-                || NewEvent == m_ActualEvent[0] || (NewEvent >= HAMMER && NewEvent <= KATANA) || NewEvent == WALLSHOT
-                || (m_ActualEvent[0] == GRAVITY_0 && NewEvent == GRAVITY_M0_5) || (m_ActualEvent[0] == GRAVITY_M0_5 && NewEvent == GRAVITY_0)
-                || (m_ActualEvent[0] == BULLET_BOUNCE && NewEvent == BULLET_PIERCING) || (m_ActualEvent[0] == BULLET_PIERCING && NewEvent == BULLET_BOUNCE)
-                || ((NewEvent >= RACE_WARRIOR && NewEvent <= RACE_RANDOM) && (m_ActualEvent[0] >= RACE_WARRIOR && m_ActualEvent[0] <= RACE_RANDOM)) || NewEvent == SURVIVOR);
+            while (!CanBeUsed(NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING, i));
 
             m_ActualEvent[i] = NewEvent;
             m_StartEvent[i] = Server()->Tick();
@@ -175,8 +168,8 @@ void CEvent::Tick()
                 GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
                 Controller()->EndRound();
             }
-            int NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING;
-            while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0) );
+            int NewEvent;
+            while (!CanBeUsed(NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING, 3));
 
             if ( m_ActualEventTeam >= STEAL_TEE )
                 Controller()->EndRound();
@@ -272,6 +265,80 @@ void CEvent::Tick()
     }
 }
 
+bool CEvent::CanBeUsed(int NewEvent, int Type)
+{
+    if ( Type == 0 || Type == 1 )
+    {
+        if (NewEvent == m_ActualEvent[0])
+            return false;
+        else if (m_TwoEvent && NewEvent == m_ActualEvent[1])
+            return false;
+        else if (m_TwoEvent && NewEvent >= GUN && NewEvent <= KATANA && m_ActualEvent[1] >= GUN && m_ActualEvent[1] <= KATANA)
+            return false;
+        else if (m_TwoEvent && NewEvent >= RACE_WARRIOR && NewEvent <= RACE_RANDOM && m_ActualEvent[1] >= RACE_WARRIOR && m_ActualEvent[1] <= RACE_RANDOM)
+            return false;
+        else if (NewEvent == SURVIVOR && Controller()->IsTeamplay())
+            return false;
+
+        else if (NewEvent == HAMMER && !Controller()->IsWeaponEntity(WEAPON_HAMMER))
+            return false;
+        else if (NewEvent == GUN && !Controller()->IsWeaponEntity(WEAPON_GUN))
+            return false;
+        else if (NewEvent == SHOTGUN && !Controller()->IsWeaponEntity(WEAPON_SHOTGUN))
+            return false;
+        else if (NewEvent == GRENADE && !Controller()->IsWeaponEntity(WEAPON_GRENADE))
+            return false;
+        else if (NewEvent == RIFLE && !Controller()->IsWeaponEntity(WEAPON_RIFLE))
+            return false;
+        else if (NewEvent == WALLSHOT && !Controller()->IsWeaponEntity(WEAPON_RIFLE))
+            return false;
+        else if (NewEvent == BOUNCE_10 && !Controller()->IsWeaponEntity(WEAPON_RIFLE))
+            return false;
+
+        if ( Type == 1 )
+        {
+            if ((NewEvent >= GUN && NewEvent <= KATANA) && (m_ActualEvent[0] >= GUN && m_ActualEvent[0] <= KATANA))
+                return false;
+            else if ((NewEvent >= RACE_WARRIOR && NewEvent <= RACE_RANDOM) && (m_ActualEvent[0] >= RACE_WARRIOR && m_ActualEvent[0] <= RACE_RANDOM))
+                return false;
+            else if (NewEvent == WALLSHOT || NewEvent == SURVIVOR)
+                return false;
+            else if (m_ActualEvent[0] == GRAVITY_0 && NewEvent == GRAVITY_M0_5)
+                return false;
+            else if (m_ActualEvent[0] == GRAVITY_M0_5 && NewEvent == GRAVITY_0)
+                return false;
+            else if (m_ActualEvent[0] == BULLET_BOUNCE && NewEvent == BULLET_PIERCING)
+                return false;
+            else if (m_ActualEvent[0] == BULLET_PIERCING && NewEvent == BULLET_BOUNCE)
+                return false;
+        }
+    }
+    else if ( Type == 3 )
+    {
+        if (NewEvent == m_ActualEventTeam)
+            return false;
+        else if (NewEvent >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0)
+            return false;
+
+        else if ((NewEvent == HAMMER_HEAL || NewEvent == HAMMER_KILL) && !Controller()->IsWeaponEntity(WEAPON_HAMMER))
+            return false;
+        else if ((NewEvent == GUN_HEAL || NewEvent == GUN_KILL) && !Controller()->IsWeaponEntity(WEAPON_GUN))
+            return false;
+        else if ((NewEvent == SHOTGUN_HEAL || NewEvent == SHOTGUN_KILL) && !Controller()->IsWeaponEntity(WEAPON_SHOTGUN))
+            return false;
+        else if ((NewEvent == GRENADE_HEAL || NewEvent == GRENADE_KILL) && !Controller()->IsWeaponEntity(WEAPON_GRENADE))
+            return false;
+        else if ((NewEvent == RIFLE_HEAL || NewEvent == RIFLE_KILL) && !Controller()->IsWeaponEntity(WEAPON_RIFLE))
+            return false;
+        else if ((NewEvent == KATANA_HEAL || NewEvent == KATANA_KILL) && !Controller()->IsWeaponEntity(WEAPON_NINJA) && !IsActualEvent(KATANA))
+            return false;
+    }
+    else
+        return false;
+
+    return true;
+}
+
 void CEvent::SetTune()
 {
     ResetTune();
@@ -361,12 +428,19 @@ void CEvent::NextEvent()
         Controller()->EndRound();
     }
 
-    if ( m_ActualEvent[0] + 1 < END && (!Controller()->IsTeamplay() || m_ActualEvent[0] + 1 != SURVIVOR))
-        m_ActualEvent[0]++;
-    else if (Controller()->IsTeamplay() && m_ActualEvent[0] + 1 == SURVIVOR)
-        m_ActualEvent[0] += 2;
-    else
-        m_ActualEvent[0] = 0;
+    for ( int i = 1; true; i++ )
+    {
+        if (m_ActualEvent[0] + i < END && CanBeUsed(m_ActualEvent[0] + i, 0))
+        {
+            m_ActualEvent[0] += i;
+            break;
+        }
+        else if (m_ActualEvent[0] + i >= END && CanBeUsed((m_ActualEvent[0] + i) % END, 0))
+        {
+            m_ActualEvent[0] = (m_ActualEvent[0] + i) % END;
+            break;
+        }
+    }
 
     m_StartEvent[0] = Server()->Tick();
     SetTune();
@@ -380,9 +454,8 @@ void CEvent::NextRandomEvent()
         Controller()->EndRound();
     }
 
-    int NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING;
-    while ( (NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING) == m_ActualEvent[0] || (NewEvent == SURVIVOR && Controller()->IsTeamplay()));
-
+    int NewEvent;
+    while (!CanBeUsed(NewEvent = (rand() % ((END - 1) - NOTHING + 1)) + NOTHING, 0));
     m_ActualEvent[0] = NewEvent;
     m_StartEvent[0] = Server()->Tick();
     SetTune();
@@ -398,9 +471,9 @@ bool CEvent::SetEvent(int event)
             Controller()->EndRound();
         }
 
-        if ( event == SURVIVOR && Controller()->IsTeamplay() )
+        if (!CanBeUsed(event, 0))
         {
-            GameServer()->SendChatTarget(-1, "The event Survivor can't be used in wTDM and wCTF");
+            GameServer()->SendChatTarget(-1, "Can't use this event with this config.");
             return false;
         }
 
@@ -437,10 +510,19 @@ void CEvent::NextEventTeam()
         Controller()->EndRound();
     }
 
-    if ( (m_ActualEventTeam + 1 >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0) || m_ActualEventTeam + 1 >= T_END )
-        m_ActualEventTeam = 0;
-    else if ( m_ActualEventTeam + 1 < T_END )
-        m_ActualEventTeam++;
+    for ( int i = 1; true; i++ )
+    {
+        if (m_ActualEventTeam + i < END && CanBeUsed(m_ActualEventTeam + i, 0))
+        {
+            m_ActualEventTeam += i;
+            break;
+        }
+        else if (m_ActualEventTeam + i > END && CanBeUsed((m_ActualEventTeam + i) % END, 0))
+        {
+            m_ActualEventTeam = (m_ActualEventTeam + i) % END;
+            break;
+        }
+    }
 
     if ( m_ActualEventTeam == TEE_VS_ZOMBIE )
         Controller()->EndRound();
@@ -457,9 +539,8 @@ void CEvent::NextRandomEventTeam()
         Controller()->EndRound();
     }
 
-    int NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING;
-    while ( (NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING) == m_ActualEventTeam || (NewEvent >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0) );
-
+    int NewEvent;
+    while (!CanBeUsed(NewEvent = (rand() % ((T_END - 1) - T_NOTHING + 1)) + T_NOTHING, 3));
     m_ActualEventTeam = NewEvent;
     m_StartEventTeam = Server()->Tick();
     if ( m_ActualEventTeam == TEE_VS_ZOMBIE )
@@ -477,9 +558,9 @@ bool CEvent::SetEventTeam(int event)
             Controller()->EndRound();
         }
 
-        if (event >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0)
+        if (!CanBeUsed(event, 3))
         {
-            GameServer()->SendChatTarget(-1, "The event Survivor and Steal tee and Tee vs Zombies can't be used in wCTF");
+            GameServer()->SendChatTarget(-1, "Can't use this event with this config.");
             return false;
         }
 

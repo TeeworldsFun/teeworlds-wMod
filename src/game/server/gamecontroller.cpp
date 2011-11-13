@@ -37,6 +37,13 @@ IGameController::IGameController(class CGameContext *pGameServer)
     m_aNumSpawnPoints[1] = 0;
     m_aNumSpawnPoints[2] = 0;
 
+    m_GameWeapon[WEAPON_HAMMER] = true;
+    m_GameWeapon[WEAPON_GUN] = true;
+    m_GameWeapon[WEAPON_SHOTGUN] = false;
+    m_GameWeapon[WEAPON_GRENADE] = false;
+    m_GameWeapon[WEAPON_RIFLE] = false;
+    m_GameWeapon[WEAPON_NINJA] = false;
+
     m_Captain[0] = -1;
     m_Captain[1] = -1;
 }
@@ -150,21 +157,25 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
     {
         Type = POWERUP_WEAPON;
         SubType = WEAPON_SHOTGUN;
+        m_GameWeapon[WEAPON_SHOTGUN] = true;
     }
     else if(Index == ENTITY_WEAPON_GRENADE)
     {
         Type = POWERUP_WEAPON;
         SubType = WEAPON_GRENADE;
+        m_GameWeapon[WEAPON_GRENADE] = true;
     }
     else if(Index == ENTITY_WEAPON_RIFLE)
     {
         Type = POWERUP_WEAPON;
         SubType = WEAPON_RIFLE;
+        m_GameWeapon[WEAPON_RIFLE] = true;
     }
     else if(Index == ENTITY_POWERUP_NINJA && g_Config.m_SvPowerups)
     {
         Type = POWERUP_NINJA;
         SubType = WEAPON_NINJA;
+        m_GameWeapon[WEAPON_NINJA] = true;
     }
 
     if(Type != -1)
@@ -535,12 +546,12 @@ bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2, int Weapon)
             return false;
 
         if((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_KILL && Weapon == WEAPON_HAMMER) ||
-            (GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_KILL && Weapon == WEAPON_GUN) ||
-            (GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_KILL && Weapon == WEAPON_SHOTGUN) ||
-            (GameServer()->m_pEventsGame->GetActualEventTeam() == GRENADE_KILL && Weapon == WEAPON_GRENADE) ||
-            (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_KILL && Weapon == WEAPON_RIFLE) ||
-            (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_KILL && Weapon == WEAPON_NINJA)
-        )
+                (GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_KILL && Weapon == WEAPON_GUN) ||
+                (GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_KILL && Weapon == WEAPON_SHOTGUN) ||
+                (GameServer()->m_pEventsGame->GetActualEventTeam() == GRENADE_KILL && Weapon == WEAPON_GRENADE) ||
+                (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_KILL && Weapon == WEAPON_RIFLE) ||
+                (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_KILL && Weapon == WEAPON_NINJA)
+          )
             return false;
 
         if(GameServer()->m_apPlayers[ClientID1]->GetTeam() == GameServer()->m_apPlayers[ClientID2]->GetTeam())
