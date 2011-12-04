@@ -48,7 +48,7 @@ public:
     void FireWeapon();
 
     void Die(int Killer, int Weapon);
-    bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon);
+    bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib);
 
     bool Spawn(class CPlayer *pPlayer, vec2 Pos);
     bool Remove();
@@ -147,6 +147,9 @@ private:
     class CAura *m_AuraCaptain[3];
     class CLaserWall *m_LaserWall[3];
     int m_NumLaserWall;
+    class CTurret *m_Turret[5];
+
+    int m_JumpTick;
 
     // ninja
     struct

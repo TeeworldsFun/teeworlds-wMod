@@ -13,6 +13,7 @@
 #include "aura.h"
 #include "laserwall.h"
 #include "plasma.h"
+#include "turret.h"
 
 //input count
 struct CInputCount
@@ -56,6 +57,8 @@ CCharacter::CCharacter(CGameWorld *pWorld)
     str_copy(m_aWeapons[WEAPON_GRENADE].m_Name, "Grenade", 50);
     str_copy(m_aWeapons[WEAPON_RIFLE].m_Name, "Rifle", 50);
     str_copy(m_aWeapons[WEAPON_NINJA].m_Name, "Katana", 50);
+    m_stat_weapon = new StatWeapon;
+    m_stat_life = new StatLife;
 }
 
 CCharacter::~CCharacter()
@@ -66,6 +69,14 @@ CCharacter::~CCharacter()
         {
             delete m_LaserWall[i];
             m_LaserWall[i] = 0;
+        }
+    }
+    for ( int i = 0; i < 5; i++ )
+    {
+        if (m_Turret[i] != 0)
+        {
+            delete m_Turret[i];
+            m_Turret[i] = 0;
         }
     }
     if ( m_AuraProtect[0] != 0 )
@@ -80,6 +91,9 @@ CCharacter::~CCharacter()
             delete m_AuraCaptain[i];
         m_AuraCaptain[0] = 0;
     }
+    
+    delete m_stat_weapon;
+    delete m_stat_life;
 }
 
 void CCharacter::Reset()
@@ -111,10 +125,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
     mem_zero(&m_SendCore, sizeof(m_SendCore));
     mem_zero(&m_ReckoningCore, sizeof(m_ReckoningCore));
 
-    m_stat_weapon = new StatWeapon;
     *m_stat_weapon = GameServer()->m_pStatistiques->GetStatWeapon(m_pPlayer->GetSID());
-
-    m_stat_life = new StatLife;
     *m_stat_life = GameServer()->m_pStatistiques->GetStatLife(m_pPlayer->GetSID());
 
     m_Protect = Server()->Tick();
@@ -124,6 +135,14 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
     m_LaserWall[1] = 0;
     m_LaserWall[2] = 0;
     m_NumLaserWall = 0;
+
+    m_Turret[0] = 0;
+    m_Turret[1] = 0;
+    m_Turret[2] = 0;
+    m_Turret[3] = 0;
+    m_Turret[4] = 0;
+
+    m_JumpTick = 0;
 
     GameServer()->m_World.InsertEntity(this);
     m_Alive = true;
@@ -261,7 +280,7 @@ void CCharacter::HandleNinja()
                 if(m_NumObjectsHit < 10)
                     m_apHitObjects[m_NumObjectsHit++] = aEnts[i];
 
-                if(aEnts[i]->TakeDamage(vec2(0, 10.0f), 20, m_pPlayer->GetCID(), WEAPON_NINJA) && !GameServer()->m_pEventsGame->IsActualEvent(KATANA))
+                if(aEnts[i]->TakeDamage(vec2(0, 10.0f), 20, m_pPlayer->GetCID(), WEAPON_NINJA, true) && !GameServer()->m_pEventsGame->IsActualEvent(KATANA))
                     m_Ninja.m_Killed++;
             }
         }
@@ -371,10 +390,10 @@ void CCharacter::FireWeapon()
         return;
 
     // check for ammo
-    if(!m_aWeapons[m_ActiveWeapon].m_Ammo ||
-            (Race == MINER && m_pPlayer->m_Mine >= 100) ||
-            ((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_RIFLE && m_pPlayer->m_Mine >= 100) ||
-            (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3))
+    if(!m_aWeapons[m_ActiveWeapon].m_Ammo || (Race == MINER && m_ActiveWeapon == WEAPON_GUN && m_aWeapons[m_ActiveWeapon].m_Ammo < 5 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
+        (Race == ORC && m_ActiveWeapon != WEAPON_RIFLE && m_aWeapons[m_ActiveWeapon].m_Ammo < 2 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
+        ((Race == MINER || GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW)) && m_pPlayer->m_Mine >= 100 && m_ActiveWeapon != WEAPON_HAMMER) ||
+        (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3))
     {
         // 125ms is a magical limit of how fast a human can click
         m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
@@ -442,7 +461,7 @@ void CCharacter::FireWeapon()
                 Dir = vec2(0.f, -1.f);
 
             pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
-                                m_pPlayer->GetCID(), m_ActiveWeapon);
+                                m_pPlayer->GetCID(), m_ActiveWeapon, Race == ORC ? true : false);
             Hits++;
         }
 
@@ -566,23 +585,36 @@ void CCharacter::FireWeapon()
         }
         else if ( Race == MINER )
         {
-            CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_RIFLE,
-                                                 m_pPlayer->GetCID(),
-                                                 ProjStartPos,
-                                                 Direction,
-                                                 Server()->TickSpeed()*30,
-                                                 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GUN, false, false, Bounce);
+            bool Created = false;
 
-            // pack the Projectile and send it to the client Directly
-            CNetObj_Projectile p;
-            pProj->FillInfo(&p);
+            for ( int i = 0; i < 5; i++ )
+            {
+                if ( m_Turret[i] == 0 )
+                {
+                    m_Turret[i] = new CTurret(GameWorld(), m_Pos, m_pPlayer->GetCID());
+                    Created = true;
+                    break;
+                }
+            }
+            
+            if (!Created)
+            {
+                int Older = 0;
+                int OlderStart = 0;
 
-            CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-            Msg.AddInt(1);
-            for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
-                Msg.AddInt(((int *)&p)[i]);
+                for ( int i = 0; i < 5; i++ )
+                {
+                    if ( OlderStart == 0 || m_Turret[i]->GetStartTick() < OlderStart )
+                    {
+                        Older = i;
+                        OlderStart = m_Turret[i]->GetStartTick();
+                    }
+                }
 
-            Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
+                delete m_Turret[Older];
+                m_Turret[Older] = new CTurret(GameWorld(), m_Pos, m_pPlayer->GetCID());
+                Created = false; 
+            }
         }
 
         if (sound)
@@ -921,11 +953,14 @@ void CCharacter::FireWeapon()
 
     m_AttackTick = Server()->Tick();
 
-    if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && (!GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO) || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && ( Race != ORC || m_ActiveWeapon != WEAPON_RIFLE ) ) // -1 == unlimited
+    if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && (!GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO)
+    || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && ( Race != ORC || m_ActiveWeapon != WEAPON_RIFLE ) ) // -1 == unlimited
     {
         m_aWeapons[m_ActiveWeapon].m_Ammo--;
         if ( Race == ORC )
             m_aWeapons[m_ActiveWeapon].m_Ammo--;
+        if ( Race == MINER && m_ActiveWeapon == WEAPON_GUN )
+            m_aWeapons[m_ActiveWeapon].m_Ammo -= 4;
     }
 
     if(!m_ReloadTimer)
@@ -1158,13 +1193,16 @@ void CCharacter::Tick()
         m_pPlayer->m_ForceBalanced = false;
     }
 
-    if(m_Core.m_Jumped & 2)
+    if(m_Core.m_Jumped & 2 && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000)
         m_Core.m_Jumped &= ~2;
 
     m_Core.m_Input = m_Input;
     m_Core.Tick(true);
 
-    if( m_Core.m_Jumped & 3 && GameServer()->m_pEventsGame->IsActualEvent(GRAVITY_M0_5) )
+    if(m_Input.m_Jump && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000)
+         m_JumpTick = Server()->Tick();
+    
+    if(m_Input.m_Jump && GameServer()->m_pEventsGame->IsActualEvent(GRAVITY_M0_5))
         m_Core.m_Vel.y = GameServer()->Tuning()->m_AirJumpImpulse;
 
     // handle death-tiles and leaving gamelayer
@@ -1406,29 +1444,6 @@ void CCharacter::Die(int Killer, int Weapon)
     m_pPlayer->m_DieTick = Server()->Tick();
 
     m_Alive = false;
-    for ( int i = 0; i < 3; i++ )
-    {
-        if (m_LaserWall[i] != 0)
-        {
-            delete m_LaserWall[i];
-            m_LaserWall[i] = 0;
-        }
-    }
-    if ( m_AuraProtect[0] != 0 )
-    {
-        for ( int i = 0; i < 12; i++ )
-            delete m_AuraProtect[i];
-        m_AuraProtect[0] = 0;
-    }
-    if ( m_AuraCaptain[0] != 0 )
-    {
-        for ( int i = 0; i < 3; i++ )
-            delete m_AuraCaptain[i];
-        m_AuraCaptain[0] = 0;
-    }
-
-    delete m_stat_weapon;
-    delete m_stat_life;
 
     GameServer()->m_World.RemoveEntity(this);
     GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
@@ -1439,7 +1454,7 @@ void CCharacter::Die(int Killer, int Weapon)
         GetPlayer()->SetCaptureTeam(TEAM_RED);
 }
 
-bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
+bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib)
 {
     int FromRace = 0;
     if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_WARRIOR) )
@@ -1454,6 +1469,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
         FromRace = (rand() % (RACE_MINER - RACE_WARRIOR)) + RACE_WARRIOR;
     else if ( GameServer()->m_apPlayers[From] )
         FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
+
+    if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || (FromRace == ORC && Weapon == WEAPON_RIFLE))
+        Instagib = true;
 
     if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) )
         m_Core.m_Vel += Force;
@@ -1505,10 +1523,14 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
     if ( m_ActiveWeapon == WEAPON_NINJA && Weapon != WEAPON_NINJA )
     {
         m_Ninja.m_Damage += Dmg;
-        if ( m_Ninja.m_Damage >= 40 )
+        if ( m_Ninja.m_Damage >= 40 && !Instagib )
         {
             Dmg = m_Ninja.m_Damage / 40;
             m_Ninja.m_Damage = 0;
+        }
+        else if (Instagib)
+        {
+            Dmg = 5;
         }
         else
         {
@@ -1574,7 +1596,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
     }
 
     // check for death
-    if(m_Health <= 0 || Weapon == WEAPON_NINJA || GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || ((Weapon == WEAPON_HAMMER || Weapon == WEAPON_RIFLE) && FromRace == ORC))
+    if(m_Health <= 0 || Instagib)
     {
         Die(From, Weapon);
 

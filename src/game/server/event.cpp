@@ -265,13 +265,13 @@ void CEvent::Tick()
     }
 }
 
-bool CEvent::CanBeUsed(int NewEvent, int Type)
+bool CEvent::CanBeUsed(int NewEvent, int Type, bool Canuseactual)
 {
     if ( Type == 0 || Type == 1 )
     {
-        if (NewEvent == m_ActualEvent[0])
+        if (NewEvent == m_ActualEvent[0] && !Canuseactual)
             return false;
-        else if (m_TwoEvent && NewEvent == m_ActualEvent[1])
+        else if (m_TwoEvent && NewEvent == m_ActualEvent[1] && !Canuseactual)
             return false;
         else if (m_TwoEvent && NewEvent >= GUN && NewEvent <= KATANA && m_ActualEvent[1] >= GUN && m_ActualEvent[1] <= KATANA)
             return false;
@@ -315,7 +315,7 @@ bool CEvent::CanBeUsed(int NewEvent, int Type)
     }
     else if ( Type == 3 )
     {
-        if (NewEvent == m_ActualEventTeam)
+        if (NewEvent == m_ActualEventTeam&& !Canuseactual)
             return false;
         else if (NewEvent >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0)
             return false;
@@ -471,7 +471,7 @@ bool CEvent::SetEvent(int event)
             Controller()->EndRound();
         }
 
-        if (!CanBeUsed(event, 0))
+        if (!CanBeUsed(event, 0, true))
         {
             GameServer()->SendChatTarget(-1, "Can't use this event with this config.");
             return false;
@@ -558,7 +558,7 @@ bool CEvent::SetEventTeam(int event)
             Controller()->EndRound();
         }
 
-        if (!CanBeUsed(event, 3))
+        if (!CanBeUsed(event, 3, true))
         {
             GameServer()->SendChatTarget(-1, "Can't use this event with this config.");
             return false;

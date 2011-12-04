@@ -176,7 +176,7 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
             l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
             float Dmg = 6 * l;
             if((int)Dmg)
-                apEnts[i]->TakeDamage(ForceDir*Dmg*2, (int)Dmg, Owner, Weapon);
+                apEnts[i]->TakeDamage(ForceDir*Dmg*2, (int)Dmg, Owner, Weapon, false);
         }
     }
 }

@@ -29,10 +29,10 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 
     m_From = From;
     m_Pos = At;
-    if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
-        m_Energy = -1;
-    if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
-        pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE);
+    m_Energy = -1;
+
+    if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || (m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
+        pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
     return true;
 }
 
@@ -48,30 +48,40 @@ void CLaser::DoBounce()
 
     vec2 To = m_Pos + m_Dir * m_Energy;
 
-    if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
+    if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING))
     {
         if(!HitCharacter(m_Pos, To))
         {
             // intersected
             m_From = m_Pos;
             m_Pos = To;
+            
+            vec2 TempPos = m_Pos;
+            vec2 TempDir = m_Dir * 4.0f;
 
-            if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
-            {
-                vec2 TempPos = m_Pos;
-                vec2 TempDir = m_Dir * 4.0f;
+            GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
+            m_Pos = TempPos;
+            m_Dir = normalize(TempDir);
 
-                GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
-                m_Pos = TempPos;
-                m_Dir = normalize(TempDir);
+            m_Energy -= distance(m_From, m_Pos) + GameServer()->Tuning()->m_LaserBounceCost;
+            m_Bounces++;
 
-                m_Energy -= distance(m_From, m_Pos) + GameServer()->Tuning()->m_LaserBounceCost;
-                m_Bounces++;
+            if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
+                m_Energy = -1;
 
-                if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
-                    m_Energy = -1;
-            }
-
+            GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
+            GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
+        }
+    }
+    else if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING))
+    {
+        To = m_Pos + m_Dir * m_Energy;
+        if(!HitCharacter(m_Pos, To))
+        {        
+            m_From = m_Pos;
+            m_Pos = To;
+            m_Energy = -1;
+            
             GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
             GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
         }
@@ -96,16 +106,10 @@ void CLaser::Tick()
 {
     if(Server()->Tick() > m_EvalTick+(Server()->TickSpeed()*GameServer()->Tuning()->m_LaserBounceDelay)/1000.0f)
         DoBounce();
-
-    if( GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && Server()->Tick() > m_EvalTick+Server()->TickSpeed()/1000.f )
-        m_Energy -= 188;
 }
 
 void CLaser::Snap(int SnappingClient)
 {
-    if(NetworkClipped(SnappingClient))
-        return;
-
     CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_ID, sizeof(CNetObj_Laser)));
     if(!pObj)
         return;

@@ -75,7 +75,7 @@ private:
         return m_pGameServer->m_pController;
     }
 
-    bool CanBeUsed(int NewEvent, int Type = 0);
+    bool CanBeUsed(int NewEvent, int Type = 0, bool Canuseactual = false);
     void SetTune();
     void ResetTune();
     bool m_TwoEvent;

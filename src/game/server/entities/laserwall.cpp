@@ -45,7 +45,7 @@ void CLaserWall::Tick()
     if(!pHit || GameServer()->m_pController->IsFriendlyFire(m_Owner, pHit->GetPlayer()->GetCID(), WEAPON_RIFLE) || pHit->m_Protect != 0)
         return;
 
-    if (pHit->TakeDamage(vec2(0,0), 100, m_Owner, WEAPON_HAMMER))
+    if (pHit->TakeDamage(vec2(0,0), 100, m_Owner, WEAPON_HAMMER, true))
         m_Killed++;
 
     if(pOwnerChar)
@@ -63,9 +63,6 @@ void CLaserWall::CreateDouble()
 
 void CLaserWall::Snap(int SnappingClient)
 {
-    if(NetworkClipped(SnappingClient))
-        return;
-
     CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_ID, sizeof(CNetObj_Laser)));
     if(!pObj)
         return;

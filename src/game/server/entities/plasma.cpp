@@ -31,7 +31,7 @@ bool CPlasma::HitCharacter(vec2 From, vec2 To)
     if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
         m_Energy = -1;
     if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
-        pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE);
+        pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
     return true;
 }
 
@@ -53,7 +53,7 @@ void CPlasma::Tick()
     if ( !GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) )
         m_Vel += 0.5f;
     else
-        m_Vel += 0.1f;
+        m_Vel += 0.01f;
 
     if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
     {
