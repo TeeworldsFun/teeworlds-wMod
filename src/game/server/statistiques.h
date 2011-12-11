@@ -1,6 +1,8 @@
 #ifndef GAME_SERVER_STATISTIQUES_H
 #define GAME_SERVER_STATISTIQUES_H
 
+#define DB_VERSION 1
+
 #include <game/server/gamecontext.h>
 #include <fstream>
 #include <vector>
@@ -27,6 +29,14 @@ struct StatLife
     int m_stockage[2];
 };
 
+struct StatMove
+{
+    float m_rate_speed;
+    float m_rate_accel;
+    float m_rate_high_jump;
+    int m_num_jump;
+};
+
 struct Upgrade
 {
     unsigned long m_money;
@@ -36,6 +46,7 @@ struct Upgrade
     unsigned long m_hook;
     StatWeapon m_stat_weapon;
     StatLife m_stat_life;
+    StatMove m_stat_move;
 };
 
 struct Rank
@@ -54,6 +65,19 @@ struct Rank
     unsigned long m_killing_spree;
     unsigned long m_max_killing_spree;
     unsigned long m_flag_capture;
+};
+
+struct Conf
+{
+    bool m_InfoHealKiller;
+    bool m_InfoXP;
+    bool m_InfoLevelUp;
+    bool m_InfoKillingSpree;
+    bool m_InfoRace;
+    bool m_InfoAmmo;
+    bool m_ShowVoter;
+    bool m_Lock;
+    int m_Weapon[NUM_WEAPONS];
 };
 
 struct Stats
@@ -84,9 +108,17 @@ struct Stats
         m_start_time = 0;
         m_actual_kill = 0;
         m_last_connect = 0;
-        m_lock = false;
+
+        m_conf.m_InfoHealKiller = true;
+        m_conf.m_InfoXP = true;
+        m_conf.m_InfoLevelUp = true;
+        m_conf.m_InfoKillingSpree = true;
+        m_conf.m_InfoRace = true;
+        m_conf.m_InfoAmmo = true;
+        m_conf.m_ShowVoter = true;
+        m_conf.m_Lock = false;
         for ( int i = 0; i < NUM_WEAPONS; i++ )
-            m_Weapon[i] = WARRIOR;
+            m_conf.m_Weapon[i] = WARRIOR;
 
         m_upgrade.m_money = 0;
         m_upgrade.m_weapon = 0;
@@ -135,8 +167,8 @@ struct Stats
     unsigned long m_max_killing_spree;
     unsigned long m_flag_capture;
     unsigned long m_last_connect;
-    bool m_lock;
-    int m_Weapon[NUM_WEAPONS];
+
+    Conf m_conf;
 
     unsigned long m_start_time;
     unsigned long m_actual_kill;
@@ -180,6 +212,14 @@ public:
     {
         return m_statistiques[id].m_upgrade.m_stat_life;
     }
+    inline StatMove GetStatMove(long id)
+    {
+        return m_statistiques[id].m_upgrade.m_stat_move;
+    }
+    inline Conf GetConf(long id)
+    {
+        return m_statistiques[id].m_conf;
+    }
 
     void UpdateStat(long id);
     void UpdateUpgrade(long id);
@@ -198,7 +238,7 @@ public:
     inline void AddKill(long id)
     {
         m_statistiques[id].m_actual_kill++;
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             return;
         }
@@ -206,7 +246,7 @@ public:
     }
     inline void AddDead(long id)
     {
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             m_statistiques[id].m_actual_kill = 0;
             return;
@@ -217,7 +257,7 @@ public:
     }
     inline void AddSuicide(long id)
     {
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             return;
         }
@@ -225,7 +265,7 @@ public:
     }
     inline void AddFire(long id)
     {
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             return;
         }
@@ -233,7 +273,7 @@ public:
     }
     inline void AddPickUpWeapon(long id)
     {
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             return;
         }
@@ -241,7 +281,7 @@ public:
     }
     inline void AddPickUpNinja(long id)
     {
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             return;
         }
@@ -249,7 +289,7 @@ public:
     }
     inline void AddChangeWeapon(long id)
     {
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             return;
         }
@@ -259,10 +299,10 @@ public:
     {
         for (int i = 0; i < NUM_WEAPONS; i++)
         {
-            GameServer()->m_apPlayers[ClientID]->m_WeaponType[i] = m_statistiques[id].m_Weapon[i];
+            GameServer()->m_apPlayers[ClientID]->m_WeaponType[i] = m_statistiques[id].m_conf.m_Weapon[i];
         }
         m_statistiques[id].m_start_time = time(NULL);
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             return;
         }
@@ -272,10 +312,10 @@ public:
     {
         for (int i = 0; i < NUM_WEAPONS; i++)
         {
-            m_statistiques[id].m_Weapon[i] = GameServer()->m_apPlayers[ClientID]->m_WeaponType[i];
+            m_statistiques[id].m_conf.m_Weapon[i] = GameServer()->m_apPlayers[ClientID]->m_WeaponType[i];
         }
         m_statistiques[id].m_last_connect = time(NULL);
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             m_statistiques[id].m_start_time = 0;
             return;
@@ -286,7 +326,7 @@ public:
     }
     inline void AddMessage(long id)
     {
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             return;
         }
@@ -294,24 +334,64 @@ public:
     }
     inline void AddFlagCapture(long id)
     {
-        if ( m_statistiques[id].m_lock )
+        if ( m_statistiques[id].m_conf.m_Lock )
         {
             return;
         }
         m_statistiques[id].m_flag_capture++;
     }
+
+    inline bool InfoHealKiller(long id)
+    {
+        return m_statistiques[id].m_conf.m_InfoHealKiller = m_statistiques[id].m_conf.m_InfoHealKiller ? false : true;
+    }
+    inline bool InfoXP(long id)
+    {
+        return m_statistiques[id].m_conf.m_InfoXP = m_statistiques[id].m_conf.m_InfoXP ? false : true;
+    }
+    inline bool InfoLevelUp(long id)
+    {
+        return m_statistiques[id].m_conf.m_InfoLevelUp = m_statistiques[id].m_conf.m_InfoLevelUp ? false : true;
+    }
+    inline bool InfoKillingSpree(long id)
+    {
+        return m_statistiques[id].m_conf.m_InfoKillingSpree = m_statistiques[id].m_conf.m_InfoKillingSpree ? false : true;
+    }
+    inline bool InfoRace(long id)
+    {
+        return m_statistiques[id].m_conf.m_InfoRace = m_statistiques[id].m_conf.m_InfoRace ? false : true;
+    }
+    inline bool InfoAmmo(long id)
+    {
+        return m_statistiques[id].m_conf.m_InfoAmmo = m_statistiques[id].m_conf.m_InfoAmmo ? false : true;
+    }
+    inline bool ShowVoter(long id)
+    {
+        return m_statistiques[id].m_conf.m_ShowVoter = m_statistiques[id].m_conf.m_ShowVoter ? false : true;
+    }
+    inline void EnableAllInfo(long id)
+    {
+        m_statistiques[id].m_conf.m_InfoHealKiller = true;
+        m_statistiques[id].m_conf.m_InfoXP = true;
+        m_statistiques[id].m_conf.m_InfoLevelUp = true;
+        m_statistiques[id].m_conf.m_InfoKillingSpree = true;
+        m_statistiques[id].m_conf.m_InfoRace = true;
+        m_statistiques[id].m_conf.m_InfoAmmo = true;
+        m_statistiques[id].m_conf.m_ShowVoter = true;
+    }
+    inline void DisableAllInfo(long id)
+    {
+        m_statistiques[id].m_conf.m_InfoHealKiller = false;
+        m_statistiques[id].m_conf.m_InfoXP = false;
+        m_statistiques[id].m_conf.m_InfoLevelUp = false;
+        m_statistiques[id].m_conf.m_InfoKillingSpree = false;
+        m_statistiques[id].m_conf.m_InfoRace = false;
+        m_statistiques[id].m_conf.m_InfoAmmo = false;
+        m_statistiques[id].m_conf.m_ShowVoter = false;
+    }
     inline bool Lock(long id)
     {
-        if ( m_statistiques[id].m_lock )
-        {
-            m_statistiques[id].m_lock = false;
-            return false;
-        }
-        else
-        {
-            m_statistiques[id].m_lock = true;
-            return true;
-        }
+        return m_statistiques[id].m_conf.m_Lock = m_statistiques[id].m_conf.m_Lock ? false : true;
     }
 
     inline int UpgradeWeapon(long id)
@@ -319,7 +399,7 @@ public:
         UpdateUpgrade(id);
         if (!m_statistiques[id].m_upgrade.m_money)
             return 1;
-        if (m_statistiques[id].m_lock)
+        if (m_statistiques[id].m_conf.m_Lock)
             return 2;
         if (m_statistiques[id].m_upgrade.m_weapon >= 40)
             return 3;
@@ -332,7 +412,7 @@ public:
         UpdateUpgrade(id);
         if (!m_statistiques[id].m_upgrade.m_money)
             return 1;
-        if (m_statistiques[id].m_lock)
+        if (m_statistiques[id].m_conf.m_Lock)
             return 2;
         if (m_statistiques[id].m_upgrade.m_life >= 40)
             return 3;
@@ -345,7 +425,7 @@ public:
         UpdateUpgrade(id);
         if (!m_statistiques[id].m_upgrade.m_money)
             return 1;
-        if (m_statistiques[id].m_lock)
+        if (m_statistiques[id].m_conf.m_Lock)
             return 2;
         if (m_statistiques[id].m_upgrade.m_move >= 40)
             return 3;
@@ -358,7 +438,7 @@ public:
         UpdateUpgrade(id);
         if (!m_statistiques[id].m_upgrade.m_money)
             return 1;
-        if (m_statistiques[id].m_lock)
+        if (m_statistiques[id].m_conf.m_Lock)
             return 2;
         if (m_statistiques[id].m_upgrade.m_hook >= 40)
             return 3;
@@ -396,7 +476,7 @@ private:
     std::vector<Stats> m_statistiques;
     std::vector<Stats*> m_tri[14];
     bool m_write;
-    int m_last_write;
+    unsigned m_last_write;
     int m_errors;
 
     CGameContext *m_pGameServer;

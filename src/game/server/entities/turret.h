@@ -14,6 +14,7 @@ public:
     virtual void Snap(int SnappingClient);
 
     int GetStartTick() { return m_StartTick; };
+    void ResetStartTick() { m_StartTick = Server()->Tick(); m_LastTick = m_StartTick; };
 private:
     int m_Owner;
     int m_StartTick;

@@ -242,13 +242,45 @@ void CGameContext::CreateSoundGlobal(int Sound, int Target)
 }
 
 
-void CGameContext::SendChatTarget(int To, const char *pText)
+void CGameContext::SendChatTarget(int To, const char *pText, int Type)
 {
     CNetMsg_Sv_Chat Msg;
     Msg.m_Team = 0;
     Msg.m_ClientID = -1;
     Msg.m_pMessage = pText;
-    Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
+    if (Type == CHAT_INFO)
+        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
+    else
+    {
+        if (To != -1)
+        {
+            if ( (Type == CHAT_INFO_HEAL_KILLER && m_pStatistiques->GetConf(m_apPlayers[To]->GetSID()).m_InfoHealKiller) ||
+                 (Type == CHAT_INFO_XP && m_pStatistiques->GetConf(m_apPlayers[To]->GetSID()).m_InfoXP) ||
+                 (Type == CHAT_INFO_LEVELUP && m_pStatistiques->GetConf(m_apPlayers[To]->GetSID()).m_InfoLevelUp) ||
+                 (Type == CHAT_INFO_KILLING_SPREE && m_pStatistiques->GetConf(m_apPlayers[To]->GetSID()).m_InfoKillingSpree) ||
+                 (Type == CHAT_INFO_RACE && m_pStatistiques->GetConf(m_apPlayers[To]->GetSID()).m_InfoRace) ||
+                 (Type == CHAT_INFO_AMMO && m_pStatistiques->GetConf(m_apPlayers[To]->GetSID()).m_InfoAmmo) ||
+                 (Type == CHAT_INFO_VOTER && m_pStatistiques->GetConf(m_apPlayers[To]->GetSID()).m_ShowVoter))
+                Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
+        }
+        else
+        {
+            for (int i = 0; i < MAX_CLIENTS; i++)
+            {
+                if (m_apPlayers[i])
+                {
+                    if ( (Type == CHAT_INFO_HEAL_KILLER && m_pStatistiques->GetConf(m_apPlayers[i]->GetSID()).m_InfoHealKiller) ||
+                         (Type == CHAT_INFO_XP && m_pStatistiques->GetConf(m_apPlayers[i]->GetSID()).m_InfoXP) ||
+                         (Type == CHAT_INFO_LEVELUP && m_pStatistiques->GetConf(m_apPlayers[i]->GetSID()).m_InfoLevelUp) ||
+                         (Type == CHAT_INFO_KILLING_SPREE && m_pStatistiques->GetConf(m_apPlayers[i]->GetSID()).m_InfoKillingSpree) ||
+                         (Type == CHAT_INFO_RACE && m_pStatistiques->GetConf(m_apPlayers[i]->GetSID()).m_InfoRace) ||
+                         (Type == CHAT_INFO_AMMO && m_pStatistiques->GetConf(m_apPlayers[i]->GetSID()).m_InfoAmmo) ||
+                         (Type == CHAT_INFO_VOTER && m_pStatistiques->GetConf(m_apPlayers[i]->GetSID()).m_ShowVoter))
+                        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
+                }
+            }
+        }
+    }
 }
 
 
@@ -406,11 +438,43 @@ void CGameContext::SendTuningParams(int ClientID)
 {
     CheckPureTuning();
 
-    CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-    int *pParams = (int *)&m_Tuning;
-    for(unsigned i = 0; i < sizeof(m_Tuning)/sizeof(int); i++)
-        Msg.AddInt(pParams[i]);
-    Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
+    CTuningParams User = m_Tuning;
+    if ( ClientID >= 0 )
+    {
+        User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_speed);
+        User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_speed);
+        User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_accel);
+        User.Set("air_control_accel", m_Tuning.m_AirControlAccel * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_accel);
+        User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_high_jump);
+        User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_high_jump);
+
+        CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
+        int *pParams = (int *)&User;
+        for(unsigned i = 0; i < sizeof(User)/sizeof(int); i++)
+            Msg.AddInt(pParams[i]);
+        Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
+    }
+    else
+    {
+        for (int i = 0; i < MAX_CLIENTS; i++)
+        {
+            if(!m_apPlayers[i])
+                continue;
+
+            User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_speed);
+            User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_speed);
+            User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_accel);
+            User.Set("air_control_accel", m_Tuning.m_AirControlAccel * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_accel);
+            User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_high_jump);
+            User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_high_jump);
+
+            CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
+            int *pParams = (int *)&User;
+            for(unsigned j = 0; j < sizeof(User)/sizeof(int); j++)
+                Msg.AddInt(pParams[j]);
+            Server()->SendMsg(&Msg, MSGFLAG_VITAL, i);
+        }
+    }
 }
 
 void CGameContext::OnTick()
@@ -486,13 +550,13 @@ void CGameContext::OnTick()
                         No++;
                 }
 
-                if(Yes >= Total/2+1 || (time_get() > m_VoteCloseTime && Yes >= Total/2) || (time_get() > m_VoteCloseTime && No == 0))
+                if(Yes >= Total/2+1)
                     m_VoteEnforce = VOTE_ENFORCE_YES;
                 else if(No >= (Total+1)/2)
                     m_VoteEnforce = VOTE_ENFORCE_NO;
             }
 
-            if(m_VoteEnforce == VOTE_ENFORCE_YES)
+            if(m_VoteEnforce == VOTE_ENFORCE_YES || (time_get() > m_VoteCloseTime && Yes >= Total/2) || (time_get() > m_VoteCloseTime && No == 0))
             {
                 Console()->ExecuteLine(m_aVoteCommand);
                 EndVote();
@@ -556,7 +620,7 @@ void CGameContext::OnClientEnter(int ClientID)
             break;
         }
         else if ( ip[i] == ']' )
-            ip[i] = true;
+            cut = true;
     }
     m_apPlayers[ClientID]->SetSID(m_pStatistiques->GetId(ip, Server()->ClientName(ClientID), Server()->ClientClan(ClientID), Server()->ClientCountry(ClientID)));
     m_pStatistiques->SetStartPlay(m_apPlayers[ClientID]->GetSID(), ClientID);
@@ -682,11 +746,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 SendChatTarget(ClientID, "*** Commands available are : ***");
                 SendChatTarget(ClientID, "/cmdlist or /help : To get commands available.");
                 SendChatTarget(ClientID, "/info or /credits : To get informations of this mod.");
-                SendChatTarget(ClientID, "/weapon or /ammo : To get informations of the actual weapon.");
+                SendChatTarget(ClientID, "/ammo : To get ammo of your actual weapon.");
                 SendChatTarget(ClientID, "/race : To choose a race");
                 SendChatTarget(ClientID, "/stats or /ranks : To get your statistics or your rank.");
                 SendChatTarget(ClientID, "/player or /upgr : To get or to add your upgrades.");
-                SendChatTarget(ClientID, "/lock : To lock/unlock your statistics.");
+                SendChatTarget(ClientID, "/conf : To change yours settings.");
                 SendChatTarget(ClientID, "/reset_stats or /reset_all_stats : To reset partially or all your statistics.");
             }
             else if(str_comp_nocase(pMsg->m_pMessage, "/info") == 0)
@@ -703,34 +767,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 SendChatTarget(ClientID, "*** Extreme Weapon Mod ***");
                 SendChatTarget(ClientID, "** Wrote by PJK **");
             }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/weapon") == 0)
-            {
-                CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
-                if (pChr)
-                {
-                    switch(pChr->GetActiveWeapon())
-                    {
-                    case WEAPON_HAMMER:
-                        SendChatTarget(ClientID, "- The hammer is very fast and explodes to protect us when it is used but it use our armor and health.");
-                        break;
-                    case WEAPON_GUN:
-                        SendChatTarget(ClientID, "- The gun is very fast and explodes when it hits. You have 100 Ammo that regenerate in 5 sec.");
-                        break;
-                    case WEAPON_GRENADE:
-                        SendChatTarget(ClientID, "- The grenade is faster and has a larger curvature in this mod, it fires six bullets that explode all the time.");
-                        break;
-                    case WEAPON_SHOTGUN:
-                        SendChatTarget(ClientID, "- The shotgun is faster in this mod, it fires six bullets that explode when they hit or they deploy in 6 others balls each when they haven't got energy.");
-                        break;
-                    case WEAPON_RIFLE:
-                        SendChatTarget(ClientID, "- The laser is faster in this mod and it fires 6 laser beam that explode when they bounce.");
-                        break;
-                    case WEAPON_NINJA:
-                        SendChatTarget(ClientID, "- The katana is the most powerful of all weapons, it transforms 50 damage in 1, can move very quickly, prevents die on death zone and kills in a single shot but it can only kill 3 tee and you can't regenerate.");
-                        break;
-                    }
-                }
-            }
             else if(str_comp_nocase(pMsg->m_pMessage, "/ammo") == 0)
             {
                 CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
@@ -745,7 +781,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             {
                 char aBuf[256] = "";
                 str_format(aBuf, 256, "%s is now a warrior !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf);
+                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                 m_apPlayers[ClientID]->KillCharacter();
                 m_apPlayers[ClientID]->m_Race = WARRIOR;
                 for (int i = 0; i < NUM_WEAPONS; i++)
@@ -755,7 +791,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             {
                 char aBuf[256] = "";
                 str_format(aBuf, 256, "%s is now an engineer !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf);
+                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                 m_apPlayers[ClientID]->KillCharacter();
                 m_apPlayers[ClientID]->m_Race = ENGINEER;
                 for (int i = 0; i < NUM_WEAPONS; i++)
@@ -765,7 +801,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             {
                 char aBuf[256] = "";
                 str_format(aBuf, 256, "%s is now an orc !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf);
+                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                 m_apPlayers[ClientID]->KillCharacter();
                 m_apPlayers[ClientID]->m_Race = ORC;
                 for (int i = 0; i < NUM_WEAPONS; i++)
@@ -775,7 +811,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             {
                 char aBuf[256] = "";
                 str_format(aBuf, 256, "%s is now a miner !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf);
+                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                 m_apPlayers[ClientID]->KillCharacter();
                 m_apPlayers[ClientID]->m_Race = MINER;
                 for (int i = 0; i < NUM_WEAPONS; i++)
@@ -785,7 +821,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             {
                 char aBuf[256] = "";
                 str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf);
+                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                 SendChatTarget(ClientID, "Use /hammer | /gun | /shotgun | /grenade | /rifle to customize !");
                 m_apPlayers[ClientID]->KillCharacter();
                 m_apPlayers[ClientID]->m_Race = CUSTOM;
@@ -802,7 +838,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_HAMMER] = WARRIOR;
@@ -815,7 +851,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_HAMMER] = ENGINEER;
@@ -828,7 +864,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_HAMMER] = ORC;
@@ -841,7 +877,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_HAMMER] = MINER;
@@ -860,7 +896,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_GUN] = WARRIOR;
@@ -873,7 +909,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_GUN] = ENGINEER;
@@ -886,7 +922,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_GUN] = ORC;
@@ -899,7 +935,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_GUN] = MINER;
@@ -918,7 +954,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_SHOTGUN] = WARRIOR;
@@ -931,7 +967,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_SHOTGUN] = ENGINEER;
@@ -944,7 +980,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_SHOTGUN] = ORC;
@@ -957,7 +993,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_SHOTGUN] = MINER;
@@ -976,7 +1012,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_GRENADE] = WARRIOR;
@@ -989,7 +1025,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_GRENADE] = ENGINEER;
@@ -1002,7 +1038,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_GRENADE] = ORC;
@@ -1015,7 +1051,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_GRENADE] = MINER;
@@ -1034,7 +1070,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_RIFLE] = WARRIOR;
@@ -1047,7 +1083,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_RIFLE] = ENGINEER;
@@ -1060,7 +1096,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_RIFLE] = ORC;
@@ -1073,7 +1109,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 {
                     char aBuf[256] = "";
                     str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf);
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
                     m_apPlayers[ClientID]->m_Race = CUSTOM;
                 }
                 m_apPlayers[ClientID]->m_WeaponType[WEAPON_RIFLE] = MINER;
@@ -1192,12 +1228,77 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 SendChatTarget(ClientID, "Usage : /upgr <type>");
                 SendChatTarget(ClientID, "Type : Weapon or Life or Move or Hook");
             }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/lock") == 0)
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoHealKiller") == 0)
+            {
+                bool statut = m_pStatistiques->InfoHealKiller(m_apPlayers[ClientID]->GetSID());
+                char a[256] = "";
+                str_format(a, 256, "Information of Heal of Killer is now : %s. ", statut ? "Enabled" : "Disabled");
+                SendChatTarget(ClientID, a);
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoXP") == 0)
+            {
+                bool statut = m_pStatistiques->InfoXP(m_apPlayers[ClientID]->GetSID());
+                char a[256] = "";
+                str_format(a, 256, "Information of XP is now : %s. ", statut ? "Enabled" : "Disabled");
+                SendChatTarget(ClientID, a);
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoLevelUp") == 0)
+            {
+                bool statut = m_pStatistiques->InfoLevelUp(m_apPlayers[ClientID]->GetSID());
+                char a[256] = "";
+                str_format(a, 256, "Information of Level Up is now : %s. ", statut ? "Enabled" : "Disabled");
+                SendChatTarget(ClientID, a);
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoKillingSpree") == 0)
+            {
+                bool statut = m_pStatistiques->InfoKillingSpree(m_apPlayers[ClientID]->GetSID());
+                char a[256] = "";
+                str_format(a, 256, "Information of Killing Spree is now : %s. ", statut ? "Enabled" : "Disabled");
+                SendChatTarget(ClientID, a);
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoRace") == 0)
+            {
+                bool statut = m_pStatistiques->InfoRace(m_apPlayers[ClientID]->GetSID());
+                char a[256] = "";
+                str_format(a, 256, "Information of Race is now : %s. ", statut ? "Enabled" : "Disabled");
+                SendChatTarget(ClientID, a);
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoAmmo") == 0)
+            {
+                bool statut = m_pStatistiques->InfoAmmo(m_apPlayers[ClientID]->GetSID());
+                char a[256] = "";
+                str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Enabled" : "Disabled");
+                SendChatTarget(ClientID, a);
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoVoter") == 0)
+            {
+                bool statut = m_pStatistiques->ShowVoter(m_apPlayers[ClientID]->GetSID());
+                char a[256] = "";
+                str_format(a, 256, "Information of Voter is now : %s. ", statut ? "Enabled" : "Disabled");
+                SendChatTarget(ClientID, a);
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf EnableAllInfo") == 0)
+            {
+                m_pStatistiques->EnableAllInfo(m_apPlayers[ClientID]->GetSID());
+                SendChatTarget(ClientID, "All information are enabled");
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf DisableAllInfo") == 0)
+            {
+                m_pStatistiques->DisableAllInfo(m_apPlayers[ClientID]->GetSID());
+                SendChatTarget(ClientID, "All information are disabled");
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf Lock") == 0)
             {
                 bool lock = m_pStatistiques->Lock(m_apPlayers[ClientID]->GetSID());
                 char a[256] = "";
                 str_format(a, 256, "Your statistics are now : %s. ", lock ? "Locked" : "Unlocked");
                 SendChatTarget(ClientID, a);
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf") == 0)
+            {
+                SendChatTarget(ClientID, "Usage : /conf <type>");
+                SendChatTarget(ClientID, "Type : InfoHealKiller or InfoXP or InfoLevelUp or InfoKillingSpree or InfoRace or InfoAmmo or InfoVoter or EnableAllInfo or DisableAllInfo or Lock");
+                SendChatTarget(ClientID, "Description : Enable or disable functionnality.");
             }
             else if(str_comp_nocase(pMsg->m_pMessage, "/reset_stats") == 0)
                 m_pStatistiques->ResetPartialStat(m_apPlayers[ClientID]->GetSID());
@@ -1397,7 +1498,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 else
                     str_format(aBuf, sizeof(aBuf), "%s voted yes", Server()->ClientName(pPlayer->GetCID()));
 
-                SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+                SendChatTarget(-1, aBuf, CHAT_INFO_VOTER);
             }
 
             pPlayer->m_Vote = pMsg->m_Vote;

@@ -6,7 +6,7 @@
 #include "projectile.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
-                         int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Smoke, bool Deploy, int Bounce)
+                         int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Limit, bool Smoke, bool Deploy, int Bounce)
     : CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE)
 {
     m_Type = Type;
@@ -20,18 +20,18 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
     m_Weapon = Weapon;
     m_StartTick = Server()->Tick();
     m_Explosive = Explosive;
-    m_ExplodeTick = 0;
+    m_Limit = Limit;
     m_Smoke = Smoke;
     m_Deploy = Deploy;
     m_Bounce = Bounce;
     GameWorld()->InsertEntity(this);
-    if ((m_Type == WEAPON_RIFLE || GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW)) && GameServer()->m_apPlayers[m_Owner])
+    if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
         GameServer()->m_apPlayers[Owner]->m_Mine++;
 }
 
 void CProjectile::Reset()
 {
-    if ((m_Type == WEAPON_RIFLE || GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW)) && GameServer()->m_apPlayers[m_Owner])
+    if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
         GameServer()->m_apPlayers[m_Owner]->m_Mine -= GameServer()->m_apPlayers[m_Owner]->m_Mine > 0 ? 1 : 0;
     GameServer()->m_World.DestroyEntity(this);
 }
@@ -72,7 +72,7 @@ void CProjectile::Tick()
     int Collide = distance(CurPos, PrevPos) ? GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0) : GameServer()->Collision()->CheckPoint(CurPos);
     CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
     CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
-    if ( m_Type == WEAPON_RIFLE && !TargetChr )
+    if ( !distance(CurPos, PrevPos) && !TargetChr )
     {
         CCharacter *apEnts[MAX_CLIENTS] = {0};
         int Num = GameServer()->m_World.FindEntities(CurPos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
@@ -86,10 +86,9 @@ void CProjectile::Tick()
         }
     }
 
-    if (m_Smoke && m_ExplodeTick % 2 == 0 && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false) && !Collide)
+    if (m_Smoke && (Server()->Tick()-m_StartTick) % 2 == 0 && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false) && !Collide)
         GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
 
-    m_ExplodeTick++;
     m_LifeSpan--;
 
     if ( m_Deploy && m_Type == WEAPON_SHOTGUN && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
@@ -133,17 +132,17 @@ void CProjectile::Tick()
         if(m_Explosive && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
             GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, false);
 
-        if(TargetChr)
+        if(TargetChr && TargetChr->IsAlive())
             TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon, false);
 
-        if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) && m_Bounce <= 0) || m_LifeSpan < 0)
+        if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) && m_Bounce <= 0 && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE)) || m_LifeSpan < 0)
         {
-            if ((m_Type == WEAPON_RIFLE || GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW)) && GameServer()->m_apPlayers[m_Owner])
+            if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
                 GameServer()->m_apPlayers[m_Owner]->m_Mine -= GameServer()->m_apPlayers[m_Owner]->m_Mine > 0 ? 1 : 0;
             GameServer()->m_World.DestroyEntity(this);
         }
-    
-        if ( Collide && (GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) || m_Bounce) )
+
+        if ( Collide && (GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) || (m_Bounce && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE))) )
         {
                 vec2 TempPos(0.0f , 0.0f);
                 GameServer()->Collision()->IntersectLine(PrevPos, GetPos(Ct), 0, &TempPos);
@@ -156,6 +155,13 @@ void CProjectile::Tick()
                 m_StartTick = Server()->Tick();
                 if (m_Bounce)
                     m_Bounce--;
+        }
+        
+        if ( Collide && GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE) )
+        {
+            GameServer()->Collision()->IntersectLine(PrevPos, GetPos(Ct), 0, &m_Pos);
+            m_StartTick = Server()->Tick();
+            m_Direction = normalize(GetPos(Ct) - PrevPos);
         }
     }
 }

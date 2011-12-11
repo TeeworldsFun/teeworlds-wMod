@@ -48,7 +48,7 @@ void CLaser::DoBounce()
 
     vec2 To = m_Pos + m_Dir * m_Energy;
 
-    if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING))
+    if(!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE) && GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
     {
         if(!HitCharacter(m_Pos, To))
         {
@@ -75,7 +75,6 @@ void CLaser::DoBounce()
     }
     else if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING))
     {
-        To = m_Pos + m_Dir * m_Energy;
         if(!HitCharacter(m_Pos, To))
         {        
             m_From = m_Pos;
@@ -90,9 +89,17 @@ void CLaser::DoBounce()
     {
         if(!HitCharacter(m_Pos, To))
         {
+            if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE))
+                GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To);
+
             m_From = m_Pos;
             m_Pos = To;
-            m_Energy = -1;
+            if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE))
+                m_Energy -= (m_Energy / 2) + 2;
+            else
+                m_Energy = -1;
+            GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
+            GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
         }
     }
 }

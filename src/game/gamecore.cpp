@@ -74,7 +74,7 @@ void CCharacterCore::Reset()
     m_TriggeredEvents = 0;
 }
 
-void CCharacterCore::Tick(bool UseInput)
+void CCharacterCore::Tick(bool UseInput, float RateSpeed, float RateAccel, float RateHighJump)
 {
     float PhysSize = 28.0f;
     m_TriggeredEvents = 0;
@@ -90,8 +90,8 @@ void CCharacterCore::Tick(bool UseInput)
 
     m_Vel.y += m_pWorld->m_Tuning.m_Gravity;
 
-    float MaxSpeed = Grounded ? m_pWorld->m_Tuning.m_GroundControlSpeed : m_pWorld->m_Tuning.m_AirControlSpeed;
-    float Accel = Grounded ? m_pWorld->m_Tuning.m_GroundControlAccel : m_pWorld->m_Tuning.m_AirControlAccel;
+    float MaxSpeed = (Grounded ? m_pWorld->m_Tuning.m_GroundControlSpeed : m_pWorld->m_Tuning.m_AirControlSpeed) * RateSpeed;
+    float Accel = (Grounded ? m_pWorld->m_Tuning.m_GroundControlAccel : m_pWorld->m_Tuning.m_AirControlAccel) * RateAccel;
     float Friction = Grounded ? m_pWorld->m_Tuning.m_GroundFriction : m_pWorld->m_Tuning.m_AirFriction;
 
     // handle input
@@ -119,13 +119,21 @@ void CCharacterCore::Tick(bool UseInput)
                 if(Grounded)
                 {
                     m_TriggeredEvents |= COREEVENT_GROUND_JUMP;
-                    m_Vel.y = -m_pWorld->m_Tuning.m_GroundJumpImpulse;
+                    if(m_pWorld->m_Tuning.m_Gravity >= 0)
+                        m_Vel.y = -m_pWorld->m_Tuning.m_GroundJumpImpulse;
+                    else
+                        m_Vel.y = m_pWorld->m_Tuning.m_GroundJumpImpulse;
+                    m_Vel.y *= RateHighJump;
                     m_Jumped |= 1;
                 }
                 else if(!(m_Jumped&2))
                 {
                     m_TriggeredEvents |= COREEVENT_AIR_JUMP;
-                    m_Vel.y = -m_pWorld->m_Tuning.m_AirJumpImpulse;
+                    if(m_pWorld->m_Tuning.m_Gravity >= 0)
+                        m_Vel.y = -m_pWorld->m_Tuning.m_AirJumpImpulse;
+                    else
+                        m_Vel.y = m_pWorld->m_Tuning.m_AirJumpImpulse;
+                    m_Vel.y *= RateHighJump;
                     m_Jumped |= 3;
                 }
             }

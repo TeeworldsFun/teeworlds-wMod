@@ -108,11 +108,20 @@ void CEvent::Tick()
         case BULLET_BOUNCE:
             str_format(aBuf, 256, "%s : All Bullets can bounce ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
+        case BULLET_GLUE:
+            str_format(aBuf, 256, "%s : All Bullets are glue ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
         case HAVE_ALL_WEAPON:
             str_format(aBuf, 256, "%s : All get all weapons when respawn ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
+        case GRAVITY_0_25:
+            str_format(aBuf, 256, "%s : Gravity modified to 0.25 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
         case GRAVITY_0:
             str_format(aBuf, 256, "%s : Gravity modified to 0 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
+        case GRAVITY_M0_25:
+            str_format(aBuf, 256, "%s : Gravity modified to -0.25 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case GRAVITY_M0_5:
             str_format(aBuf, 256, "%s : Gravity modified to -0.5 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
@@ -303,13 +312,19 @@ bool CEvent::CanBeUsed(int NewEvent, int Type, bool Canuseactual)
                 return false;
             else if (NewEvent == WALLSHOT || NewEvent == SURVIVOR)
                 return false;
-            else if (m_ActualEvent[0] == GRAVITY_0 && NewEvent == GRAVITY_M0_5)
+            else if (m_ActualEvent[0] == GRAVITY_0_25 && (NewEvent == GRAVITY_0 || NewEvent == GRAVITY_M0_25 || NewEvent == GRAVITY_M0_5))
                 return false;
-            else if (m_ActualEvent[0] == GRAVITY_M0_5 && NewEvent == GRAVITY_0)
+            else if (m_ActualEvent[0] == GRAVITY_0 && (NewEvent == GRAVITY_0_25 || NewEvent == GRAVITY_M0_25 || NewEvent == GRAVITY_M0_5))
                 return false;
-            else if (m_ActualEvent[0] == BULLET_BOUNCE && NewEvent == BULLET_PIERCING)
+            else if (m_ActualEvent[0] == GRAVITY_M0_25 && (NewEvent == GRAVITY_0_25 || NewEvent == GRAVITY_0 || NewEvent == GRAVITY_M0_5))
                 return false;
-            else if (m_ActualEvent[0] == BULLET_PIERCING && NewEvent == BULLET_BOUNCE)
+            else if (m_ActualEvent[0] == GRAVITY_M0_5 && (NewEvent == GRAVITY_0_25 || NewEvent == GRAVITY_0 || NewEvent == GRAVITY_M0_25))
+                return false;
+            else if (m_ActualEvent[0] == BULLET_BOUNCE && (NewEvent == BULLET_PIERCING || NewEvent == BULLET_GLUE))
+                return false;
+            else if (m_ActualEvent[0] == BULLET_PIERCING && (NewEvent == BULLET_BOUNCE || NewEvent == BULLET_GLUE))
+                return false;
+            else if (m_ActualEvent[0] == BULLET_GLUE && (NewEvent == BULLET_PIERCING || NewEvent == BULLET_BOUNCE))
                 return false;
         }
     }
@@ -342,9 +357,19 @@ bool CEvent::CanBeUsed(int NewEvent, int Type, bool Canuseactual)
 void CEvent::SetTune()
 {
     ResetTune();
+    if ( IsActualEvent(GRAVITY_0_25) )
+    {
+        GameServer()->Tuning()->Set("gravity", static_cast<float>(0.25));
+        GameServer()->SendTuningParams(-1);
+    }
     if ( IsActualEvent(GRAVITY_0) )
     {
         GameServer()->Tuning()->Set("gravity", static_cast<float>(0.0));
+        GameServer()->SendTuningParams(-1);
+    }
+    if ( IsActualEvent(GRAVITY_M0_25) )
+    {
+        GameServer()->Tuning()->Set("gravity", static_cast<float>(-0.25));
         GameServer()->SendTuningParams(-1);
     }
     if ( IsActualEvent(GRAVITY_M0_5) )

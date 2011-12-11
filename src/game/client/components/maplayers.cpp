@@ -20,13 +20,27 @@
 
 CMapLayers::CMapLayers(int t)
 {
-    m_Type = t;
-    m_pLayers = 0;
+	m_Type = t;
+	m_pLayers = 0;
+	m_CurrentLocalTick = 0;
+	m_LastLocalTick = 0;
+	m_EnvelopeUpdate = false;
 }
 
 void CMapLayers::OnInit()
 {
     m_pLayers = Layers();
+}
+
+void CMapLayers::EnvelopeUpdate()
+{
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	{
+		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
+		m_CurrentLocalTick = pInfo->m_CurrentTick;
+		m_LastLocalTick = pInfo->m_CurrentTick;
+		m_EnvelopeUpdate = true;
+	}
 }
 
 
@@ -40,48 +54,57 @@ void CMapLayers::MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *p
 
 void CMapLayers::EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser)
 {
-    CMapLayers *pThis = (CMapLayers *)pUser;
-    pChannels[0] = 0;
-    pChannels[1] = 0;
-    pChannels[2] = 0;
-    pChannels[3] = 0;
+	CMapLayers *pThis = (CMapLayers *)pUser;
+	pChannels[0] = 0;
+	pChannels[1] = 0;
+	pChannels[2] = 0;
+	pChannels[3] = 0;
 
-    CEnvPoint *pPoints = 0;
+	CEnvPoint *pPoints = 0;
 
-    {
-        int Start, Num;
-        pThis->m_pLayers->Map()->GetType(MAPITEMTYPE_ENVPOINTS, &Start, &Num);
-        if(Num)
-            pPoints = (CEnvPoint *)pThis->m_pLayers->Map()->GetItem(Start, 0, 0);
-    }
+	{
+		int Start, Num;
+		pThis->m_pLayers->Map()->GetType(MAPITEMTYPE_ENVPOINTS, &Start, &Num);
+		if(Num)
+			pPoints = (CEnvPoint *)pThis->m_pLayers->Map()->GetItem(Start, 0, 0);
+	}
 
-    int Start, Num;
-    pThis->m_pLayers->Map()->GetType(MAPITEMTYPE_ENVELOPE, &Start, &Num);
+	int Start, Num;
+	pThis->m_pLayers->Map()->GetType(MAPITEMTYPE_ENVELOPE, &Start, &Num);
 
-    if(Env >= Num)
-        return;
+	if(Env >= Num)
+		return;
 
-    CMapItemEnvelope *pItem = (CMapItemEnvelope *)pThis->m_pLayers->Map()->GetItem(Start+Env, 0, 0);
+	CMapItemEnvelope *pItem = (CMapItemEnvelope *)pThis->m_pLayers->Map()->GetItem(Start+Env, 0, 0);
 
-    static float Time = 0;
-    if(pThis->Client()->State() == IClient::STATE_DEMOPLAYBACK)
-    {
-        const IDemoPlayer::CInfo *pInfo = pThis->DemoPlayer()->BaseInfo();
-        static int LastLocalTick = pInfo->m_CurrentTick;
+	static float Time = 0;
+	if(pThis->Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	{
+		const IDemoPlayer::CInfo *pInfo = pThis->DemoPlayer()->BaseInfo();
+		
+		if(!pInfo->m_Paused || pThis->m_EnvelopeUpdate)
+		{
+			if(pThis->m_CurrentLocalTick != pInfo->m_CurrentTick)
+			{
+				pThis->m_LastLocalTick = pThis->m_CurrentLocalTick;
+				pThis->m_CurrentLocalTick = pInfo->m_CurrentTick;
+			}
 
-        if(!pInfo->m_Paused)
-            Time += (pInfo->m_CurrentTick-LastLocalTick) / (float)pThis->Client()->GameTickSpeed() * pInfo->m_Speed;
+			Time = mix(pThis->m_LastLocalTick / (float)pThis->Client()->GameTickSpeed(),
+						pThis->m_CurrentLocalTick / (float)pThis->Client()->GameTickSpeed(),
+						pThis->Client()->IntraGameTick());
+		}
 
-        pThis->RenderTools()->RenderEvalEnvelope(pPoints+pItem->m_StartPoint, pItem->m_NumPoints, 4, Time+TimeOffset, pChannels);
-
-        LastLocalTick = pInfo->m_CurrentTick;
-    }
-    else
-    {
-        if(pThis->m_pClient->m_Snap.m_pGameInfoObj)
-            Time = (pThis->Client()->GameTick()-pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick) / (float)pThis->Client()->GameTickSpeed();
-        pThis->RenderTools()->RenderEvalEnvelope(pPoints+pItem->m_StartPoint, pItem->m_NumPoints, 4, Time+TimeOffset, pChannels);
-    }
+		pThis->RenderTools()->RenderEvalEnvelope(pPoints+pItem->m_StartPoint, pItem->m_NumPoints, 4, Time+TimeOffset, pChannels);
+	}
+	else
+	{
+		if(pThis->m_pClient->m_Snap.m_pGameInfoObj)
+			Time = mix((pThis->Client()->PrevGameTick()-pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick) / (float)pThis->Client()->GameTickSpeed(),
+						(pThis->Client()->GameTick()-pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick) / (float)pThis->Client()->GameTickSpeed(),
+						pThis->Client()->IntraGameTick());
+		pThis->RenderTools()->RenderEvalEnvelope(pPoints+pItem->m_StartPoint, pItem->m_NumPoints, 4, Time+TimeOffset, pChannels);
+	}
 }
 
 void CMapLayers::OnRender()

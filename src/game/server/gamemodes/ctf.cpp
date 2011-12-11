@@ -206,13 +206,13 @@ void CGameControllerCTF::Tick()
                             F->m_pCarryingCharacter->GetPlayer()->m_level = GameServer()->m_pStatistiques->GetLevel(F->m_pCarryingCharacter->GetPlayer()->GetSID());
                             char Text[256] = "";
                             str_format(Text, 256, "%s has a levelup ! He is level %ld now ! Good Game ;) !", Server()->ClientName(F->m_pCarryingCharacter->GetPlayer()->GetCID()), F->m_pCarryingCharacter->GetPlayer()->m_level);
-                            GameServer()->SendChatTarget(-1, Text);
+                            GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_LEVELUP);
                         }
                         else
                         {
                             char Text[256] = "";
                             str_format(Text, 256, "XP : %d/%d", GameServer()->m_pStatistiques->GetXp(F->m_pCarryingCharacter->GetPlayer()->GetSID()),  F->m_pCarryingCharacter->GetPlayer()->m_level + 1);
-                            GameServer()->SendChatTarget( F->m_pCarryingCharacter->GetPlayer()->GetCID(), Text);
+                            GameServer()->SendChatTarget( F->m_pCarryingCharacter->GetPlayer()->GetCID(), Text, CGameContext::CHAT_INFO_XP);
                         }
                     }
 

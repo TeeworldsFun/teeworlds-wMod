@@ -14,6 +14,7 @@
 #include "laserwall.h"
 #include "plasma.h"
 #include "turret.h"
+#include "teleporter.h"
 
 //input count
 struct CInputCount
@@ -59,6 +60,7 @@ CCharacter::CCharacter(CGameWorld *pWorld)
     str_copy(m_aWeapons[WEAPON_NINJA].m_Name, "Katana", 50);
     m_stat_weapon = new StatWeapon;
     m_stat_life = new StatLife;
+    m_stat_move = new StatMove;
 }
 
 CCharacter::~CCharacter()
@@ -79,6 +81,14 @@ CCharacter::~CCharacter()
             m_Turret[i] = 0;
         }
     }
+    for ( int i = 0; i < 10; i++ )
+    {
+        if (m_Teleporter[i] != 0)
+        {
+            delete m_Teleporter[i];
+            m_Teleporter[i] = 0;
+        }
+    }
     if ( m_AuraProtect[0] != 0 )
     {
         for ( int i = 0; i < 12; i++ )
@@ -91,9 +101,10 @@ CCharacter::~CCharacter()
             delete m_AuraCaptain[i];
         m_AuraCaptain[0] = 0;
     }
-    
+
     delete m_stat_weapon;
     delete m_stat_life;
+    delete m_stat_move;
 }
 
 void CCharacter::Reset()
@@ -127,10 +138,12 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
     *m_stat_weapon = GameServer()->m_pStatistiques->GetStatWeapon(m_pPlayer->GetSID());
     *m_stat_life = GameServer()->m_pStatistiques->GetStatLife(m_pPlayer->GetSID());
+    *m_stat_move = GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID());
 
     m_Protect = Server()->Tick();
     m_AuraProtect[0] = 0;
     m_AuraCaptain[0] = 0;
+
     m_LaserWall[0] = 0;
     m_LaserWall[1] = 0;
     m_LaserWall[2] = 0;
@@ -141,6 +154,17 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
     m_Turret[2] = 0;
     m_Turret[3] = 0;
     m_Turret[4] = 0;
+
+    m_Teleporter[0] = 0;
+    m_Teleporter[1] = 0;
+    m_Teleporter[2] = 0;
+    m_Teleporter[3] = 0;
+    m_Teleporter[4] = 0;
+    m_Teleporter[5] = 0;
+    m_Teleporter[6] = 0;
+    m_Teleporter[7] = 0;
+    m_Teleporter[8] = 0;
+    m_Teleporter[9] = 0;
 
     m_JumpTick = 0;
 
@@ -185,7 +209,7 @@ void CCharacter::SetWeapon(int W)
 
         char a[256] = "";
         str_format(a, 256, " Ammo of the %s is : %d/%d.", m_aWeapons[W].m_Name, m_aWeapons[W].m_Ammo, Stockage);
-        GameServer()->SendChatTarget(m_pPlayer->GetCID(), a);
+        GameServer()->SendChatTarget(m_pPlayer->GetCID(), a, CGameContext::CHAT_INFO_AMMO);
     }
 
     GameServer()->m_pStatistiques->AddChangeWeapon(m_pPlayer->GetSID());
@@ -375,7 +399,8 @@ void CCharacter::FireWeapon()
     bool FullAuto = false;
     if((m_ActiveWeapon != WEAPON_HAMMER || (Race != ENGINEER && m_stat_weapon->m_auto_hammer)) &&
             (m_ActiveWeapon != WEAPON_GUN || m_stat_weapon->m_auto_gun) &&
-            (m_ActiveWeapon != WEAPON_NINJA || m_stat_weapon->m_auto_ninja))
+            (m_ActiveWeapon != WEAPON_NINJA || m_stat_weapon->m_auto_ninja) &&
+            (Race != MINER || (m_ActiveWeapon != WEAPON_GUN && m_ActiveWeapon != WEAPON_GRENADE)))
         FullAuto = true;
 
     // check if we gonna fire
@@ -389,18 +414,22 @@ void CCharacter::FireWeapon()
     if(!WillFire)
         return;
 
+    bool Limit = false;
+
+    if((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_NINJA) ||
+       (Race == MINER && m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_NINJA && m_ActiveWeapon != WEAPON_GUN))
+        Limit = true;
+
     // check for ammo
     if(!m_aWeapons[m_ActiveWeapon].m_Ammo || (Race == MINER && m_ActiveWeapon == WEAPON_GUN && m_aWeapons[m_ActiveWeapon].m_Ammo < 5 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
         (Race == ORC && m_ActiveWeapon != WEAPON_RIFLE && m_aWeapons[m_ActiveWeapon].m_Ammo < 2 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
-        ((Race == MINER || GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW)) && m_pPlayer->m_Mine >= 100 && m_ActiveWeapon != WEAPON_HAMMER) ||
-        (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3))
+        (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3) ||
+        (Limit && m_pPlayer->m_Mine >= 100))
     {
         // 125ms is a magical limit of how fast a human can click
         m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
         GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
-        if (Race == MINER && m_pPlayer->m_Mine >= 100)
-            GameServer()->SendChatTarget(m_pPlayer->GetCID(), "You can't put more mines for now. Limit = 100");
-        if (GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && m_pPlayer->m_Mine >= 100)
+        if (Limit && m_pPlayer->m_Mine >= 100)
             GameServer()->SendChatTarget(m_pPlayer->GetCID(), "You can't fire more for now. For this event, Limit = 100");
         if (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3)
         {
@@ -518,7 +547,7 @@ void CCharacter::FireWeapon()
                                                  ProjStartPos,
                                                  Direction,
                                                  (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-                                                 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN, false, false, Bounce);
+                                                 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN, Limit, false, false, Bounce);
 
             // pack the Projectile and send it to the client Directly
             CNetObj_Projectile p;
@@ -551,7 +580,7 @@ void CCharacter::FireWeapon()
                                                      ProjStartPos,
                                                      vec2(cosf(a), sinf(a))*Speed,
                                                      (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-                                                     1, false, 0, -1, WEAPON_GUN, false, false, Bounce);
+                                                     1, false, 0, -1, WEAPON_GUN, Limit, false, false, Bounce);
 
                 // pack the Projectile and send it to the client Directly
                 CNetObj_Projectile p;
@@ -570,7 +599,7 @@ void CCharacter::FireWeapon()
                                                  ProjStartPos,
                                                  Direction,
                                                  (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-                                                 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN, true,  false, Bounce);
+                                                 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN, Limit, true,  false, Bounce);
 
             // pack the Projectile and send it to the client Directly
             CNetObj_Projectile p;
@@ -611,9 +640,8 @@ void CCharacter::FireWeapon()
                     }
                 }
 
-                delete m_Turret[Older];
-                m_Turret[Older] = new CTurret(GameWorld(), m_Pos, m_pPlayer->GetCID());
-                Created = false; 
+                m_Turret[Older]->m_Pos = m_Pos;
+                m_Turret[Older]->ResetStartTick();
             }
         }
 
@@ -643,7 +671,7 @@ void CCharacter::FireWeapon()
                                                      ProjStartPos,
                                                      vec2(cosf(a), sinf(a))*Speed,
                                                      (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, false, true, Bounce);
+                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, Limit, false, true, Bounce);
 
                 // pack the Projectile and send it to the client Directly
                 CNetObj_Projectile p;
@@ -677,7 +705,7 @@ void CCharacter::FireWeapon()
                                                      ProjStartPos,
                                                      vec2(cosf(a), sinf(a))*Speed,
                                                      (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-                                                     1, false, 0, -1, WEAPON_SHOTGUN, false, false, Bounce);
+                                                     1, false, 0, -1, WEAPON_SHOTGUN, Limit, false, false, Bounce);
 
                 // pack the Projectile and send it to the client Directly
                 CNetObj_Projectile p;
@@ -708,7 +736,7 @@ void CCharacter::FireWeapon()
                                                      ProjStartPos,
                                                      vec2(cosf(a), sinf(a))*Speed,
                                                      (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, true, true, Bounce);
+                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, Limit, true, true, Bounce);
 
                 // pack the Projectile and send it to the client Directly
                 CNetObj_Projectile p;
@@ -727,7 +755,7 @@ void CCharacter::FireWeapon()
                                                  ProjStartPos,
                                                  Direction,
                                                  Server()->TickSpeed()*30,
-                                                 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_SHOTGUN, false, false, Bounce);
+                                                 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_SHOTGUN, Limit, false, false, Bounce);
 
             // pack the Projectile and send it to the client Directly
             CNetObj_Projectile p;
@@ -769,7 +797,7 @@ void CCharacter::FireWeapon()
                                                      ProjStartPos,
                                                      vec2(cosf(a), sinf(a))*Speed,
                                                      (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
-                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, true, false, Bounce);
+                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, Limit, true, false, Bounce);
 
                 // pack the Projectile and send it to the client Directly
                 CNetObj_Projectile p;
@@ -801,7 +829,7 @@ void CCharacter::FireWeapon()
                                                      ProjStartPos,
                                                      vec2(cosf(a), sinf(a))*Speed,
                                                      (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
-                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, false, false, Bounce + 1);
+                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, Limit, false, false, Bounce + 1);
 
                 // pack the Projectile and send it to the client Directly
                 CNetObj_Projectile p;
@@ -833,7 +861,7 @@ void CCharacter::FireWeapon()
                                                      ProjStartPos,
                                                      vec2(cosf(a), sinf(a))*Speed,
                                                      (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
-                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, true, false, Bounce + 1);
+                                                     1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GRENADE, Limit, true, false, Bounce + 1);
 
                 // pack the Projectile and send it to the client Directly
                 CNetObj_Projectile p;
@@ -847,23 +875,37 @@ void CCharacter::FireWeapon()
         }
         else if ( Race == MINER )
         {
-            CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_RIFLE,
-                                                 m_pPlayer->GetCID(),
-                                                 ProjStartPos,
-                                                 Direction,
-                                                 Server()->TickSpeed()*30,
-                                                 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GRENADE, false, false, Bounce);
+            bool Created = false;
 
-            // pack the Projectile and send it to the client Directly
-            CNetObj_Projectile p;
-            pProj->FillInfo(&p);
+            for ( int i = 0; i < 10; i++ )
+            {
+                if ( m_Teleporter[i] == 0 )
+                {
+                    m_Teleporter[i] = new CTeleporter(GameWorld(), m_Pos, m_pPlayer->GetCID(), m_Teleporter[0]);
+                    if (i)
+                        m_Teleporter[i-1]->SetNext(m_Teleporter[i]);
+                    Created = true;
+                    break;
+                }
+            }
+            
+            if (!Created)
+            {
+                int Older = 0;
+                int OlderStart = 0;
 
-            CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-            Msg.AddInt(1);
-            for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
-                Msg.AddInt(((int *)&p)[i]);
+                for ( int i = 0; i < 10; i++ )
+                {
+                    if ( OlderStart == 0 || m_Teleporter[i]->GetStartTick() < OlderStart )
+                    {
+                        Older = i;
+                        OlderStart = m_Teleporter[i]->GetStartTick();
+                    }
+                }
 
-            Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
+                m_Teleporter[Older]->m_Pos = m_Pos;
+                m_Teleporter[Older]->ResetStartTick();
+            }
         }
 
         if (sound)
@@ -916,7 +958,7 @@ void CCharacter::FireWeapon()
                                                  ProjStartPos,
                                                  Direction,
                                                  Server()->TickSpeed()*30,
-                                                 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_RIFLE, false, false, Bounce);
+                                                 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_RIFLE, Limit, false, false, Bounce);
 
             // pack the Projectile and send it to the client Directly
             CNetObj_Projectile p;
@@ -1068,7 +1110,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
         {
             char a[256] = "";
             str_format(a, 256, "Ammo of the %s is : %d/%d.", m_aWeapons[Weapon].m_Name, m_aWeapons[Weapon].m_Ammo, Stockage);
-            GameServer()->SendChatTarget(m_pPlayer->GetCID(), a);
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), a, CGameContext::CHAT_INFO_AMMO);
         }
     }
     else if((m_aWeapons[Weapon].m_Ammo < Stockage && m_aWeapons[Weapon].m_Ammo != -1) || !m_aWeapons[Weapon].m_Got)
@@ -1090,7 +1132,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
         {
             char a[256] = "";
             str_format(a, 256, "Ammo of the %s is : %d/%d.", m_aWeapons[Weapon].m_Name, m_aWeapons[Weapon].m_Ammo, Stockage);
-            GameServer()->SendChatTarget(m_pPlayer->GetCID(), a);
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), a, CGameContext::CHAT_INFO_AMMO);
         }
 
         GameServer()->m_pStatistiques->AddPickUpWeapon(m_pPlayer->GetSID());
@@ -1197,13 +1239,10 @@ void CCharacter::Tick()
         m_Core.m_Jumped &= ~2;
 
     m_Core.m_Input = m_Input;
-    m_Core.Tick(true);
+    m_Core.Tick(true, m_stat_move->m_rate_speed, m_stat_move->m_rate_accel, m_stat_move->m_rate_high_jump);
 
     if(m_Input.m_Jump && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000)
          m_JumpTick = Server()->Tick();
-    
-    if(m_Input.m_Jump && GameServer()->m_pEventsGame->IsActualEvent(GRAVITY_M0_5))
-        m_Core.m_Vel.y = GameServer()->Tuning()->m_AirJumpImpulse;
 
     // handle death-tiles and leaving gamelayer
     if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
@@ -1531,6 +1570,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
         else if (Instagib)
         {
             Dmg = 5;
+            Instagib = false;
         }
         else
         {

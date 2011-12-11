@@ -20,42 +20,92 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
         else
             m_write = true;
 
-        fichier.open("Statistiques.bak", std::ifstream::in);
-        if (!fichier.is_open())
-            return;
+        return;
     }
 
-    for ( int i = 0; !fichier.eof(); i++ )
+    int Version = 0;
+    fichier >> Version;
+    
+    if (Version != DB_VERSION)
     {
-        m_statistiques.push_back(stats);
-        m_statistiques[i].m_id = i;
-        fichier >> m_statistiques[i].m_ip;
-        fichier >> m_statistiques[i].m_name;
-        fichier >> m_statistiques[i].m_clan;
-        fichier >> m_statistiques[i].m_country;
-        fichier >> m_statistiques[i].m_kill;
-        fichier >> m_statistiques[i].m_dead;
-        fichier >> m_statistiques[i].m_suicide;
-        fichier >> m_statistiques[i].m_log_in;
-        fichier >> m_statistiques[i].m_fire;
-        fichier >> m_statistiques[i].m_pickup_weapon;
-        fichier >> m_statistiques[i].m_pickup_ninja;
-        fichier >> m_statistiques[i].m_change_weapon;
-        fichier >> m_statistiques[i].m_time_play;
-        fichier >> m_statistiques[i].m_message;
-        fichier >> m_statistiques[i].m_killing_spree;
-        fichier >> m_statistiques[i].m_max_killing_spree;
-        fichier >> m_statistiques[i].m_flag_capture;
-        fichier >> m_statistiques[i].m_last_connect;
-        fichier >> m_statistiques[i].m_lock;
-        fichier >> m_statistiques[i].m_upgrade.m_weapon;
-        fichier >> m_statistiques[i].m_upgrade.m_life;
-        fichier >> m_statistiques[i].m_upgrade.m_move;
-        fichier >> m_statistiques[i].m_upgrade.m_hook;
-        m_statistiques[i].m_start_time = 0;
-        m_statistiques[i].m_actual_kill = 0;
-        UpdateStat(i);
-        UpdateUpgrade(i);
+        fichier.seekg (0, std::ios::beg);
+
+        for ( int i = 0; !fichier.eof(); i++ )
+        {
+            m_statistiques.push_back(stats);
+            m_statistiques[i].m_id = i;
+            fichier >> m_statistiques[i].m_ip;
+            fichier >> m_statistiques[i].m_name;
+            fichier >> m_statistiques[i].m_clan;
+            fichier >> m_statistiques[i].m_country;
+            fichier >> m_statistiques[i].m_kill;
+            fichier >> m_statistiques[i].m_dead;
+            fichier >> m_statistiques[i].m_suicide;
+            fichier >> m_statistiques[i].m_log_in;
+            fichier >> m_statistiques[i].m_fire;
+            fichier >> m_statistiques[i].m_pickup_weapon;
+            fichier >> m_statistiques[i].m_pickup_ninja;
+            fichier >> m_statistiques[i].m_change_weapon;
+            fichier >> m_statistiques[i].m_time_play;
+            fichier >> m_statistiques[i].m_message;
+            fichier >> m_statistiques[i].m_killing_spree;
+            fichier >> m_statistiques[i].m_max_killing_spree;
+            fichier >> m_statistiques[i].m_flag_capture;
+            fichier >> m_statistiques[i].m_last_connect;
+            fichier >> m_statistiques[i].m_conf.m_Lock;
+            fichier >> m_statistiques[i].m_upgrade.m_weapon;
+            fichier >> m_statistiques[i].m_upgrade.m_life;
+            fichier >> m_statistiques[i].m_upgrade.m_move;
+            fichier >> m_statistiques[i].m_upgrade.m_hook;
+            m_statistiques[i].m_start_time = 0;
+            m_statistiques[i].m_actual_kill = 0;
+            UpdateStat(i);
+            UpdateUpgrade(i);
+        }
+    }
+    else
+    {
+        for ( int i = 0; !fichier.eof(); i++ )
+        {
+            m_statistiques.push_back(stats);
+            m_statistiques[i].m_id = i;
+            fichier >> m_statistiques[i].m_ip;
+            fichier >> m_statistiques[i].m_name;
+            fichier >> m_statistiques[i].m_clan;
+            fichier >> m_statistiques[i].m_country;
+            fichier >> m_statistiques[i].m_kill;
+            fichier >> m_statistiques[i].m_dead;
+            fichier >> m_statistiques[i].m_suicide;
+            fichier >> m_statistiques[i].m_log_in;
+            fichier >> m_statistiques[i].m_fire;
+            fichier >> m_statistiques[i].m_pickup_weapon;
+            fichier >> m_statistiques[i].m_pickup_ninja;
+            fichier >> m_statistiques[i].m_change_weapon;
+            fichier >> m_statistiques[i].m_time_play;
+            fichier >> m_statistiques[i].m_message;
+            fichier >> m_statistiques[i].m_killing_spree;
+            fichier >> m_statistiques[i].m_max_killing_spree;
+            fichier >> m_statistiques[i].m_flag_capture;
+            fichier >> m_statistiques[i].m_last_connect;
+            fichier >> m_statistiques[i].m_conf.m_InfoHealKiller;
+            fichier >> m_statistiques[i].m_conf.m_InfoXP;
+            fichier >> m_statistiques[i].m_conf.m_InfoLevelUp;
+            fichier >> m_statistiques[i].m_conf.m_InfoKillingSpree;
+            fichier >> m_statistiques[i].m_conf.m_InfoRace;
+            fichier >> m_statistiques[i].m_conf.m_InfoAmmo;
+            fichier >> m_statistiques[i].m_conf.m_ShowVoter;
+            fichier >> m_statistiques[i].m_conf.m_Lock;
+            for (int j = 0; j < 4; j++)
+                fichier >> m_statistiques[i].m_conf.m_Weapon[j];
+            fichier >> m_statistiques[i].m_upgrade.m_weapon;
+            fichier >> m_statistiques[i].m_upgrade.m_life;
+            fichier >> m_statistiques[i].m_upgrade.m_move;
+            fichier >> m_statistiques[i].m_upgrade.m_hook;
+            m_statistiques[i].m_start_time = 0;
+            m_statistiques[i].m_actual_kill = 0;
+            UpdateStat(i);
+            UpdateUpgrade(i);
+        }
     }
 
     m_write = true;
@@ -234,7 +284,6 @@ long CStatistiques::GetId(const char ip[MAX_IP_LENGTH], const char a[], const ch
     m_statistiques[new_id].m_name = Name;
     m_statistiques[new_id].m_clan = Clan;
     m_statistiques[new_id].m_country = country;
-    m_statistiques[new_id].m_lock = false;
     UpdateStat(new_id);
     UpdateUpgrade(new_id);
     UpdateRank();
@@ -256,7 +305,7 @@ void CStatistiques::UpdateStat(long id)
     m_statistiques[id].m_level = floor(((-1)+sqrt(1+(8*(m_statistiques[id].m_kill + m_statistiques[id].m_killing_spree + (m_statistiques[id].m_flag_capture * 5)))))/2);
     m_statistiques[id].m_xp = (m_statistiques[id].m_kill + m_statistiques[id].m_killing_spree + (m_statistiques[id].m_flag_capture * 5)) - (m_statistiques[id].m_level * (m_statistiques[id].m_level + 1))/2;
 
-    if ( m_statistiques[id].m_start_time != 0 && !m_statistiques[id].m_lock)
+    if ( m_statistiques[id].m_start_time != 0 && !m_statistiques[id].m_conf.m_Lock)
     {
         m_statistiques[id].m_time_play += difftime(time_timestamp(), m_statistiques[id].m_start_time);
         m_statistiques[id].m_start_time = time_timestamp();
@@ -319,6 +368,13 @@ void CStatistiques::UpdateUpgrade(long id)
         m_statistiques[id].m_upgrade.m_stat_life.m_stockage[0] = 15;
         m_statistiques[id].m_upgrade.m_stat_life.m_stockage[1] = (10 + (int)(m_statistiques[id].m_upgrade.m_life / 4)) - 5;
     }
+    
+    m_statistiques[id].m_upgrade.m_stat_move.m_rate_speed = 1 + ((int)((m_statistiques[id].m_upgrade.m_move + 3)/ 4) * 0.2f);
+    m_statistiques[id].m_upgrade.m_stat_move.m_rate_accel = 1 + ((int)((m_statistiques[id].m_upgrade.m_move + 2)/ 4) * 0.1f);
+    m_statistiques[id].m_upgrade.m_stat_move.m_rate_high_jump = 1 + ((int)((m_statistiques[id].m_upgrade.m_move + 1)/ 4) * 0.05f);
+    m_statistiques[id].m_upgrade.m_stat_move.m_num_jump = 1 + (int)(m_statistiques[id].m_upgrade.m_move / 4);
+    if ( m_statistiques[id].m_upgrade.m_move == 40 )
+        m_statistiques[id].m_upgrade.m_stat_move.m_num_jump = -1;
 }
 
 class Trier
@@ -641,6 +697,7 @@ void CStatistiques::WriteStat()
     std::ofstream fichier("Statistiques.new", std::ios::out | std::ios::trunc);
     if(fichier.is_open())
     {
+        fichier << DB_VERSION << " ";
         for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
         {
             UpdateStat(i);
@@ -664,7 +721,16 @@ void CStatistiques::WriteStat()
                 fichier << m_statistiques[i].m_max_killing_spree << " ";
                 fichier << m_statistiques[i].m_flag_capture << " ";
                 fichier << m_statistiques[i].m_last_connect << " ";
-                fichier << m_statistiques[i].m_lock << " ";
+                fichier << m_statistiques[i].m_conf.m_InfoHealKiller << " ";
+                fichier << m_statistiques[i].m_conf.m_InfoXP << " ";
+                fichier << m_statistiques[i].m_conf.m_InfoLevelUp << " ";
+                fichier << m_statistiques[i].m_conf.m_InfoKillingSpree << " ";
+                fichier << m_statistiques[i].m_conf.m_InfoRace << " ";
+                fichier << m_statistiques[i].m_conf.m_InfoAmmo << " ";
+                fichier << m_statistiques[i].m_conf.m_ShowVoter << " ";
+                fichier << m_statistiques[i].m_conf.m_Lock << " ";
+                for (int j = 0; j < 4; j++)
+                    fichier << m_statistiques[i].m_conf.m_Weapon[j] << " ";
                 fichier << m_statistiques[i].m_upgrade.m_weapon << " ";
                 fichier << m_statistiques[i].m_upgrade.m_life << " ";
                 fichier << m_statistiques[i].m_upgrade.m_move << " ";
@@ -674,18 +740,9 @@ void CStatistiques::WriteStat()
 
         fichier.close();
 
-        std::ifstream test("Statistiques.bak");
-        if ( test.is_open() )
-        {
-            test.close();
-            if (fs_remove("Statistiques.bak"))
-            {
-                m_errors++;
-                return;
-            }
-        }
-
-        if ( fs_rename("Statistiques.txt", "Statistiques.bak") == 0 )
+        char NewName[256] = "";
+        str_format(NewName, 256, "Statistiques_%u.txt", time_timestamp() - 150);
+        if (fs_rename("Statistiques.txt", NewName) == 0 )
         {
             fs_rename("Statistiques.new", "Statistiques.txt");
         }

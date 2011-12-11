@@ -17,6 +17,7 @@
 
 #include <game/generated/client_data.h>
 
+#include "maplayers.h"
 #include "menus.h"
 
 int CMenus::DoButton_DemoPlayer(const void *pID, const char *pText, int Checked, const CUIRect *pRect)
@@ -43,195 +44,197 @@ int CMenus::DoButton_Sprite(const void *pID, int ImageID, int SpriteID, int Chec
 
 void CMenus::RenderDemoPlayer(CUIRect MainView)
 {
-    const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
+	const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
 
-    const float SeekBarHeight = 15.0f;
-    const float ButtonbarHeight = 20.0f;
-    const float NameBarHeight = 20.0f;
-    const float Margins = 5.0f;
-    float TotalHeight;
+	const float SeekBarHeight = 15.0f;
+	const float ButtonbarHeight = 20.0f;
+	const float NameBarHeight = 20.0f;
+	const float Margins = 5.0f;
+	float TotalHeight;
 
-    if(m_MenuActive)
-        TotalHeight = SeekBarHeight+ButtonbarHeight+NameBarHeight+Margins*3;
-    else
-        TotalHeight = SeekBarHeight+Margins*2;
+	if(m_MenuActive)
+		TotalHeight = SeekBarHeight+ButtonbarHeight+NameBarHeight+Margins*3;
+	else
+		TotalHeight = SeekBarHeight+Margins*2;
 
-    MainView.HSplitBottom(TotalHeight, 0, &MainView);
-    MainView.VSplitLeft(50.0f, 0, &MainView);
-    MainView.VSplitRight(450.0f, &MainView, 0);
+	MainView.HSplitBottom(TotalHeight, 0, &MainView);
+	MainView.VSplitLeft(50.0f, 0, &MainView);
+	MainView.VSplitRight(450.0f, &MainView, 0);
 
-    RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_T, 10.0f);
+	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_T, 10.0f);
 
-    MainView.Margin(5.0f, &MainView);
+	MainView.Margin(5.0f, &MainView);
 
-    CUIRect SeekBar, ButtonBar, NameBar;
+	CUIRect SeekBar, ButtonBar, NameBar;
 
-    int CurrentTick = pInfo->m_CurrentTick - pInfo->m_FirstTick;
-    int TotalTicks = pInfo->m_LastTick - pInfo->m_FirstTick;
+	int CurrentTick = pInfo->m_CurrentTick - pInfo->m_FirstTick;
+	int TotalTicks = pInfo->m_LastTick - pInfo->m_FirstTick;
 
-    if(m_MenuActive)
-    {
-        MainView.HSplitTop(SeekBarHeight, &SeekBar, &ButtonBar);
-        ButtonBar.HSplitTop(Margins, 0, &ButtonBar);
-        ButtonBar.HSplitBottom(NameBarHeight, &ButtonBar, &NameBar);
-        NameBar.HSplitTop(4.0f, 0, &NameBar);
-    }
-    else
-        SeekBar = MainView;
+	if(m_MenuActive)
+	{
+		MainView.HSplitTop(SeekBarHeight, &SeekBar, &ButtonBar);
+		ButtonBar.HSplitTop(Margins, 0, &ButtonBar);
+		ButtonBar.HSplitBottom(NameBarHeight, &ButtonBar, &NameBar);
+		NameBar.HSplitTop(4.0f, 0, &NameBar);
+	}
+	else
+		SeekBar = MainView;
 
-    // do seekbar
-    {
-        static int s_SeekBarID = 0;
-        void *id = &s_SeekBarID;
-        char aBuffer[128];
+	// do seekbar
+	{
+		static int s_SeekBarID = 0;
+		void *id = &s_SeekBarID;
+		char aBuffer[128];
 
-        RenderTools()->DrawUIRect(&SeekBar, vec4(0,0,0,0.5f), CUI::CORNER_ALL, 5.0f);
+		RenderTools()->DrawUIRect(&SeekBar, vec4(0,0,0,0.5f), CUI::CORNER_ALL, 5.0f);
 
-        float Amount = CurrentTick/(float)TotalTicks;
+		float Amount = CurrentTick/(float)TotalTicks;
 
-        CUIRect FilledBar = SeekBar;
-        FilledBar.w = 10.0f + (FilledBar.w-10.0f)*Amount;
+		CUIRect FilledBar = SeekBar;
+		FilledBar.w = 10.0f + (FilledBar.w-10.0f)*Amount;
 
-        RenderTools()->DrawUIRect(&FilledBar, vec4(1,1,1,0.5f), CUI::CORNER_ALL, 5.0f);
+		RenderTools()->DrawUIRect(&FilledBar, vec4(1,1,1,0.5f), CUI::CORNER_ALL, 5.0f);
 
-        str_format(aBuffer, sizeof(aBuffer), "%d:%02d / %d:%02d",
-                   CurrentTick/SERVER_TICK_SPEED/60, (CurrentTick/SERVER_TICK_SPEED)%60,
-                   TotalTicks/SERVER_TICK_SPEED/60, (TotalTicks/SERVER_TICK_SPEED)%60);
-        UI()->DoLabel(&SeekBar, aBuffer, SeekBar.h*0.70f, 0);
+		str_format(aBuffer, sizeof(aBuffer), "%d:%02d / %d:%02d",
+			CurrentTick/SERVER_TICK_SPEED/60, (CurrentTick/SERVER_TICK_SPEED)%60,
+			TotalTicks/SERVER_TICK_SPEED/60, (TotalTicks/SERVER_TICK_SPEED)%60);
+		UI()->DoLabel(&SeekBar, aBuffer, SeekBar.h*0.70f, 0);
 
-        // do the logic
-        int Inside = UI()->MouseInside(&SeekBar);
+		// do the logic
+		int Inside = UI()->MouseInside(&SeekBar);
 
-        if(UI()->ActiveItem() == id)
-        {
-            if(!UI()->MouseButton(0))
-                UI()->SetActiveItem(0);
-            else
-            {
-                static float PrevAmount = 0.0f;
-                float Amount = (UI()->MouseX()-SeekBar.x)/(float)SeekBar.w;
-                if(Amount > 0.0f && Amount < 1.0f && absolute(PrevAmount-Amount) >= 0.01f)
-                {
-                    PrevAmount = Amount;
-                    m_pClient->OnReset();
-                    m_pClient->m_SuppressEvents = true;
-                    DemoPlayer()->SetPos(Amount);
-                    m_pClient->m_SuppressEvents = false;
-                }
-            }
-        }
-        else if(UI()->HotItem() == id)
-        {
-            if(UI()->MouseButton(0))
-                UI()->SetActiveItem(id);
-        }
+		if(UI()->ActiveItem() == id)
+		{
+			if(!UI()->MouseButton(0))
+				UI()->SetActiveItem(0);
+			else
+			{
+				static float PrevAmount = 0.0f;
+				float Amount = (UI()->MouseX()-SeekBar.x)/(float)SeekBar.w;
+				if(Amount > 0.0f && Amount < 1.0f && absolute(PrevAmount-Amount) >= 0.01f)
+				{
+					PrevAmount = Amount;
+					m_pClient->OnReset();
+					m_pClient->m_SuppressEvents = true;
+					DemoPlayer()->SetPos(Amount);
+					m_pClient->m_SuppressEvents = false;
+					m_pClient->m_pMapLayersBackGround->EnvelopeUpdate();
+					m_pClient->m_pMapLayersForeGround->EnvelopeUpdate();
+				}
+			}
+		}
+		else if(UI()->HotItem() == id)
+		{
+			if(UI()->MouseButton(0))
+				UI()->SetActiveItem(id);
+		}
 
-        if(Inside)
-            UI()->SetHotItem(id);
-    }
+		if(Inside)
+			UI()->SetHotItem(id);
+	}
 
-    if(CurrentTick == TotalTicks)
-    {
-        m_pClient->OnReset();
-        DemoPlayer()->Pause();
-        DemoPlayer()->SetPos(0);
-    }
+	if(CurrentTick == TotalTicks)
+	{
+		m_pClient->OnReset();
+		DemoPlayer()->Pause();
+		DemoPlayer()->SetPos(0);
+	}
 
-    bool IncreaseDemoSpeed = false, DecreaseDemoSpeed = false;
+	bool IncreaseDemoSpeed = false, DecreaseDemoSpeed = false;
 
-    if(m_MenuActive)
-    {
-        // do buttons
-        CUIRect Button;
+	if(m_MenuActive)
+	{
+		// do buttons
+		CUIRect Button;
 
-        // combined play and pause button
-        ButtonBar.VSplitLeft(ButtonbarHeight, &Button, &ButtonBar);
-        static int s_PlayPauseButton = 0;
-        if(!pInfo->m_Paused)
-        {
-            if(DoButton_Sprite(&s_PlayPauseButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_PAUSE, false, &Button, CUI::CORNER_ALL))
-                DemoPlayer()->Pause();
-        }
-        else
-        {
-            if(DoButton_Sprite(&s_PlayPauseButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_PLAY, false, &Button, CUI::CORNER_ALL))
-                DemoPlayer()->Unpause();
-        }
+		// combined play and pause button
+		ButtonBar.VSplitLeft(ButtonbarHeight, &Button, &ButtonBar);
+		static int s_PlayPauseButton = 0;
+		if(!pInfo->m_Paused)
+		{
+			if(DoButton_Sprite(&s_PlayPauseButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_PAUSE, false, &Button, CUI::CORNER_ALL))
+				DemoPlayer()->Pause();
+		}
+		else
+		{
+			if(DoButton_Sprite(&s_PlayPauseButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_PLAY, false, &Button, CUI::CORNER_ALL))
+				DemoPlayer()->Unpause();
+		}
 
-        // stop button
+		// stop button
 
-        ButtonBar.VSplitLeft(Margins, 0, &ButtonBar);
-        ButtonBar.VSplitLeft(ButtonbarHeight, &Button, &ButtonBar);
-        static int s_ResetButton = 0;
-        if(DoButton_Sprite(&s_ResetButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_STOP, false, &Button, CUI::CORNER_ALL))
-        {
-            m_pClient->OnReset();
-            DemoPlayer()->Pause();
-            DemoPlayer()->SetPos(0);
-        }
+		ButtonBar.VSplitLeft(Margins, 0, &ButtonBar);
+		ButtonBar.VSplitLeft(ButtonbarHeight, &Button, &ButtonBar);
+		static int s_ResetButton = 0;
+		if(DoButton_Sprite(&s_ResetButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_STOP, false, &Button, CUI::CORNER_ALL))
+		{
+			m_pClient->OnReset();
+			DemoPlayer()->Pause();
+			DemoPlayer()->SetPos(0);
+		}
 
-        // slowdown
-        ButtonBar.VSplitLeft(Margins, 0, &ButtonBar);
-        ButtonBar.VSplitLeft(ButtonbarHeight, &Button, &ButtonBar);
-        static int s_SlowDownButton = 0;
-        if(DoButton_Sprite(&s_SlowDownButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_SLOWER, 0, &Button, CUI::CORNER_ALL) || Input()->KeyPresses(KEY_MOUSE_WHEEL_DOWN))
-            DecreaseDemoSpeed = true;
+		// slowdown
+		ButtonBar.VSplitLeft(Margins, 0, &ButtonBar);
+		ButtonBar.VSplitLeft(ButtonbarHeight, &Button, &ButtonBar);
+		static int s_SlowDownButton = 0;
+		if(DoButton_Sprite(&s_SlowDownButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_SLOWER, 0, &Button, CUI::CORNER_ALL) || Input()->KeyPresses(KEY_MOUSE_WHEEL_DOWN))
+			DecreaseDemoSpeed = true;
 
-        // fastforward
-        ButtonBar.VSplitLeft(Margins, 0, &ButtonBar);
-        ButtonBar.VSplitLeft(ButtonbarHeight, &Button, &ButtonBar);
-        static int s_FastForwardButton = 0;
-        if(DoButton_Sprite(&s_FastForwardButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_FASTER, 0, &Button, CUI::CORNER_ALL))
-            IncreaseDemoSpeed = true;
+		// fastforward
+		ButtonBar.VSplitLeft(Margins, 0, &ButtonBar);
+		ButtonBar.VSplitLeft(ButtonbarHeight, &Button, &ButtonBar);
+		static int s_FastForwardButton = 0;
+		if(DoButton_Sprite(&s_FastForwardButton, IMAGE_DEMOBUTTONS, SPRITE_DEMOBUTTON_FASTER, 0, &Button, CUI::CORNER_ALL))
+			IncreaseDemoSpeed = true;
 
-        // speed meter
-        ButtonBar.VSplitLeft(Margins*3, 0, &ButtonBar);
-        char aBuffer[64];
-        if(pInfo->m_Speed >= 1.0f)
-            str_format(aBuffer, sizeof(aBuffer), "x%.0f", pInfo->m_Speed);
-        else
-            str_format(aBuffer, sizeof(aBuffer), "x%.2f", pInfo->m_Speed);
-        UI()->DoLabel(&ButtonBar, aBuffer, Button.h*0.7f, -1);
+		// speed meter
+		ButtonBar.VSplitLeft(Margins*3, 0, &ButtonBar);
+		char aBuffer[64];
+		if(pInfo->m_Speed >= 1.0f)
+			str_format(aBuffer, sizeof(aBuffer), "x%.0f", pInfo->m_Speed);
+		else
+			str_format(aBuffer, sizeof(aBuffer), "x%.2f", pInfo->m_Speed);
+		UI()->DoLabel(&ButtonBar, aBuffer, Button.h*0.7f, -1);
 
-        // close button
-        ButtonBar.VSplitRight(ButtonbarHeight*3, &ButtonBar, &Button);
-        static int s_ExitButton = 0;
-        if(DoButton_DemoPlayer(&s_ExitButton, Localize("Close"), 0, &Button))
-            Client()->Disconnect();
+		// close button
+		ButtonBar.VSplitRight(ButtonbarHeight*3, &ButtonBar, &Button);
+		static int s_ExitButton = 0;
+		if(DoButton_DemoPlayer(&s_ExitButton, Localize("Close"), 0, &Button))
+			Client()->Disconnect();
 
-        // demo name
-        char aDemoName[64] = {0};
-        DemoPlayer()->GetDemoName(aDemoName, sizeof(aDemoName));
-        char aBuf[128];
-        str_format(aBuf, sizeof(aBuf), Localize("Demofile: %s"), aDemoName);
-        CTextCursor Cursor;
-        TextRender()->SetCursor(&Cursor, NameBar.x, NameBar.y, Button.h*0.5f, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
-        Cursor.m_LineWidth = MainView.w;
-        TextRender()->TextEx(&Cursor, aBuf, -1);
-    }
+		// demo name
+		char aDemoName[64] = {0};
+		DemoPlayer()->GetDemoName(aDemoName, sizeof(aDemoName));
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), Localize("Demofile: %s"), aDemoName);
+		CTextCursor Cursor;
+		TextRender()->SetCursor(&Cursor, NameBar.x, NameBar.y, Button.h*0.5f, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
+		Cursor.m_LineWidth = MainView.w;
+		TextRender()->TextEx(&Cursor, aBuf, -1);
+	}
 
-    if(IncreaseDemoSpeed || Input()->KeyPresses(KEY_MOUSE_WHEEL_UP))
-    {
-        if(pInfo->m_Speed < 0.1f) DemoPlayer()->SetSpeed(0.1f);
-        else if(pInfo->m_Speed < 0.25f) DemoPlayer()->SetSpeed(0.25f);
-        else if(pInfo->m_Speed < 0.5f) DemoPlayer()->SetSpeed(0.5f);
-        else if(pInfo->m_Speed < 0.75f) DemoPlayer()->SetSpeed(0.75f);
-        else if(pInfo->m_Speed < 1.0f) DemoPlayer()->SetSpeed(1.0f);
-        else if(pInfo->m_Speed < 2.0f) DemoPlayer()->SetSpeed(2.0f);
-        else if(pInfo->m_Speed < 4.0f) DemoPlayer()->SetSpeed(4.0f);
-        else DemoPlayer()->SetSpeed(8.0f);
-    }
-    else if(DecreaseDemoSpeed || Input()->KeyPresses(KEY_MOUSE_WHEEL_DOWN))
-    {
-        if(pInfo->m_Speed > 4.0f) DemoPlayer()->SetSpeed(4.0f);
-        else if(pInfo->m_Speed > 2.0f) DemoPlayer()->SetSpeed(2.0f);
-        else if(pInfo->m_Speed > 1.0f) DemoPlayer()->SetSpeed(1.0f);
-        else if(pInfo->m_Speed > 0.75f) DemoPlayer()->SetSpeed(0.75f);
-        else if(pInfo->m_Speed > 0.5f) DemoPlayer()->SetSpeed(0.5f);
-        else if(pInfo->m_Speed > 0.25f) DemoPlayer()->SetSpeed(0.25f);
-        else if(pInfo->m_Speed > 0.1f) DemoPlayer()->SetSpeed(0.1f);
-        else DemoPlayer()->SetSpeed(0.05f);
-    }
+	if(IncreaseDemoSpeed || Input()->KeyPresses(KEY_MOUSE_WHEEL_UP))
+	{
+		if(pInfo->m_Speed < 0.1f) DemoPlayer()->SetSpeed(0.1f);
+		else if(pInfo->m_Speed < 0.25f) DemoPlayer()->SetSpeed(0.25f);
+		else if(pInfo->m_Speed < 0.5f) DemoPlayer()->SetSpeed(0.5f);
+		else if(pInfo->m_Speed < 0.75f) DemoPlayer()->SetSpeed(0.75f);
+		else if(pInfo->m_Speed < 1.0f) DemoPlayer()->SetSpeed(1.0f);
+		else if(pInfo->m_Speed < 2.0f) DemoPlayer()->SetSpeed(2.0f);
+		else if(pInfo->m_Speed < 4.0f) DemoPlayer()->SetSpeed(4.0f);
+		else DemoPlayer()->SetSpeed(8.0f);
+	}
+	else if(DecreaseDemoSpeed || Input()->KeyPresses(KEY_MOUSE_WHEEL_DOWN))
+	{
+		if(pInfo->m_Speed > 4.0f) DemoPlayer()->SetSpeed(4.0f);
+		else if(pInfo->m_Speed > 2.0f) DemoPlayer()->SetSpeed(2.0f);
+		else if(pInfo->m_Speed > 1.0f) DemoPlayer()->SetSpeed(1.0f);
+		else if(pInfo->m_Speed > 0.75f) DemoPlayer()->SetSpeed(0.75f);
+		else if(pInfo->m_Speed > 0.5f) DemoPlayer()->SetSpeed(0.5f);
+		else if(pInfo->m_Speed > 0.25f) DemoPlayer()->SetSpeed(0.25f);
+		else if(pInfo->m_Speed > 0.1f) DemoPlayer()->SetSpeed(0.1f);
+		else DemoPlayer()->SetSpeed(0.05f);
+	}
 }
 
 static CUIRect gs_ListBoxOriginalView;

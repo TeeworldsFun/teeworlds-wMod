@@ -1218,177 +1218,178 @@ void CEditor::DoQuad(CQuad *q, int Index)
 
 void CEditor::DoQuadPoint(CQuad *pQuad, int QuadIndex, int V)
 {
-    void *pID = &pQuad->m_aPoints[V];
+	void *pID = &pQuad->m_aPoints[V];
 
-    float wx = UI()->MouseWorldX();
-    float wy = UI()->MouseWorldY();
+	float wx = UI()->MouseWorldX();
+	float wy = UI()->MouseWorldY();
 
-    float px = fx2f(pQuad->m_aPoints[V].x);
-    float py = fx2f(pQuad->m_aPoints[V].y);
+	float px = fx2f(pQuad->m_aPoints[V].x);
+	float py = fx2f(pQuad->m_aPoints[V].y);
 
-    float dx = (px - wx)/m_WorldZoom;
-    float dy = (py - wy)/m_WorldZoom;
-    if(dx*dx+dy*dy < 50)
-        UI()->SetHotItem(pID);
+	float dx = (px - wx)/m_WorldZoom;
+	float dy = (py - wy)/m_WorldZoom;
+	if(dx*dx+dy*dy < 50)
+		UI()->SetHotItem(pID);
 
-    // draw selection background
-    if(m_SelectedQuad == QuadIndex && m_SelectedPoints&(1<<V))
-    {
-        Graphics()->SetColor(0,0,0,1);
-        IGraphics::CQuadItem QuadItem(px, py, 7.0f, 7.0f);
-        Graphics()->QuadsDraw(&QuadItem, 1);
-    }
+	// draw selection background
+	if(m_SelectedQuad == QuadIndex && m_SelectedPoints&(1<<V))
+	{
+		Graphics()->SetColor(0,0,0,1);
+		IGraphics::CQuadItem QuadItem(px, py, 7.0f, 7.0f);
+		Graphics()->QuadsDraw(&QuadItem, 1);
+	}
 
-    enum
-    {
-        OP_NONE=0,
-        OP_MOVEPOINT,
-        OP_MOVEUV,
-        OP_CONTEXT_MENU
-    };
+	enum
+	{
+		OP_NONE=0,
+		OP_MOVEPOINT,
+		OP_MOVEUV,
+		OP_CONTEXT_MENU
+	};
 
-    static bool s_Moved;
-    static int s_Operation = OP_NONE;
+	static bool s_Moved;
+	static int s_Operation = OP_NONE;
 
-    if(UI()->ActiveItem() == pID)
-    {
-        float dx = m_MouseDeltaWx;
-        float dy = m_MouseDeltaWy;
-        if(!s_Moved)
-        {
-            if(dx*dx+dy*dy > 0.5f)
-                s_Moved = true;
-        }
+	if(UI()->ActiveItem() == pID)
+	{
+		float dx = m_MouseDeltaWx;
+		float dy = m_MouseDeltaWy;
+		if(!s_Moved)
+		{
+			if(dx*dx+dy*dy > 0.5f)
+				s_Moved = true;
+		}
 
-        if(s_Moved)
-        {
-            if(s_Operation == OP_MOVEPOINT)
-            {
-                if(m_GridActive)
-                {
-                    for(int m = 0; m < 4; m++)
-                        if(m_SelectedPoints&(1<<m))
-                        {
-                            int LineDistance = GetLineDistance();
+		if(s_Moved)
+		{
+			if(s_Operation == OP_MOVEPOINT)
+			{
+				if(m_GridActive)
+				{
+					for(int m = 0; m < 4; m++)
+						if(m_SelectedPoints&(1<<m))
+						{
+							int LineDistance = GetLineDistance();
 
-                            float x = 0.0f;
-                            float y = 0.0f;
-                            if(wx >= 0)
-                                x = (int)((wx+(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
-                            else
-                                x = (int)((wx-(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
-                            if(wy >= 0)
-                                y = (int)((wy+(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
-                            else
-                                y = (int)((wy-(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
+							float x = 0.0f;
+							float y = 0.0f;
+							if(wx >= 0)
+								x = (int)((wx+(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
+							else
+								x = (int)((wx-(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
+							if(wy >= 0)
+								y = (int)((wy+(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
+							else
+								y = (int)((wy-(LineDistance/2)*m_GridFactor)/(LineDistance*m_GridFactor)) * (LineDistance*m_GridFactor);
 
-                            pQuad->m_aPoints[m].x = f2fx(x);
-                            pQuad->m_aPoints[m].y = f2fx(y);
-                        }
-                }
-                else
-                {
-                    for(int m = 0; m < 4; m++)
-                        if(m_SelectedPoints&(1<<m))
-                        {
-                            pQuad->m_aPoints[m].x += f2fx(dx);
-                            pQuad->m_aPoints[m].y += f2fx(dy);
-                        }
-                }
-            }
-            else if(s_Operation == OP_MOVEUV)
-            {
-                for(int m = 0; m < 4; m++)
-                    if(m_SelectedPoints&(1<<m))
-                    {
-                        // 0,2;1,3 - line x
-                        // 0,1;2,3 - line y
+							pQuad->m_aPoints[m].x = f2fx(x);
+							pQuad->m_aPoints[m].y = f2fx(y);
+						}
+				}
+				else
+				{
+					for(int m = 0; m < 4; m++)
+						if(m_SelectedPoints&(1<<m))
+						{
+							pQuad->m_aPoints[m].x += f2fx(dx);
+							pQuad->m_aPoints[m].y += f2fx(dy);
+						}
+				}
+			}
+			else if(s_Operation == OP_MOVEUV)
+			{
+				for(int m = 0; m < 4; m++)
+					if(m_SelectedPoints&(1<<m))
+					{
+						// 0,2;1,3 - line x
+						// 0,1;2,3 - line y
 
-                        pQuad->m_aTexcoords[m].x += f2fx(dx*0.001f);
-                        pQuad->m_aTexcoords[(m+2)%4].x += f2fx(dx*0.001f);
+						pQuad->m_aTexcoords[m].x += f2fx(dx*0.001f);
+						pQuad->m_aTexcoords[(m+2)%4].x += f2fx(dx*0.001f);
 
-                        pQuad->m_aTexcoords[m].y += f2fx(dy*0.001f);
-                        pQuad->m_aTexcoords[m^1].y += f2fx(dy*0.001f);
-                    }
-            }
-        }
+						pQuad->m_aTexcoords[m].y += f2fx(dy*0.001f);
+						pQuad->m_aTexcoords[m^1].y += f2fx(dy*0.001f);
+					}
+			}
+		}
 
-        if(s_Operation == OP_CONTEXT_MENU)
-        {
-            if(!UI()->MouseButton(1))
-            {
-                static int s_PointPopupID = 0;
-                UiInvokePopupMenu(&s_PointPopupID, 0, UI()->MouseX(), UI()->MouseY(), 120, 150, PopupPoint);
-                UI()->SetActiveItem(0);
-            }
-        }
-        else
-        {
-            if(!UI()->MouseButton(0))
-            {
-                if(!s_Moved)
-                {
-                    if(Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT))
-                        m_SelectedPoints ^= 1<<V;
-                    else
-                        m_SelectedPoints = 1<<V;
-                }
-                m_LockMouse = false;
-                UI()->SetActiveItem(0);
-            }
-        }
+		if(s_Operation == OP_CONTEXT_MENU)
+		{
+			if(!UI()->MouseButton(1))
+			{
+				static int s_PointPopupID = 0;
+				UiInvokePopupMenu(&s_PointPopupID, 0, UI()->MouseX(), UI()->MouseY(), 120, 150, PopupPoint);
+				UI()->SetActiveItem(0);
+			}
+		}
+		else
+		{
+			if(!UI()->MouseButton(0))
+			{
+				if(!s_Moved)
+				{
+					if(Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT))
+						m_SelectedPoints ^= 1<<V;
+					else
+						m_SelectedPoints = 1<<V;
+				}
+				m_LockMouse = false;
+				UI()->SetActiveItem(0);
+			}
+		}
 
-        Graphics()->SetColor(1,1,1,1);
-    }
-    else if(UI()->HotItem() == pID)
-    {
-        ms_pUiGotContext = pID;
+		Graphics()->SetColor(1,1,1,1);
+	}
+	else if(UI()->HotItem() == pID)
+	{
+		ms_pUiGotContext = pID;
 
-        Graphics()->SetColor(1,1,1,1);
-        m_pTooltip = "Left mouse button to move. Hold shift to move the texture.";
+		Graphics()->SetColor(1,1,1,1);
+		m_pTooltip = "Left mouse button to move. Hold shift to move the texture.";
 
-        if(UI()->MouseButton(0))
-        {
-            UI()->SetActiveItem(pID);
-            s_Moved = false;
-            if(Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT))
-            {
-                s_Operation = OP_MOVEUV;
-                m_LockMouse = true;
-            }
-            else
-                s_Operation = OP_MOVEPOINT;
+		if(UI()->MouseButton(0))
+		{
+			UI()->SetActiveItem(pID);
+			s_Moved = false;
+			if(Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT))
+			{
+				s_Operation = OP_MOVEUV;
+				m_LockMouse = true;
+			}
+			else
+				s_Operation = OP_MOVEPOINT;
 
-            if(!(m_SelectedPoints&(1<<V)))
-            {
-                if(Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT))
-                    m_SelectedPoints |= 1<<V;
-                else
-                    m_SelectedPoints = 1<<V;
-            }
+			if(!(m_SelectedPoints&(1<<V)))
+			{
+				if(Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT))
+					m_SelectedPoints |= 1<<V;
+				else
+					m_SelectedPoints = 1<<V;
+				s_Moved = true;
+			}
 
-            m_SelectedQuad = QuadIndex;
-        }
-        else if(UI()->MouseButton(1))
-        {
-            s_Operation = OP_CONTEXT_MENU;
-            m_SelectedQuad = QuadIndex;
-            UI()->SetActiveItem(pID);
-            if(!(m_SelectedPoints&(1<<V)))
-            {
-                if(Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT))
-                    m_SelectedPoints |= 1<<V;
-                else
-                    m_SelectedPoints = 1<<V;
-                s_Moved = true;
-            }
-        }
-    }
-    else
-        Graphics()->SetColor(1,0,0,1);
+			m_SelectedQuad = QuadIndex;
+		}
+		else if(UI()->MouseButton(1))
+		{
+			s_Operation = OP_CONTEXT_MENU;
+			m_SelectedQuad = QuadIndex;
+			UI()->SetActiveItem(pID);
+			if(!(m_SelectedPoints&(1<<V)))
+			{
+				if(Input()->KeyPressed(KEY_LSHIFT) || Input()->KeyPressed(KEY_RSHIFT))
+					m_SelectedPoints |= 1<<V;
+				else
+					m_SelectedPoints = 1<<V;
+				s_Moved = true;
+			}
+		}
+	}
+	else
+		Graphics()->SetColor(1,0,0,1);
 
-    IGraphics::CQuadItem QuadItem(px, py, 5.0f*m_WorldZoom, 5.0f*m_WorldZoom);
-    Graphics()->QuadsDraw(&QuadItem, 1);
+	IGraphics::CQuadItem QuadItem(px, py, 5.0f*m_WorldZoom, 5.0f*m_WorldZoom);
+	Graphics()->QuadsDraw(&QuadItem, 1);
 }
 
 void CEditor::DoQuadEnvelopes(CQuad *pQuad, int Index, int TexID)
@@ -3794,31 +3795,39 @@ int CEditor::GetLineDistance()
 
 void CEditorMap::DeleteEnvelope(int Index)
 {
-    if(Index < 0 || Index >= m_lEnvelopes.size())
-        return;
+	if(Index < 0 || Index >= m_lEnvelopes.size())
+		return;
 
-    m_Modified = true;
+	m_Modified = true;
 
-    // fix links between envelopes and quads
-    for(int i = 0; i < m_lGroups.size(); ++i)
-        for(int j = 0; j < m_lGroups[i]->m_lLayers.size(); ++j)
-            if(m_lGroups[i]->m_lLayers[j]->m_Type == LAYERTYPE_QUADS)
-            {
-                CLayerQuads *Layer = static_cast<CLayerQuads *>(m_lGroups[i]->m_lLayers[j]);
-                for(int k = 0; k < Layer->m_lQuads.size(); ++k)
-                {
-                    if(Layer->m_lQuads[k].m_PosEnv == Index)
-                        Layer->m_lQuads[k].m_PosEnv = -1;
-                    else if(Layer->m_lQuads[k].m_PosEnv > Index)
-                        Layer->m_lQuads[k].m_PosEnv--;
-                    if(Layer->m_lQuads[k].m_ColorEnv == Index)
-                        Layer->m_lQuads[k].m_ColorEnv = -1;
-                    else if(Layer->m_lQuads[k].m_ColorEnv > Index)
-                        Layer->m_lQuads[k].m_ColorEnv--;
-                }
-            }
+	// fix links between envelopes and quads
+	for(int i = 0; i < m_lGroups.size(); ++i)
+		for(int j = 0; j < m_lGroups[i]->m_lLayers.size(); ++j)
+			if(m_lGroups[i]->m_lLayers[j]->m_Type == LAYERTYPE_QUADS)
+			{
+				CLayerQuads *pLayer = static_cast<CLayerQuads *>(m_lGroups[i]->m_lLayers[j]);
+				for(int k = 0; k < pLayer->m_lQuads.size(); ++k)
+				{
+					if(pLayer->m_lQuads[k].m_PosEnv == Index)
+						pLayer->m_lQuads[k].m_PosEnv = -1;
+					else if(pLayer->m_lQuads[k].m_PosEnv > Index)
+						pLayer->m_lQuads[k].m_PosEnv--;
+					if(pLayer->m_lQuads[k].m_ColorEnv == Index)
+						pLayer->m_lQuads[k].m_ColorEnv = -1;
+					else if(pLayer->m_lQuads[k].m_ColorEnv > Index)
+						pLayer->m_lQuads[k].m_ColorEnv--;
+				}
+			}
+			else if(m_lGroups[i]->m_lLayers[j]->m_Type == LAYERTYPE_TILES)
+			{
+				CLayerTiles *pLayer = static_cast<CLayerTiles *>(m_lGroups[i]->m_lLayers[j]);
+				if(pLayer->m_ColorEnv == Index)
+					pLayer->m_ColorEnv = -1;
+				if(pLayer->m_ColorEnv > Index)
+					pLayer->m_ColorEnv--;
+			}
 
-    m_lEnvelopes.remove_index(Index);
+	m_lEnvelopes.remove_index(Index);
 }
 
 void CEditorMap::MakeGameLayer(CLayer *pLayer)

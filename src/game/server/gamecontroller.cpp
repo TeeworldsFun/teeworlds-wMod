@@ -387,15 +387,16 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
                 pKiller->m_level = m_pGameServer->m_pStatistiques->GetLevel(pKiller->GetSID());
                 char Text[256] = "";
                 str_format(Text, 256, "XP : %d/%d", pKiller->m_level, pKiller->m_level);
-                m_pGameServer->SendChatTarget(pKiller->GetCID(), Text);
+                m_pGameServer->SendChatTarget(pKiller->GetCID(), Text, CGameContext::CHAT_INFO_XP);
                 str_format(Text, 256, "%s has a levelup ! He is level %ld now ! Good Game ;) !", Server()->ClientName(pKiller->GetCID()), pKiller->m_level);
-                m_pGameServer->SendChatTarget(-1, Text);
+                m_pGameServer->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_LEVELUP);
+                m_pGameServer->SendChatTarget(pKiller->GetCID(), "You've get a levelup ! Don't forget put /upgr on the chat to upgr your statistics ! Good Game ;)");
             }
             else
             {
                 char Text[256] = "";
                 str_format(Text, 256, "XP : %d/%d", m_pGameServer->m_pStatistiques->GetXp(pKiller->GetSID()), pKiller->m_level + 1);
-                m_pGameServer->SendChatTarget(pKiller->GetCID(), Text);
+                m_pGameServer->SendChatTarget(pKiller->GetCID(), Text, CGameContext::CHAT_INFO_XP);
             }
         }
 
@@ -406,19 +407,22 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
             {
                 char buf[512];
                 str_format(buf, sizeof(buf), "%s %s with %ld kills !", Server()->ClientName(pKiller->GetCID()), spree_note[m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID())/5-1], m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()));
-                GameServer()->SendChatTarget(-1, buf);
+                GameServer()->SendChatTarget(-1, buf, CGameContext::CHAT_INFO_KILLING_SPREE);
             }
             else
             {
                 char Text[256] = "";
                 str_format(Text, 256, "WARNING : %s must be stopped !!! %ld kills !!! ;)", Server()->ClientName(pKiller->GetCID()), m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()));
-                GameServer()->SendChatTarget(-1, Text);
+                GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
             }
             if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) < 4)
             {
                 char bonus_note[3][32] = {"handle x1.5 and fly unlimited", "all weapons except katana", "invisibility"};
                 char Text[256] = "";
-                str_format(Text, 256, "You've get %s !", bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
+                str_format(Text, 256, "%s gets %s !", Server()->ClientName(pKiller->GetCID()), bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
+                GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
+
+                str_format(Text, 256, "You've get %s by killing spree !", bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
                 GameServer()->SendChatTarget(pKiller->GetCID(), Text);
 
                 if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 2)
@@ -442,13 +446,13 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
         {
             char Text[256] = "";
             str_format(Text, 256, "%s had %d%% health and %d%% armor.", Server()->ClientName(pKiller->GetCID()), pKiller->GetCharacter()->GetPercentHealth(), pKiller->GetCharacter()->GetPercentArmor());
-            GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), Text);
+            GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), Text, CGameContext::CHAT_INFO_HEAL_KILLER);
         }
         else
         {
             char Text[256] = "";
             str_format(Text, 256, "%s had 0%% health and 0%% armor.", Server()->ClientName(pKiller->GetCID()));
-            GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), Text);
+            GameServer()->SendChatTarget(pVictim->GetPlayer()->GetCID(), Text, CGameContext::CHAT_INFO_HEAL_KILLER);
         }
     }
 
@@ -458,7 +462,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
         str_format(Text, 256, "%s %ld-kills killing spree was ended by %s.", Server()->ClientName(pVictim->GetPlayer()->GetCID()),m_pGameServer->m_pStatistiques->GetActualKill(pVictim->GetPlayer()->GetSID()), Server()->ClientName(pKiller->GetCID()));
         GameServer()->CreateExplosion(pVictim->m_Pos, pVictim->GetPlayer()->GetCID(), WEAPON_GAME, true, false);
         GameServer()->CreateSound(pVictim->m_Pos, SOUND_GRENADE_EXPLODE);
-        GameServer()->SendChatTarget(-1, Text);
+        GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
     }
 
     m_pGameServer->m_pStatistiques->AddDead(pVictim->GetPlayer()->GetSID());
@@ -486,7 +490,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
         loot->m_Pos.x = pVictim->m_Pos.x + alea.x;
         loot->m_Pos.y = pVictim->m_Pos.y - alea.y;
     }
-    while (GameServer()->Collision()->CheckPoint(loot->m_Pos));
+    while (GameServer()->Collision()->TestBox(loot->m_Pos, vec2(PickupPhysSize, PickupPhysSize)));
 
     loot = new CLoot(&GameServer()->m_World, POWERUP_ARMOR, 0);
     do
@@ -496,7 +500,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
         loot->m_Pos.x = pVictim->m_Pos.x + alea.x;
         loot->m_Pos.y = pVictim->m_Pos.y - alea.y;
     }
-    while (GameServer()->Collision()->CheckPoint(loot->m_Pos));
+     while (GameServer()->Collision()->TestBox(loot->m_Pos, vec2(PickupPhysSize, PickupPhysSize)));
 
     if ( pVictim->GetActiveWeapon() != WEAPON_GUN && pVictim->GetActiveWeapon() != WEAPON_HAMMER )
     {
@@ -508,7 +512,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
             loot->m_Pos.x = pVictim->m_Pos.x + alea.x;
             loot->m_Pos.y = pVictim->m_Pos.y - alea.y;
         }
-        while (GameServer()->Collision()->CheckPoint(loot->m_Pos));
+         while (GameServer()->Collision()->TestBox(loot->m_Pos, vec2(PickupPhysSize, PickupPhysSize)));
     }
 
     return 0;

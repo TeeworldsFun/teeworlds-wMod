@@ -63,6 +63,7 @@ public:
     bool RemoveWeapon(int Weapon);
 
     void SetEmote(int Emote, int Tick);
+    void SetPos(vec2 Pos) { m_Pos = Pos; m_Core.m_Pos = Pos; };
 
     bool IsAlive() const
     {
@@ -100,6 +101,7 @@ private:
 
     struct StatWeapon *m_stat_weapon;
     struct StatLife *m_stat_life;
+    struct StatMove *m_stat_move;
 
     struct WeaponStat
     {
@@ -148,6 +150,7 @@ private:
     class CLaserWall *m_LaserWall[3];
     int m_NumLaserWall;
     class CTurret *m_Turret[5];
+    class CTeleporter *m_Teleporter[10];
 
     int m_JumpTick;
 

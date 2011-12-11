@@ -276,7 +276,7 @@ void CPlayer::SetTeam(int Team, bool verbose)
             str_format(aBuf, sizeof(aBuf), "'%s' joined the game", Server()->ClientName(m_ClientID));
             GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
         }
-        else if ( GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE )
+        else if ( GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
         {
             str_format(aBuf, sizeof(aBuf), "'%s' joined the zombies", Server()->ClientName(m_ClientID));
             GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);

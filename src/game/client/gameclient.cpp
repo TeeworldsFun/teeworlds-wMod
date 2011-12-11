@@ -108,130 +108,132 @@ const char *CGameClient::GetItemName(int Type)
 
 void CGameClient::OnConsoleInit()
 {
-    m_pEngine = Kernel()->RequestInterface<IEngine>();
-    m_pClient = Kernel()->RequestInterface<IClient>();
-    m_pGraphics = Kernel()->RequestInterface<IGraphics>();
-    m_pTextRender = Kernel()->RequestInterface<ITextRender>();
-    m_pSound = Kernel()->RequestInterface<ISound>();
-    m_pInput = Kernel()->RequestInterface<IInput>();
-    m_pConsole = Kernel()->RequestInterface<IConsole>();
-    m_pStorage = Kernel()->RequestInterface<IStorage>();
-    m_pDemoPlayer = Kernel()->RequestInterface<IDemoPlayer>();
-    m_pDemoRecorder = Kernel()->RequestInterface<IDemoRecorder>();
-    m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>();
-    m_pEditor = Kernel()->RequestInterface<IEditor>();
-    m_pFriends = Kernel()->RequestInterface<IFriends>();
+	m_pEngine = Kernel()->RequestInterface<IEngine>();
+	m_pClient = Kernel()->RequestInterface<IClient>();
+	m_pGraphics = Kernel()->RequestInterface<IGraphics>();
+	m_pTextRender = Kernel()->RequestInterface<ITextRender>();
+	m_pSound = Kernel()->RequestInterface<ISound>();
+	m_pInput = Kernel()->RequestInterface<IInput>();
+	m_pConsole = Kernel()->RequestInterface<IConsole>();
+	m_pStorage = Kernel()->RequestInterface<IStorage>();
+	m_pDemoPlayer = Kernel()->RequestInterface<IDemoPlayer>();
+	m_pDemoRecorder = Kernel()->RequestInterface<IDemoRecorder>();
+	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>();
+	m_pEditor = Kernel()->RequestInterface<IEditor>();
+	m_pFriends = Kernel()->RequestInterface<IFriends>();
 
-    // setup pointers
-    m_pBinds = &::gs_Binds;
-    m_pGameConsole = &::gs_GameConsole;
-    m_pParticles = &::gs_Particles;
-    m_pMenus = &::gs_Menus;
-    m_pSkins = &::gs_Skins;
-    m_pCountryFlags = &::gs_CountryFlags;
-    m_pChat = &::gs_Chat;
-    m_pFlow = &::gs_Flow;
-    m_pCamera = &::gs_Camera;
-    m_pControls = &::gs_Controls;
-    m_pEffects = &::gs_Effects;
-    m_pSounds = &::gs_Sounds;
-    m_pMotd = &::gs_Motd;
-    m_pDamageind = &::gsDamageInd;
-    m_pMapimages = &::gs_MapImages;
-    m_pVoting = &::gs_Voting;
-    m_pScoreboard = &::gs_Scoreboard;
-    m_pItems = &::gs_Items;
+	// setup pointers
+	m_pBinds = &::gs_Binds;
+	m_pGameConsole = &::gs_GameConsole;
+	m_pParticles = &::gs_Particles;
+	m_pMenus = &::gs_Menus;
+	m_pSkins = &::gs_Skins;
+	m_pCountryFlags = &::gs_CountryFlags;
+	m_pChat = &::gs_Chat;
+	m_pFlow = &::gs_Flow;
+	m_pCamera = &::gs_Camera;
+	m_pControls = &::gs_Controls;
+	m_pEffects = &::gs_Effects;
+	m_pSounds = &::gs_Sounds;
+	m_pMotd = &::gs_Motd;
+	m_pDamageind = &::gsDamageInd;
+	m_pMapimages = &::gs_MapImages;
+	m_pVoting = &::gs_Voting;
+	m_pScoreboard = &::gs_Scoreboard;
+	m_pItems = &::gs_Items;
+	m_pMapLayersBackGround = &::gs_MapLayersBackGround;
+	m_pMapLayersForeGround = &::gs_MapLayersForeGround;
 
-    // make a list of all the systems, make sure to add them in the corrent render order
-    m_All.Add(m_pSkins);
-    m_All.Add(m_pCountryFlags);
-    m_All.Add(m_pMapimages);
-    m_All.Add(m_pEffects); // doesn't render anything, just updates effects
-    m_All.Add(m_pParticles);
-    m_All.Add(m_pBinds);
-    m_All.Add(m_pControls);
-    m_All.Add(m_pCamera);
-    m_All.Add(m_pSounds);
-    m_All.Add(m_pVoting);
-    m_All.Add(m_pParticles); // doesn't render anything, just updates all the particles
+	// make a list of all the systems, make sure to add them in the corrent render order
+	m_All.Add(m_pSkins);
+	m_All.Add(m_pCountryFlags);
+	m_All.Add(m_pMapimages);
+	m_All.Add(m_pEffects); // doesn't render anything, just updates effects
+	m_All.Add(m_pParticles);
+	m_All.Add(m_pBinds);
+	m_All.Add(m_pControls);
+	m_All.Add(m_pCamera);
+	m_All.Add(m_pSounds);
+	m_All.Add(m_pVoting);
+	m_All.Add(m_pParticles); // doesn't render anything, just updates all the particles
 
-    m_All.Add(&gs_MapLayersBackGround); // first to render
-    m_All.Add(&m_pParticles->m_RenderTrail);
-    m_All.Add(m_pItems);
-    m_All.Add(&gs_Players);
-    m_All.Add(&gs_MapLayersForeGround);
-    m_All.Add(&m_pParticles->m_RenderExplosions);
-    m_All.Add(&gs_NamePlates);
-    m_All.Add(&m_pParticles->m_RenderGeneral);
-    m_All.Add(m_pDamageind);
-    m_All.Add(&gs_Hud);
-    m_All.Add(&gs_Spectator);
-    m_All.Add(&gs_Emoticon);
-    m_All.Add(&gs_KillMessages);
-    m_All.Add(m_pChat);
-    m_All.Add(&gs_Broadcast);
-    m_All.Add(&gs_DebugHud);
-    m_All.Add(&gs_Scoreboard);
-    m_All.Add(m_pMotd);
-    m_All.Add(m_pMenus);
-    m_All.Add(m_pGameConsole);
+	m_All.Add(&gs_MapLayersBackGround); // first to render
+	m_All.Add(&m_pParticles->m_RenderTrail);
+	m_All.Add(m_pItems);
+	m_All.Add(&gs_Players);
+	m_All.Add(&gs_MapLayersForeGround);
+	m_All.Add(&m_pParticles->m_RenderExplosions);
+	m_All.Add(&gs_NamePlates);
+	m_All.Add(&m_pParticles->m_RenderGeneral);
+	m_All.Add(m_pDamageind);
+	m_All.Add(&gs_Hud);
+	m_All.Add(&gs_Spectator);
+	m_All.Add(&gs_Emoticon);
+	m_All.Add(&gs_KillMessages);
+	m_All.Add(m_pChat);
+	m_All.Add(&gs_Broadcast);
+	m_All.Add(&gs_DebugHud);
+	m_All.Add(&gs_Scoreboard);
+	m_All.Add(m_pMotd);
+	m_All.Add(m_pMenus);
+	m_All.Add(m_pGameConsole);
 
-    // build the input stack
-    m_Input.Add(&m_pMenus->m_Binder); // this will take over all input when we want to bind a key
-    m_Input.Add(&m_pBinds->m_SpecialBinds);
-    m_Input.Add(m_pGameConsole);
-    m_Input.Add(m_pChat); // chat has higher prio due to tha you can quit it by pressing esc
-    m_Input.Add(m_pMotd); // for pressing esc to remove it
-    m_Input.Add(m_pMenus);
-    m_Input.Add(&gs_Spectator);
-    m_Input.Add(&gs_Emoticon);
-    m_Input.Add(m_pControls);
-    m_Input.Add(m_pBinds);
+	// build the input stack
+	m_Input.Add(&m_pMenus->m_Binder); // this will take over all input when we want to bind a key
+	m_Input.Add(&m_pBinds->m_SpecialBinds);
+	m_Input.Add(m_pGameConsole);
+	m_Input.Add(m_pChat); // chat has higher prio due to tha you can quit it by pressing esc
+	m_Input.Add(m_pMotd); // for pressing esc to remove it
+	m_Input.Add(m_pMenus);
+	m_Input.Add(&gs_Spectator);
+	m_Input.Add(&gs_Emoticon);
+	m_Input.Add(m_pControls);
+	m_Input.Add(m_pBinds);
 
-    // add the some console commands
-    Console()->Register("team", "i", CFGFLAG_CLIENT, ConTeam, this, "Switch team");
-    Console()->Register("kill", "", CFGFLAG_CLIENT, ConKill, this, "Kill yourself");
+	// add the some console commands
+	Console()->Register("team", "i", CFGFLAG_CLIENT, ConTeam, this, "Switch team");
+	Console()->Register("kill", "", CFGFLAG_CLIENT, ConKill, this, "Kill yourself");
 
-    // register server dummy commands for tab completion
-    Console()->Register("tune", "si", CFGFLAG_SERVER, 0, 0, "Tune variable to value");
-    Console()->Register("tune_reset", "", CFGFLAG_SERVER, 0, 0, "Reset tuning");
-    Console()->Register("tune_dump", "", CFGFLAG_SERVER, 0, 0, "Dump tuning");
-    Console()->Register("change_map", "?r", CFGFLAG_SERVER, 0, 0, "Change map");
-    Console()->Register("restart", "?i", CFGFLAG_SERVER, 0, 0, "Restart in x seconds");
-    Console()->Register("broadcast", "r", CFGFLAG_SERVER, 0, 0, "Broadcast message");
-    Console()->Register("say", "r", CFGFLAG_SERVER, 0, 0, "Say in chat");
-    Console()->Register("set_team", "ii?i", CFGFLAG_SERVER, 0, 0, "Set team of player to team");
-    Console()->Register("set_team_all", "i", CFGFLAG_SERVER, 0, 0, "Set team of all players to team");
-    Console()->Register("add_vote", "sr", CFGFLAG_SERVER, 0, 0, "Add a voting option");
-    Console()->Register("remove_vote", "s", CFGFLAG_SERVER, 0, 0, "remove a voting option");
-    Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, 0, 0, "Force a voting option");
-    Console()->Register("clear_votes", "", CFGFLAG_SERVER, 0, 0, "Clears the voting options");
-    Console()->Register("vote", "r", CFGFLAG_SERVER, 0, 0, "Force a vote to yes/no");
-
-
-    // propagate pointers
-    m_UI.SetGraphics(Graphics(), TextRender());
-    m_RenderTools.m_pGraphics = Graphics();
-    m_RenderTools.m_pUI = UI();
-    for(int i = 0; i < m_All.m_Num; i++)
-        m_All.m_paComponents[i]->m_pClient = this;
-
-    // let all the other components register their console commands
-    for(int i = 0; i < m_All.m_Num; i++)
-        m_All.m_paComponents[i]->OnConsoleInit();
+	// register server dummy commands for tab completion
+	Console()->Register("tune", "si", CFGFLAG_SERVER, 0, 0, "Tune variable to value");
+	Console()->Register("tune_reset", "", CFGFLAG_SERVER, 0, 0, "Reset tuning");
+	Console()->Register("tune_dump", "", CFGFLAG_SERVER, 0, 0, "Dump tuning");
+	Console()->Register("change_map", "?r", CFGFLAG_SERVER, 0, 0, "Change map");
+	Console()->Register("restart", "?i", CFGFLAG_SERVER, 0, 0, "Restart in x seconds");
+	Console()->Register("broadcast", "r", CFGFLAG_SERVER, 0, 0, "Broadcast message");
+	Console()->Register("say", "r", CFGFLAG_SERVER, 0, 0, "Say in chat");
+	Console()->Register("set_team", "ii?i", CFGFLAG_SERVER, 0, 0, "Set team of player to team");
+	Console()->Register("set_team_all", "i", CFGFLAG_SERVER, 0, 0, "Set team of all players to team");
+	Console()->Register("add_vote", "sr", CFGFLAG_SERVER, 0, 0, "Add a voting option");
+	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, 0, 0, "remove a voting option");
+	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, 0, 0, "Force a voting option");
+	Console()->Register("clear_votes", "", CFGFLAG_SERVER, 0, 0, "Clears the voting options");
+	Console()->Register("vote", "r", CFGFLAG_SERVER, 0, 0, "Force a vote to yes/no");
 
 
-    //
-    Console()->Chain("player_name", ConchainSpecialInfoupdate, this);
-    Console()->Chain("player_clan", ConchainSpecialInfoupdate, this);
-    Console()->Chain("player_country", ConchainSpecialInfoupdate, this);
-    Console()->Chain("player_use_custom_color", ConchainSpecialInfoupdate, this);
-    Console()->Chain("player_color_body", ConchainSpecialInfoupdate, this);
-    Console()->Chain("player_color_feet", ConchainSpecialInfoupdate, this);
-    Console()->Chain("player_skin", ConchainSpecialInfoupdate, this);
+	// propagate pointers
+	m_UI.SetGraphics(Graphics(), TextRender());
+	m_RenderTools.m_pGraphics = Graphics();
+	m_RenderTools.m_pUI = UI();
+	for(int i = 0; i < m_All.m_Num; i++)
+		m_All.m_paComponents[i]->m_pClient = this;
 
-    //
-    m_SuppressEvents = false;
+	// let all the other components register their console commands
+	for(int i = 0; i < m_All.m_Num; i++)
+		m_All.m_paComponents[i]->OnConsoleInit();
+
+
+	//
+	Console()->Chain("player_name", ConchainSpecialInfoupdate, this);
+	Console()->Chain("player_clan", ConchainSpecialInfoupdate, this);
+	Console()->Chain("player_country", ConchainSpecialInfoupdate, this);
+	Console()->Chain("player_use_custom_color", ConchainSpecialInfoupdate, this);
+	Console()->Chain("player_color_body", ConchainSpecialInfoupdate, this);
+	Console()->Chain("player_color_feet", ConchainSpecialInfoupdate, this);
+	Console()->Chain("player_skin", ConchainSpecialInfoupdate, this);
+
+	//
+	m_SuppressEvents = false;
 }
 
 void CGameClient::OnInit()

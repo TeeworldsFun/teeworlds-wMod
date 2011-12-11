@@ -165,8 +165,19 @@ public:
         CHAT_BLUE=1
     };
 
+    enum
+    {
+        CHAT_INFO,
+        CHAT_INFO_HEAL_KILLER,
+        CHAT_INFO_XP,
+        CHAT_INFO_LEVELUP,
+        CHAT_INFO_KILLING_SPREE,
+        CHAT_INFO_RACE,
+        CHAT_INFO_AMMO,
+        CHAT_INFO_VOTER
+    };
     // network
-    void SendChatTarget(int To, const char *pText);
+    void SendChatTarget(int To, const char *pText, int Type = CHAT_INFO);
     void SendChat(int ClientID, int Team, const char *pText);
     void SendEmoticon(int ClientID, int Emoticon);
     void SendWeaponPickup(int ClientID, int Weapon);

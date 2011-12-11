@@ -55,37 +55,38 @@ void CPlasma::Tick()
     else
         m_Vel += 0.01f;
 
-    if(GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
+    if(!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE) && GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
     {
         if(!HitCharacter(m_Pos, To))
         {
             // intersected
             m_Pos = To;
 
-            if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
-            {
-                vec2 TempPos = m_Pos;
-                vec2 TempDir = m_Dir * 4.0f;
+            vec2 TempPos = m_Pos;
+            vec2 TempDir = m_Dir * 4.0f;
 
-                GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
-                m_Pos = TempPos;
-                m_Dir = normalize(TempDir);
+            GameServer()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
+            m_Pos = TempPos;
+            m_Dir = normalize(TempDir);
 
-                m_Bounces++;
-                m_Energy -= GameServer()->Tuning()->m_LaserBounceCost;
+            m_Bounces++;
+            m_Energy -= GameServer()->Tuning()->m_LaserBounceCost;
 
-                if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
-                    m_Energy = -1;
+            if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
+                m_Energy = -1;
 
-                GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
-                GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
-            }
+            GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
+            GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
         }
     }
     else
     {
         if(!HitCharacter(m_Pos, To))
+        {
+            if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE))
+                GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To);
             m_Pos = To;
+        }
     }
 }
 
