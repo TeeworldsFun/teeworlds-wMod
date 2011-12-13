@@ -1,5 +1,5 @@
 /* inffast.c -- fast decoding
- * Copyright (C) 1995-2004 Mark Adler
+ * Copyright (C) 1995-2008, 2010 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -64,7 +64,7 @@
       requires strm->avail_out >= 258 for each loop to avoid checking for
       output space.
  */
-void inflate_fast(strm, start)
+void ZLIB_INTERNAL inflate_fast(strm, start)
 z_streamp strm;
 unsigned start;         /* inflate()'s starting value for strm->avail_out */
 {
@@ -79,7 +79,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
 #endif
     unsigned wsize;             /* window size or zero if not using window */
     unsigned whave;             /* valid bytes in the window */
-    unsigned write;             /* window write index */
+    unsigned wnext;             /* window write index */
     unsigned char FAR *window;  /* allocated sliding window, if wsize != 0 */
     unsigned long hold;         /* local strm->hold */
     unsigned bits;              /* local strm->bits */
@@ -87,9 +87,9 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
     code const FAR *dcode;      /* local strm->distcode */
     unsigned lmask;             /* mask for first level of length codes */
     unsigned dmask;             /* mask for first level of distance codes */
-    code this;                  /* retrieved table entry */
+    code here;                  /* retrieved table entry */
     unsigned op;                /* code bits, operation, extra bits, or */
-    /*  window position, window bytes to copy */
+                                /*  window position, window bytes to copy */
     unsigned len;               /* match length, unused bytes */
     unsigned dist;              /* match distance */
     unsigned char FAR *from;    /* where to copy match from */
@@ -106,7 +106,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
 #endif
     wsize = state->wsize;
     whave = state->whave;
-    write = state->write;
+    wnext = state->wnext;
     window = state->window;
     hold = state->hold;
     bits = state->bits;
@@ -117,36 +117,30 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
 
     /* decode literals and length/distances until end-of-block or not enough
        input data or output space */
-    do
-    {
-        if (bits < 15)
-        {
+    do {
+        if (bits < 15) {
             hold += (unsigned long)(PUP(in)) << bits;
             bits += 8;
             hold += (unsigned long)(PUP(in)) << bits;
             bits += 8;
         }
-        this = lcode[hold & lmask];
-dolen:
-        op = (unsigned)(this.bits);
+        here = lcode[hold & lmask];
+      dolen:
+        op = (unsigned)(here.bits);
         hold >>= op;
         bits -= op;
-        op = (unsigned)(this.op);
-        if (op == 0)                            /* literal */
-        {
-            Tracevv((stderr, this.val >= 0x20 && this.val < 0x7f ?
-                     "inflate:         literal '%c'\n" :
-                     "inflate:         literal 0x%02x\n", this.val));
-            PUP(out) = (unsigned char)(this.val);
+        op = (unsigned)(here.op);
+        if (op == 0) {                          /* literal */
+            Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
+                    "inflate:         literal '%c'\n" :
+                    "inflate:         literal 0x%02x\n", here.val));
+            PUP(out) = (unsigned char)(here.val);
         }
-        else if (op & 16)                       /* length base */
-        {
-            len = (unsigned)(this.val);
+        else if (op & 16) {                     /* length base */
+            len = (unsigned)(here.val);
             op &= 15;                           /* number of extra bits */
-            if (op)
-            {
-                if (bits < op)
-                {
+            if (op) {
+                if (bits < op) {
                     hold += (unsigned long)(PUP(in)) << bits;
                     bits += 8;
                 }
@@ -155,37 +149,32 @@ dolen:
                 bits -= op;
             }
             Tracevv((stderr, "inflate:         length %u\n", len));
-            if (bits < 15)
-            {
+            if (bits < 15) {
                 hold += (unsigned long)(PUP(in)) << bits;
                 bits += 8;
                 hold += (unsigned long)(PUP(in)) << bits;
                 bits += 8;
             }
-            this = dcode[hold & dmask];
-dodist:
-            op = (unsigned)(this.bits);
+            here = dcode[hold & dmask];
+          dodist:
+            op = (unsigned)(here.bits);
             hold >>= op;
             bits -= op;
-            op = (unsigned)(this.op);
-            if (op & 16)                        /* distance base */
-            {
-                dist = (unsigned)(this.val);
+            op = (unsigned)(here.op);
+            if (op & 16) {                      /* distance base */
+                dist = (unsigned)(here.val);
                 op &= 15;                       /* number of extra bits */
-                if (bits < op)
-                {
+                if (bits < op) {
                     hold += (unsigned long)(PUP(in)) << bits;
                     bits += 8;
-                    if (bits < op)
-                    {
+                    if (bits < op) {
                         hold += (unsigned long)(PUP(in)) << bits;
                         bits += 8;
                     }
                 }
                 dist += (unsigned)hold & ((1U << op) - 1);
 #ifdef INFLATE_STRICT
-                if (dist > dmax)
-                {
+                if (dist > dmax) {
                     strm->msg = (char *)"invalid distance too far back";
                     state->mode = BAD;
                     break;
@@ -195,134 +184,127 @@ dodist:
                 bits -= op;
                 Tracevv((stderr, "inflate:         distance %u\n", dist));
                 op = (unsigned)(out - beg);     /* max distance in output */
-                if (dist > op)                  /* see if copy from window */
-                {
+                if (dist > op) {                /* see if copy from window */
                     op = dist - op;             /* distance back in window */
-                    if (op > whave)
-                    {
-                        strm->msg = (char *)"invalid distance too far back";
-                        state->mode = BAD;
-                        break;
+                    if (op > whave) {
+                        if (state->sane) {
+                            strm->msg =
+                                (char *)"invalid distance too far back";
+                            state->mode = BAD;
+                            break;
+                        }
+#ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
+                        if (len <= op - whave) {
+                            do {
+                                PUP(out) = 0;
+                            } while (--len);
+                            continue;
+                        }
+                        len -= op - whave;
+                        do {
+                            PUP(out) = 0;
+                        } while (--op > whave);
+                        if (op == 0) {
+                            from = out - dist;
+                            do {
+                                PUP(out) = PUP(from);
+                            } while (--len);
+                            continue;
+                        }
+#endif
                     }
                     from = window - OFF;
-                    if (write == 0)             /* very common case */
-                    {
+                    if (wnext == 0) {           /* very common case */
                         from += wsize - op;
-                        if (op < len)           /* some from window */
-                        {
+                        if (op < len) {         /* some from window */
                             len -= op;
-                            do
-                            {
+                            do {
                                 PUP(out) = PUP(from);
-                            }
-                            while (--op);
+                            } while (--op);
                             from = out - dist;  /* rest from output */
                         }
                     }
-                    else if (write < op)        /* wrap around window */
-                    {
-                        from += wsize + write - op;
-                        op -= write;
-                        if (op < len)           /* some from end of window */
-                        {
+                    else if (wnext < op) {      /* wrap around window */
+                        from += wsize + wnext - op;
+                        op -= wnext;
+                        if (op < len) {         /* some from end of window */
                             len -= op;
-                            do
-                            {
+                            do {
                                 PUP(out) = PUP(from);
-                            }
-                            while (--op);
+                            } while (--op);
                             from = window - OFF;
-                            if (write < len)    /* some from start of window */
-                            {
-                                op = write;
+                            if (wnext < len) {  /* some from start of window */
+                                op = wnext;
                                 len -= op;
-                                do
-                                {
+                                do {
                                     PUP(out) = PUP(from);
-                                }
-                                while (--op);
+                                } while (--op);
                                 from = out - dist;      /* rest from output */
                             }
                         }
                     }
-                    else                        /* contiguous in window */
-                    {
-                        from += write - op;
-                        if (op < len)           /* some from window */
-                        {
+                    else {                      /* contiguous in window */
+                        from += wnext - op;
+                        if (op < len) {         /* some from window */
                             len -= op;
-                            do
-                            {
+                            do {
                                 PUP(out) = PUP(from);
-                            }
-                            while (--op);
+                            } while (--op);
                             from = out - dist;  /* rest from output */
                         }
                     }
-                    while (len > 2)
-                    {
+                    while (len > 2) {
                         PUP(out) = PUP(from);
                         PUP(out) = PUP(from);
                         PUP(out) = PUP(from);
                         len -= 3;
                     }
-                    if (len)
-                    {
+                    if (len) {
                         PUP(out) = PUP(from);
                         if (len > 1)
                             PUP(out) = PUP(from);
                     }
                 }
-                else
-                {
+                else {
                     from = out - dist;          /* copy direct from output */
-                    do                          /* minimum length is three */
-                    {
+                    do {                        /* minimum length is three */
                         PUP(out) = PUP(from);
                         PUP(out) = PUP(from);
                         PUP(out) = PUP(from);
                         len -= 3;
-                    }
-                    while (len > 2);
-                    if (len)
-                    {
+                    } while (len > 2);
+                    if (len) {
                         PUP(out) = PUP(from);
                         if (len > 1)
                             PUP(out) = PUP(from);
                     }
                 }
             }
-            else if ((op & 64) == 0)            /* 2nd level distance code */
-            {
-                this = dcode[this.val + (hold & ((1U << op) - 1))];
+            else if ((op & 64) == 0) {          /* 2nd level distance code */
+                here = dcode[here.val + (hold & ((1U << op) - 1))];
                 goto dodist;
             }
-            else
-            {
+            else {
                 strm->msg = (char *)"invalid distance code";
                 state->mode = BAD;
                 break;
             }
         }
-        else if ((op & 64) == 0)                /* 2nd level length code */
-        {
-            this = lcode[this.val + (hold & ((1U << op) - 1))];
+        else if ((op & 64) == 0) {              /* 2nd level length code */
+            here = lcode[here.val + (hold & ((1U << op) - 1))];
             goto dolen;
         }
-        else if (op & 32)                       /* end-of-block */
-        {
+        else if (op & 32) {                     /* end-of-block */
             Tracevv((stderr, "inflate:         end of block\n"));
             state->mode = TYPE;
             break;
         }
-        else
-        {
+        else {
             strm->msg = (char *)"invalid literal/length code";
             state->mode = BAD;
             break;
         }
-    }
-    while (in < last && out < end);
+    } while (in < last && out < end);
 
     /* return unused bytes (on entry, bits < 8, so in won't go too far back) */
     len = bits >> 3;
@@ -345,7 +327,7 @@ dodist:
    inflate_fast() speedups that turned out slower (on a PowerPC G3 750CXe):
    - Using bit fields for code structure
    - Different op definition to avoid & for extra bits (do & for table bits)
-   - Three separate decoding do-loops for direct, window, and write == 0
+   - Three separate decoding do-loops for direct, window, and wnext == 0
    - Special case for distance > 1 copies to do overlapped load and store copy
    - Explicit branch predictions (based on measured branch probabilities)
    - Deferring match copy and interspersed it with decoding subsequent codes

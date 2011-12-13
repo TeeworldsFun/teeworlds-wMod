@@ -8,25 +8,25 @@
 class CControls : public CComponent
 {
 public:
-    vec2 m_MousePos;
-    vec2 m_TargetPos;
+	vec2 m_MousePos;
+	vec2 m_TargetPos;
 
-    CNetObj_PlayerInput m_InputData;
-    CNetObj_PlayerInput m_LastData;
-    int m_InputDirectionLeft;
-    int m_InputDirectionRight;
+	CNetObj_PlayerInput m_InputData;
+	CNetObj_PlayerInput m_LastData;
+	int m_InputDirectionLeft;
+	int m_InputDirectionRight;
 
-    CControls();
+	CControls();
 
-    virtual void OnReset();
-    virtual void OnRelease();
-    virtual void OnRender();
-    virtual void OnMessage(int MsgType, void *pRawMsg);
-    virtual bool OnMouseMove(float x, float y);
-    virtual void OnConsoleInit();
-    virtual void OnPlayerDeath();
+	virtual void OnReset();
+	virtual void OnRelease();
+	virtual void OnRender();
+	virtual void OnMessage(int MsgType, void *pRawMsg);
+	virtual bool OnMouseMove(float x, float y);
+	virtual void OnConsoleInit();
+	virtual void OnPlayerDeath();
 
-    int SnapInput(int *pData);
-    void ClampMousePos();
+	int SnapInput(int *pData);
+	void ClampMousePos();
 };
 #endif

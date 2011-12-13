@@ -34,8 +34,7 @@ void float_values (WavpackStream *wps, int32_t *values, int32_t num_values)
     else if (shift < -32)
         shift = -32;
 
-    while (num_values--)
-    {
+    while (num_values--) {
         if (shift > 0)
             *values <<= shift;
         else if (shift < 0)

@@ -7,24 +7,24 @@
 
 class CFlow : public CComponent
 {
-    struct CCell
-    {
-        vec2 m_Vel;
-    };
+	struct CCell
+	{
+		vec2 m_Vel;
+	};
 
-    CCell *m_pCells;
-    int m_Height;
-    int m_Width;
-    int m_Spacing;
+	CCell *m_pCells;
+	int m_Height;
+	int m_Width;
+	int m_Spacing;
 
-    void DbgRender();
-    void Init();
+	void DbgRender();
+	void Init();
 public:
-    CFlow();
+	CFlow();
 
-    vec2 Get(vec2 Pos);
-    void Add(vec2 Pos, vec2 Vel, float Size);
-    void Update();
+	vec2 Get(vec2 Pos);
+	void Add(vec2 Pos, vec2 Vel, float Size);
+	void Update();
 };
 
 #endif

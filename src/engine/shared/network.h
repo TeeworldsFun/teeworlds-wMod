@@ -323,46 +323,35 @@ private:
     void BanRemoveByObject(CBan *pBan);
 
 public:
-    int SetCallbacks(NETFUNC_NEWCLIENT pfnNewClient, NETFUNC_DELCLIENT pfnDelClient, void *pUser);
+	int SetCallbacks(NETFUNC_NEWCLIENT pfnNewClient, NETFUNC_DELCLIENT pfnDelClient, void *pUser);
 
-    //
-    bool Open(NETADDR BindAddr, int MaxClients, int MaxClientsPerIP, int Flags);
-    int Close();
+	//
+	bool Open(NETADDR BindAddr, int MaxClients, int MaxClientsPerIP, int Flags);
+	int Close();
 
-    //
-    int Recv(CNetChunk *pChunk);
-    int Send(CNetChunk *pChunk);
-    int Update();
+	//
+	int Recv(CNetChunk *pChunk);
+	int Send(CNetChunk *pChunk);
+	int Update();
 
-    //
-    int Drop(int ClientID, const char *pReason);
+	//
+	int Drop(int ClientID, const char *pReason);
 
-    // banning
-    int BanAdd(NETADDR Addr, int Seconds, const char *pReason);
-    int BanRemove(NETADDR Addr);
-    int BanNum(); // caution, slow
-    int BanGet(int Index, CBanInfo *pInfo); // caution, slow
+	// banning
+	int BanAdd(NETADDR Addr, int Seconds, const char *pReason);
+	int BanRemove(NETADDR Addr);
+	int BanRemoveAll();
+	int BanNum(); // caution, slow
+	int BanGet(int Index, CBanInfo *pInfo); // caution, slow
 
-    // status requests
-    NETADDR ClientAddr(int ClientID) const
-    {
-        return m_aSlots[ClientID].m_Connection.PeerAddress();
-    }
-    NETSOCKET Socket() const
-    {
-        return m_Socket;
-    }
-    int NetType()
-    {
-        return m_Socket.type;
-    }
-    int MaxClients() const
-    {
-        return m_MaxClients;
-    }
+	// status requests
+	NETADDR ClientAddr(int ClientID) const { return m_aSlots[ClientID].m_Connection.PeerAddress(); }
+	NETSOCKET Socket() const { return m_Socket; }
+	int NetType() const { return m_Socket.type; }
+	int MaxClients() const { return m_MaxClients; }
 
-    //
-    void SetMaxClientsPerIP(int Max);
+	//
+	void SetMaxClientsPerIP(int Max);
 };
 
 class CNetConsole

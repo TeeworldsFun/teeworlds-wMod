@@ -28,38 +28,29 @@
 
 bool CNetServer::Open(NETADDR BindAddr, int MaxClients, int MaxClientsPerIP, int Flags)
 {
-    // zero out the whole structure
-    mem_zero(this, sizeof(*this));
+	// zero out the whole structure
+	mem_zero(this, sizeof(*this));
 
-    // open socket
-    m_Socket = net_udp_create(BindAddr);
-    if(!m_Socket.type)
-        return false;
+	// open socket
+	m_Socket = net_udp_create(BindAddr);
+	if(!m_Socket.type)
+		return false;
 
-    // clamp clients
-    m_MaxClients = MaxClients;
-    if(m_MaxClients > NET_MAX_CLIENTS)
-        m_MaxClients = NET_MAX_CLIENTS;
-    if(m_MaxClients < 1)
-        m_MaxClients = 1;
+	// clamp clients
+	m_MaxClients = MaxClients;
+	if(m_MaxClients > NET_MAX_CLIENTS)
+		m_MaxClients = NET_MAX_CLIENTS;
+	if(m_MaxClients < 1)
+		m_MaxClients = 1;
 
-    m_MaxClientsPerIP = MaxClientsPerIP;
+	m_MaxClientsPerIP = MaxClientsPerIP;
 
-    for(int i = 0; i < NET_MAX_CLIENTS; i++)
-        m_aSlots[i].m_Connection.Init(m_Socket);
+	for(int i = 0; i < NET_MAX_CLIENTS; i++)
+		m_aSlots[i].m_Connection.Init(m_Socket);
 
-    // setup all pointers for bans
-    for(int i = 1; i < NET_SERVER_MAXBANS-1; i++)
-    {
-        m_BanPool[i].m_pNext = &m_BanPool[i+1];
-        m_BanPool[i].m_pPrev = &m_BanPool[i-1];
-    }
+	BanRemoveAll();
 
-    m_BanPool[0].m_pNext = &m_BanPool[1];
-    m_BanPool[NET_SERVER_MAXBANS-1].m_pPrev = &m_BanPool[NET_SERVER_MAXBANS-2];
-    m_BanPool_FirstFree = &m_BanPool[0];
-
-    return true;
+	return true;
 }
 
 int CNetServer::SetCallbacks(NETFUNC_NEWCLIENT pfnNewClient, NETFUNC_DELCLIENT pfnDelClient, void *pUser)
@@ -144,6 +135,28 @@ int CNetServer::BanRemove(NETADDR Addr)
     }
 
     return -1;
+}
+
+int CNetServer::BanRemoveAll()
+{
+	// clear bans memory
+	mem_zero(m_aBans, sizeof(m_aBans));
+	mem_zero(m_BanPool, sizeof(m_BanPool));
+	m_BanPool_FirstFree = 0;
+	m_BanPool_FirstUsed = 0;
+
+	// setup all pointers for bans
+	for(int i = 1; i < NET_SERVER_MAXBANS-1; i++)
+	{
+		m_BanPool[i].m_pNext = &m_BanPool[i+1];
+		m_BanPool[i].m_pPrev = &m_BanPool[i-1];
+	}
+
+	m_BanPool[0].m_pNext = &m_BanPool[1];
+	m_BanPool[NET_SERVER_MAXBANS-1].m_pPrev = &m_BanPool[NET_SERVER_MAXBANS-2];
+	m_BanPool_FirstFree = &m_BanPool[0];
+
+	return 0;
 }
 
 int CNetServer::BanAdd(NETADDR Addr, int Seconds, const char *pReason)

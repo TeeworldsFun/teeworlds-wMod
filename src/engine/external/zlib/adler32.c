@@ -1,12 +1,15 @@
 /* adler32.c -- compute the Adler-32 checksum of a data stream
- * Copyright (C) 1995-2004 Mark Adler
+ * Copyright (C) 1995-2007 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
 /* @(#) $Id$ */
 
-#define ZLIB_INTERNAL
-#include "zlib.h"
+#include "zutil.h"
+
+#define local static
+
+local uLong adler32_combine_(uLong adler1, uLong adler2, z_off64_t len2);
 
 #define BASE 65521UL    /* largest prime smaller than 65536 */
 #define NMAX 5552
@@ -55,9 +58,9 @@
 
 /* ========================================================================= */
 uLong ZEXPORT adler32(adler, buf, len)
-uLong adler;
-const Bytef *buf;
-uInt len;
+    uLong adler;
+    const Bytef *buf;
+    uInt len;
 {
     unsigned long sum2;
     unsigned n;
@@ -67,8 +70,7 @@ uInt len;
     adler &= 0xffff;
 
     /* in case user likes doing a byte at a time, keep it fast */
-    if (len == 1)
-    {
+    if (len == 1) {
         adler += buf[0];
         if (adler >= BASE)
             adler -= BASE;
@@ -83,10 +85,8 @@ uInt len;
         return 1L;
 
     /* in case short lengths are provided, keep it somewhat fast */
-    if (len < 16)
-    {
-        while (len--)
-        {
+    if (len < 16) {
+        while (len--) {
             adler += *buf++;
             sum2 += adler;
         }
@@ -97,31 +97,25 @@ uInt len;
     }
 
     /* do length NMAX blocks -- requires just one modulo operation */
-    while (len >= NMAX)
-    {
+    while (len >= NMAX) {
         len -= NMAX;
         n = NMAX / 16;          /* NMAX is divisible by 16 */
-        do
-        {
+        do {
             DO16(buf);          /* 16 sums unrolled */
             buf += 16;
-        }
-        while (--n);
+        } while (--n);
         MOD(adler);
         MOD(sum2);
     }
 
     /* do remaining bytes (less than NMAX, still just one modulo) */
-    if (len)                    /* avoid modulos if none remaining */
-    {
-        while (len >= 16)
-        {
+    if (len) {                  /* avoid modulos if none remaining */
+        while (len >= 16) {
             len -= 16;
             DO16(buf);
             buf += 16;
         }
-        while (len--)
-        {
+        while (len--) {
             adler += *buf++;
             sum2 += adler;
         }
@@ -134,10 +128,10 @@ uInt len;
 }
 
 /* ========================================================================= */
-uLong ZEXPORT adler32_combine(adler1, adler2, len2)
-uLong adler1;
-uLong adler2;
-z_off_t len2;
+local uLong adler32_combine_(adler1, adler2, len2)
+    uLong adler1;
+    uLong adler2;
+    z_off64_t len2;
 {
     unsigned long sum1;
     unsigned long sum2;
@@ -150,9 +144,26 @@ z_off_t len2;
     MOD(sum2);
     sum1 += (adler2 & 0xffff) + BASE - 1;
     sum2 += ((adler1 >> 16) & 0xffff) + ((adler2 >> 16) & 0xffff) + BASE - rem;
-    if (sum1 > BASE) sum1 -= BASE;
-    if (sum1 > BASE) sum1 -= BASE;
-    if (sum2 > (BASE << 1)) sum2 -= (BASE << 1);
-    if (sum2 > BASE) sum2 -= BASE;
+    if (sum1 >= BASE) sum1 -= BASE;
+    if (sum1 >= BASE) sum1 -= BASE;
+    if (sum2 >= (BASE << 1)) sum2 -= (BASE << 1);
+    if (sum2 >= BASE) sum2 -= BASE;
     return sum1 | (sum2 << 16);
+}
+
+/* ========================================================================= */
+uLong ZEXPORT adler32_combine(adler1, adler2, len2)
+    uLong adler1;
+    uLong adler2;
+    z_off_t len2;
+{
+    return adler32_combine_(adler1, adler2, len2);
+}
+
+uLong ZEXPORT adler32_combine64(adler1, adler2, len2)
+    uLong adler1;
+    uLong adler2;
+    z_off64_t len2;
+{
+    return adler32_combine_(adler1, adler2, len2);
 }

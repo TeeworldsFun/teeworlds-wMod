@@ -7,217 +7,220 @@
 
 class CSnapIDPool
 {
-    enum
-    {
-        MAX_IDS = 16*1024,
-    };
+	enum
+	{
+		MAX_IDS = 16*1024,
+	};
 
-    class CID
-    {
-    public:
-        short m_Next;
-        short m_State; // 0 = free, 1 = alloced, 2 = timed
-        int m_Timeout;
-    };
+	class CID
+	{
+	public:
+		short m_Next;
+		short m_State; // 0 = free, 1 = alloced, 2 = timed
+		int m_Timeout;
+	};
 
-    CID m_aIDs[MAX_IDS];
+	CID m_aIDs[MAX_IDS];
 
-    int m_FirstFree;
-    int m_FirstTimed;
-    int m_LastTimed;
-    int m_Usage;
-    int m_InUsage;
+	int m_FirstFree;
+	int m_FirstTimed;
+	int m_LastTimed;
+	int m_Usage;
+	int m_InUsage;
 
 public:
 
-    CSnapIDPool();
+	CSnapIDPool();
 
-    void Reset();
-    void RemoveFirstTimeout();
-    int NewID();
-    void TimeoutIDs();
-    void FreeID(int ID);
+	void Reset();
+	void RemoveFirstTimeout();
+	int NewID();
+	void TimeoutIDs();
+	void FreeID(int ID);
 };
 
 class CServer : public IServer
 {
-    class IGameServer *m_pGameServer;
-    class IConsole *m_pConsole;
-    class IStorage *m_pStorage;
+	class IGameServer *m_pGameServer;
+	class IConsole *m_pConsole;
+	class IStorage *m_pStorage;
 public:
-    class IGameServer *GameServer()
-    {
-        return m_pGameServer;
-    }
-    class IConsole *Console()
-    {
-        return m_pConsole;
-    }
-    class IStorage *Storage()
-    {
-        return m_pStorage;
-    }
+	class IGameServer *GameServer() { return m_pGameServer; }
+	class IConsole *Console() { return m_pConsole; }
+	class IStorage *Storage() { return m_pStorage; }
 
-    class CClient
-    {
-    public:
+	enum
+	{
+		AUTHED_NO=0,
+		AUTHED_MOD,
+		AUTHED_ADMIN,
 
-        enum
-        {
-            STATE_EMPTY = 0,
-            STATE_AUTH,
-            STATE_CONNECTING,
-            STATE_READY,
-            STATE_INGAME,
+		MAX_RCONCMD_SEND=16,
+	};
 
-            SNAPRATE_INIT=0,
-            SNAPRATE_FULL,
-            SNAPRATE_RECOVER
-        };
+	class CClient
+	{
+	public:
 
-        class CInput
-        {
-        public:
-            int m_aData[MAX_INPUT_SIZE];
-            int m_GameTick; // the tick that was chosen for the input
-        };
+		enum
+		{
+			STATE_EMPTY = 0,
+			STATE_AUTH,
+			STATE_CONNECTING,
+			STATE_READY,
+			STATE_INGAME,
 
-        // connection state info
-        int m_State;
-        int m_Latency;
-        int m_SnapRate;
+			SNAPRATE_INIT=0,
+			SNAPRATE_FULL,
+			SNAPRATE_RECOVER
+		};
 
-        int m_LastAckedSnapshot;
-        int m_LastInputTick;
-        CSnapshotStorage m_Snapshots;
+		class CInput
+		{
+		public:
+			int m_aData[MAX_INPUT_SIZE];
+			int m_GameTick; // the tick that was chosen for the input
+		};
 
-        CInput m_LatestInput;
-        CInput m_aInputs[200]; // TODO: handle input better
-        int m_CurrentInput;
+		// connection state info
+		int m_State;
+		int m_Latency;
+		int m_SnapRate;
 
-        char m_aName[MAX_NAME_LENGTH];
-        char m_aClan[MAX_CLAN_LENGTH];
-        int m_Country;
-        int m_Score;
-        int m_Authed;
-        int m_AuthTries;
+		int m_LastAckedSnapshot;
+		int m_LastInputTick;
+		CSnapshotStorage m_Snapshots;
 
-        const IConsole::CCommandInfo *m_pRconCmdToSend;
+		CInput m_LatestInput;
+		CInput m_aInputs[200]; // TODO: handle input better
+		int m_CurrentInput;
 
-        void Reset();
-    };
+		char m_aName[MAX_NAME_LENGTH];
+		char m_aClan[MAX_CLAN_LENGTH];
+		int m_Country;
+		int m_Score;
+		int m_Authed;
+		int m_AuthTries;
 
-    CClient m_aClients[MAX_CLIENTS];
+		const IConsole::CCommandInfo *m_pRconCmdToSend;
 
-    CSnapshotDelta m_SnapshotDelta;
-    CSnapshotBuilder m_SnapshotBuilder;
-    CSnapIDPool m_IDPool;
-    CNetServer m_NetServer;
-    CEcon m_Econ;
+		void Reset();
+	};
 
-    IEngineMap *m_pMap;
+	CClient m_aClients[MAX_CLIENTS];
 
-    int64 m_GameStartTime;
-    //int m_CurrentGameTick;
-    int m_RunServer;
-    int m_MapReload;
-    int m_RconClientID;
-    int m_RconAuthLevel;
-    int m_PrintCBIndex;
+	CSnapshotDelta m_SnapshotDelta;
+	CSnapshotBuilder m_SnapshotBuilder;
+	CSnapIDPool m_IDPool;
+	CNetServer m_NetServer;
+	CEcon m_Econ;
 
-    int64 m_Lastheartbeat;
-    //static NETADDR4 master_server;
+	IEngineMap *m_pMap;
 
-    char m_aCurrentMap[64];
-    unsigned m_CurrentMapCrc;
-    unsigned char *m_pCurrentMapData;
-    int m_CurrentMapSize;
+	int64 m_GameStartTime;
+	//int m_CurrentGameTick;
+	int m_RunServer;
+	int m_MapReload;
+	int m_RconClientID;
+	int m_RconAuthLevel;
+	int m_PrintCBIndex;
 
-    CDemoRecorder m_DemoRecorder;
-    CRegister m_Register;
-    CMapChecker m_MapChecker;
+	int64 m_Lastheartbeat;
+	//static NETADDR4 master_server;
 
-    CServer();
+	char m_aCurrentMap[64];
+	unsigned m_CurrentMapCrc;
+	unsigned char *m_pCurrentMapData;
+	int m_CurrentMapSize;
 
-    int TrySetClientName(int ClientID, const char *pName);
+	CDemoRecorder m_DemoRecorder;
+	CRegister m_Register;
+	CMapChecker m_MapChecker;
 
-    virtual void SetClientName(int ClientID, const char *pName);
-    virtual void SetClientClan(int ClientID, char const *pClan);
-    virtual void SetClientCountry(int ClientID, int Country);
-    virtual void SetClientScore(int ClientID, int Score);
+	CServer();
 
-    void Kick(int ClientID, const char *pReason);
+	int TrySetClientName(int ClientID, const char *pName);
 
-    void DemoRecorder_HandleAutoStart();
+	virtual void SetClientName(int ClientID, const char *pName);
+	virtual void SetClientClan(int ClientID, char const *pClan);
+	virtual void SetClientCountry(int ClientID, int Country);
+	virtual void SetClientScore(int ClientID, int Score);
 
-    //int Tick()
-    int64 TickStartTime(int Tick);
-    //int TickSpeed()
+	void Kick(int ClientID, const char *pReason);
 
-    int Init();
+	void DemoRecorder_HandleAutoStart();
 
-    int IsAuthed(int ClientID);
-    int GetClientInfo(int ClientID, CClientInfo *pInfo);
-    void GetClientAddr(int ClientID, char *pAddrStr, int Size);
-    const char *ClientName(int ClientID);
-    const char *ClientClan(int ClientID);
-    int ClientCountry(int ClientID);
-    bool ClientIngame(int ClientID);
+	//int Tick()
+	int64 TickStartTime(int Tick);
+	//int TickSpeed()
 
-    virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID);
-    int SendMsgEx(CMsgPacker *pMsg, int Flags, int ClientID, bool System);
+	int Init();
 
-    void DoSnapshot();
+	bool IsAuthed(int ClientID);
+	int GetClientInfo(int ClientID, CClientInfo *pInfo);
+	void GetClientAddr(int ClientID, char *pAddrStr, int Size);
+	const char *ClientName(int ClientID);
+	const char *ClientClan(int ClientID);
+	int ClientCountry(int ClientID);
+	bool ClientIngame(int ClientID);
+	int MaxClients() const;
 
-    static int NewClientCallback(int ClientID, void *pUser);
-    static int DelClientCallback(int ClientID, const char *pReason, void *pUser);
+	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID);
+	int SendMsgEx(CMsgPacker *pMsg, int Flags, int ClientID, bool System);
 
-    void SendMap(int ClientID);
-    void SendConnectionReady(int ClientID);
-    void SendRconLine(int ClientID, const char *pLine);
-    static void SendRconLineAuthed(const char *pLine, void *pUser);
+	void DoSnapshot();
 
-    void SendRconCmdAdd(const IConsole::CCommandInfo *pCommandInfo, int ClientID);
-    void SendRconCmdRem(const IConsole::CCommandInfo *pCommandInfo, int ClientID);
-    void UpdateClientRconCommands();
+	static int NewClientCallback(int ClientID, void *pUser);
+	static int DelClientCallback(int ClientID, const char *pReason, void *pUser);
 
-    void ProcessClientPacket(CNetChunk *pPacket);
+	void SendMap(int ClientID);
+	void SendConnectionReady(int ClientID);
+	void SendRconLine(int ClientID, const char *pLine);
+	static void SendRconLineAuthed(const char *pLine, void *pUser);
 
-    void SendServerInfo(NETADDR *pAddr, int Token);
-    void UpdateServerInfo();
+	void SendRconCmdAdd(const IConsole::CCommandInfo *pCommandInfo, int ClientID);
+	void SendRconCmdRem(const IConsole::CCommandInfo *pCommandInfo, int ClientID);
+	void UpdateClientRconCommands();
 
-    int BanAdd(NETADDR Addr, int Seconds, const char *pReason);
-    int BanRemove(NETADDR Addr);
+	void ProcessClientPacket(CNetChunk *pPacket);
 
-    void PumpNetwork();
+	void SendServerInfo(NETADDR *pAddr, int Token);
+	void UpdateServerInfo();
 
-    char *GetMapName();
-    int LoadMap(const char *pMapName);
+	int BanAdd(NETADDR Addr, int Seconds, const char *pReason);
+	int BanRemove(NETADDR Addr);
+	int BanRemoveAll();
 
-    void InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole);
-    int Run();
+	void PumpNetwork();
 
-    static void ConKick(IConsole::IResult *pResult, void *pUser);
-    static void ConBan(IConsole::IResult *pResult, void *pUser);
-    static void ConUnban(IConsole::IResult *pResult, void *pUser);
-    static void ConBans(IConsole::IResult *pResult, void *pUser);
-    static void ConStatus(IConsole::IResult *pResult, void *pUser);
-    static void ConShutdown(IConsole::IResult *pResult, void *pUser);
-    static void ConRecord(IConsole::IResult *pResult, void *pUser);
-    static void ConStopRecord(IConsole::IResult *pResult, void *pUser);
-    static void ConMapReload(IConsole::IResult *pResult, void *pUser);
-    static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-    static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-    static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-    static void ConchainConsoleOutputLevelUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	char *GetMapName();
+	int LoadMap(const char *pMapName);
 
-    void RegisterCommands();
+	void InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole);
+	int Run();
+
+	static void ConKick(IConsole::IResult *pResult, void *pUser);
+	static void ConBan(IConsole::IResult *pResult, void *pUser);
+	static void ConUnban(IConsole::IResult *pResult, void *pUser);
+	static void ConUnbanAll(IConsole::IResult *pResult, void *pUser);
+	static void ConBans(IConsole::IResult *pResult, void *pUser);
+ 	static void ConStatus(IConsole::IResult *pResult, void *pUser);
+	static void ConShutdown(IConsole::IResult *pResult, void *pUser);
+	static void ConRecord(IConsole::IResult *pResult, void *pUser);
+	static void ConStopRecord(IConsole::IResult *pResult, void *pUser);
+	static void ConMapReload(IConsole::IResult *pResult, void *pUser);
+	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainConsoleOutputLevelUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+
+	void RegisterCommands();
 
 
-    virtual int SnapNewID();
-    virtual void SnapFreeID(int ID);
-    virtual void *SnapNewItem(int Type, int ID, int Size);
-    void SnapSetStaticsize(int ItemType, int Size);
+	virtual int SnapNewID();
+	virtual void SnapFreeID(int ID);
+	virtual void *SnapNewItem(int Type, int ID, int Size);
+	void SnapSetStaticsize(int ItemType, int Size);
 };
 
 #endif

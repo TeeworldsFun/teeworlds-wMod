@@ -12,14 +12,14 @@ class CMapLayers : public CComponent
 	int m_LastLocalTick;
 	bool m_EnvelopeUpdate;
 
-    void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup);
-    static void EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser);
+	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup);
+	static void EnvelopeEval(float TimeOffset, int Env, float *pChannels, void *pUser);
 public:
-    enum
-    {
-        TYPE_BACKGROUND=0,
-        TYPE_FOREGROUND,
-    };
+	enum
+	{
+		TYPE_BACKGROUND=0,
+		TYPE_FOREGROUND,
+	};
 
 	CMapLayers(int Type);
 	virtual void OnInit();

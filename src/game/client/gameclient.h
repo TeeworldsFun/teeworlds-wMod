@@ -12,56 +12,56 @@
 
 class CGameClient : public IGameClient
 {
-    class CStack
-    {
-    public:
-        enum
-        {
-            MAX_COMPONENTS = 64,
-        };
+	class CStack
+	{
+	public:
+		enum
+		{
+			MAX_COMPONENTS = 64,
+		};
 
-        CStack();
-        void Add(class CComponent *pComponent);
+		CStack();
+		void Add(class CComponent *pComponent);
 
-        class CComponent *m_paComponents[MAX_COMPONENTS];
-        int m_Num;
-    };
+		class CComponent *m_paComponents[MAX_COMPONENTS];
+		int m_Num;
+	};
 
-    CStack m_All;
-    CStack m_Input;
-    CNetObjHandler m_NetObjHandler;
+	CStack m_All;
+	CStack m_Input;
+	CNetObjHandler m_NetObjHandler;
 
-    class IEngine *m_pEngine;
-    class IInput *m_pInput;
-    class IGraphics *m_pGraphics;
-    class ITextRender *m_pTextRender;
-    class IClient *m_pClient;
-    class ISound *m_pSound;
-    class IConsole *m_pConsole;
-    class IStorage *m_pStorage;
-    class IDemoPlayer *m_pDemoPlayer;
-    class IDemoRecorder *m_pDemoRecorder;
-    class IServerBrowser *m_pServerBrowser;
-    class IEditor *m_pEditor;
-    class IFriends *m_pFriends;
+	class IEngine *m_pEngine;
+	class IInput *m_pInput;
+	class IGraphics *m_pGraphics;
+	class ITextRender *m_pTextRender;
+	class IClient *m_pClient;
+	class ISound *m_pSound;
+	class IConsole *m_pConsole;
+	class IStorage *m_pStorage;
+	class IDemoPlayer *m_pDemoPlayer;
+	class IDemoRecorder *m_pDemoRecorder;
+	class IServerBrowser *m_pServerBrowser;
+	class IEditor *m_pEditor;
+	class IFriends *m_pFriends;
 
-    CLayers m_Layers;
-    class CCollision m_Collision;
-    CUI m_UI;
+	CLayers m_Layers;
+	class CCollision m_Collision;
+	CUI m_UI;
 
-    void DispatchInput();
-    void ProcessEvents();
-    void UpdatePositions();
+	void DispatchInput();
+	void ProcessEvents();
+	void UpdatePositions();
 
-    int m_PredictedTick;
-    int m_LastNewPredictedTick;
+	int m_PredictedTick;
+	int m_LastNewPredictedTick;
 
-    int64 m_LastSendInfo;
+	int64 m_LastSendInfo;
 
-    static void ConTeam(IConsole::IResult *pResult, void *pUserData);
-    static void ConKill(IConsole::IResult *pResult, void *pUserData);
+	static void ConTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConKill(IConsole::IResult *pResult, void *pUserData);
 
-    static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 public:
 	IKernel *Kernel() { return IInterface::Kernel(); }
@@ -249,25 +249,25 @@ public:
 
 inline float HueToRgb(float v1, float v2, float h)
 {
-    if(h < 0.0f) h += 1;
-    if(h > 1.0f) h -= 1;
-    if((6.0f * h) < 1.0f) return v1 + (v2 - v1) * 6.0f * h;
-    if((2.0f * h) < 1.0f) return v2;
-    if((3.0f * h) < 2.0f) return v1 + (v2 - v1) * ((2.0f/3.0f) - h) * 6.0f;
-    return v1;
+	if(h < 0.0f) h += 1;
+	if(h > 1.0f) h -= 1;
+	if((6.0f * h) < 1.0f) return v1 + (v2 - v1) * 6.0f * h;
+	if((2.0f * h) < 1.0f) return v2;
+	if((3.0f * h) < 2.0f) return v1 + (v2 - v1) * ((2.0f/3.0f) - h) * 6.0f;
+	return v1;
 }
 
 inline vec3 HslToRgb(vec3 HSL)
 {
-    if(HSL.s == 0.0f)
-        return vec3(HSL.l, HSL.l, HSL.l);
-    else
-    {
-        float v2 = HSL.l < 0.5f ? HSL.l * (1.0f + HSL.s) : (HSL.l+HSL.s) - (HSL.s*HSL.l);
-        float v1 = 2.0f * HSL.l - v2;
+	if(HSL.s == 0.0f)
+		return vec3(HSL.l, HSL.l, HSL.l);
+	else
+	{
+		float v2 = HSL.l < 0.5f ? HSL.l * (1.0f + HSL.s) : (HSL.l+HSL.s) - (HSL.s*HSL.l);
+		float v1 = 2.0f * HSL.l - v2;
 
-        return vec3(HueToRgb(v1, v2, HSL.h + (1.0f/3.0f)), HueToRgb(v1, v2, HSL.h), HueToRgb(v1, v2, HSL.h - (1.0f/3.0f)));
-    }
+		return vec3(HueToRgb(v1, v2, HSL.h + (1.0f/3.0f)), HueToRgb(v1, v2, HSL.h), HueToRgb(v1, v2, HSL.h - (1.0f/3.0f)));
+	}
 }
 
 

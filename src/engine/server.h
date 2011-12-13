@@ -22,57 +22,52 @@ protected:
     int m_TickSpeed;
 
 public:
-    /*
-    	Structure: CClientInfo
-    */
-    struct CClientInfo
-    {
-        const char *m_pName;
-        int m_Latency;
-    };
+	/*
+		Structure: CClientInfo
+	*/
+	struct CClientInfo
+	{
+		const char *m_pName;
+		int m_Latency;
+	};
 
-    int Tick() const
-    {
-        return m_CurrentGameTick;
-    }
-    int TickSpeed() const
-    {
-        return m_TickSpeed;
-    }
+	int Tick() const { return m_CurrentGameTick; }
+	int TickSpeed() const { return m_TickSpeed; }
 
-    virtual const char *ClientName(int ClientID) = 0;
-    virtual const char *ClientClan(int ClientID) = 0;
-    virtual int ClientCountry(int ClientID) = 0;
-    virtual bool ClientIngame(int ClientID) = 0;
-    virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) = 0;
-    virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size) = 0;
+	virtual int MaxClients() const = 0;
+	virtual const char *ClientName(int ClientID) = 0;
+	virtual const char *ClientClan(int ClientID) = 0;
+	virtual int ClientCountry(int ClientID) = 0;
+	virtual bool ClientIngame(int ClientID) = 0;
+	virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) = 0;
+	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size) = 0;
 
-    virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;
+	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;
 
-    template<class T>
-    int SendPackMsg(T *pMsg, int Flags, int ClientID)
-    {
-        CMsgPacker Packer(pMsg->MsgID());
-        if(pMsg->Pack(&Packer))
-            return -1;
-        return SendMsg(&Packer, Flags, ClientID);
-    }
+	template<class T>
+	int SendPackMsg(T *pMsg, int Flags, int ClientID)
+	{
+		CMsgPacker Packer(pMsg->MsgID());
+		if(pMsg->Pack(&Packer))
+			return -1;
+		return SendMsg(&Packer, Flags, ClientID);
+	}
 
-    virtual void SetClientName(int ClientID, char const *pName) = 0;
-    virtual void SetClientClan(int ClientID, char const *pClan) = 0;
-    virtual void SetClientCountry(int ClientID, int Country) = 0;
-    virtual void SetClientScore(int ClientID, int Score) = 0;
+	virtual void SetClientName(int ClientID, char const *pName) = 0;
+	virtual void SetClientClan(int ClientID, char const *pClan) = 0;
+	virtual void SetClientCountry(int ClientID, int Country) = 0;
+	virtual void SetClientScore(int ClientID, int Score) = 0;
 
-    virtual int SnapNewID() = 0;
-    virtual void SnapFreeID(int ID) = 0;
-    virtual void *SnapNewItem(int Type, int ID, int Size) = 0;
+	virtual int SnapNewID() = 0;
+	virtual void SnapFreeID(int ID) = 0;
+	virtual void *SnapNewItem(int Type, int ID, int Size) = 0;
 
-    virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
+	virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
 
-    virtual int IsAuthed(int ClientID) = 0;
-    virtual void Kick(int ClientID, const char *pReason) = 0;
+	virtual bool IsAuthed(int ClientID) = 0;
+	virtual void Kick(int ClientID, const char *pReason) = 0;
 
-    virtual void DemoRecorder_HandleAutoStart() = 0;
+	virtual void DemoRecorder_HandleAutoStart() = 0;
 };
 
 class IGameServer : public IInterface

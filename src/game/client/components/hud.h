@@ -6,28 +6,28 @@
 
 class CHud : public CComponent
 {
-    float m_Width, m_Height;
-    float m_AverageFPS;
+	float m_Width, m_Height;
+	float m_AverageFPS;
 
-    void RenderCursor();
+	void RenderCursor();
 
-    void RenderFps();
-    void RenderConnectionWarning();
-    void RenderTeambalanceWarning();
-    void RenderVoting();
-    void RenderHealthAndAmmo(const CNetObj_Character *pCharacter);
-    void RenderGameTimer();
-    void RenderSuddenDeath();
-    void RenderScoreHud();
-    void RenderSpectatorHud();
-    void RenderWarmupTimer();
+	void RenderFps();
+	void RenderConnectionWarning();
+	void RenderTeambalanceWarning();
+	void RenderVoting();
+	void RenderHealthAndAmmo(const CNetObj_Character *pCharacter);
+	void RenderGameTimer();
+	void RenderSuddenDeath();
+	void RenderScoreHud();
+	void RenderSpectatorHud();
+	void RenderWarmupTimer();
 
-    void MapscreenToGroup(float CenterX, float CenterY, struct CMapItemGroup *PGroup);
+	void MapscreenToGroup(float CenterX, float CenterY, struct CMapItemGroup *PGroup);
 public:
-    CHud();
+	CHud();
 
-    virtual void OnReset();
-    virtual void OnRender();
+	virtual void OnReset();
+	virtual void OnRender();
 };
 
 #endif

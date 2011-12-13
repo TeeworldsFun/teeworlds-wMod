@@ -1,5 +1,5 @@
 /* compress.c -- compress a memory buffer
- * Copyright (C) 1995-2003 Jean-loup Gailly.
+ * Copyright (C) 1995-2005 Jean-loup Gailly.
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -20,11 +20,11 @@
    Z_STREAM_ERROR if the level parameter is invalid.
 */
 int ZEXPORT compress2 (dest, destLen, source, sourceLen, level)
-Bytef *dest;
-uLongf *destLen;
-const Bytef *source;
-uLong sourceLen;
-int level;
+    Bytef *dest;
+    uLongf *destLen;
+    const Bytef *source;
+    uLong sourceLen;
+    int level;
 {
     z_stream stream;
     int err;
@@ -47,8 +47,7 @@ int level;
     if (err != Z_OK) return err;
 
     err = deflate(&stream, Z_FINISH);
-    if (err != Z_STREAM_END)
-    {
+    if (err != Z_STREAM_END) {
         deflateEnd(&stream);
         return err == Z_OK ? Z_BUF_ERROR : err;
     }
@@ -61,10 +60,10 @@ int level;
 /* ===========================================================================
  */
 int ZEXPORT compress (dest, destLen, source, sourceLen)
-Bytef *dest;
-uLongf *destLen;
-const Bytef *source;
-uLong sourceLen;
+    Bytef *dest;
+    uLongf *destLen;
+    const Bytef *source;
+    uLong sourceLen;
 {
     return compress2(dest, destLen, source, sourceLen, Z_DEFAULT_COMPRESSION);
 }
@@ -74,7 +73,8 @@ uLong sourceLen;
    this function needs to be updated.
  */
 uLong ZEXPORT compressBound (sourceLen)
-uLong sourceLen;
+    uLong sourceLen;
 {
-    return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + 11;
+    return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) +
+           (sourceLen >> 25) + 13;
 }

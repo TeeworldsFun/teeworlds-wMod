@@ -5,32 +5,20 @@
 
 class CAnimState
 {
-    CAnimKeyframe m_Body;
-    CAnimKeyframe m_BackFoot;
-    CAnimKeyframe m_FrontFoot;
-    CAnimKeyframe m_Attach;
+	CAnimKeyframe m_Body;
+	CAnimKeyframe m_BackFoot;
+	CAnimKeyframe m_FrontFoot;
+	CAnimKeyframe m_Attach;
 
 public:
-    CAnimKeyframe *GetBody()
-    {
-        return &m_Body;
-    };
-    CAnimKeyframe *GetBackFoot()
-    {
-        return &m_BackFoot;
-    };
-    CAnimKeyframe *GetFrontFoot()
-    {
-        return &m_FrontFoot;
-    };
-    CAnimKeyframe *GetAttach()
-    {
-        return &m_Attach;
-    };
-    void Set(CAnimation *pAnim, float Time);
-    void Add(CAnimation *pAdded, float Time, float Amount);
+	CAnimKeyframe *GetBody() { return &m_Body; };
+	CAnimKeyframe *GetBackFoot() { return &m_BackFoot; };
+	CAnimKeyframe *GetFrontFoot() { return &m_FrontFoot; };
+	CAnimKeyframe *GetAttach() { return &m_Attach; };
+	void Set(CAnimation *pAnim, float Time);
+	void Add(CAnimation *pAdded, float Time, float Amount);
 
-    static CAnimState *GetIdle();
+	static CAnimState *GetIdle();
 };
 
 #endif
