@@ -138,6 +138,8 @@ private:
     int m_NumInputs;
     int m_Jumped;
 
+    int m_NumJumped;
+
     int m_DamageTakenTick;
 
     int m_Health;

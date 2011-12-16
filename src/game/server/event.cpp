@@ -156,7 +156,7 @@ void CEvent::Tick()
         case JUMP_UNLIMITED:
             str_format(aBuf, 256, "%s : All can always jump ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
-        case JUMP_X3:
+        case JUMP_X1_5:
             str_format(aBuf, 256, "%s : All can jump higher ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case ALL:
@@ -396,6 +396,12 @@ void CEvent::SetTune()
         GameServer()->Tuning()->Set("hook_drag_speed", static_cast<float>(150.0));
         GameServer()->SendTuningParams(-1);
     }
+    if ( IsActualEvent(JUMP_X1_5) )
+    {
+        GameServer()->Tuning()->Set("ground_jump_impulse", static_cast<float>(13.2f) * static_cast<float>(1.5f));
+        GameServer()->Tuning()->Set("air_jump_impulse", static_cast<float>(12.0f)  * static_cast<float>(1.5f));
+        GameServer()->SendTuningParams(-1);
+    }
     if ( IsActualEvent(WEAPON_SLOW) )
     {
         GameServer()->Tuning()->Set("gun_speed", static_cast<float>(110.0));
@@ -433,6 +439,8 @@ void CEvent::ResetTune()
     GameServer()->Tuning()->Set("air_control_speed", static_cast<float>(5.0));
     GameServer()->Tuning()->Set("hook_fire_speed", static_cast<float>(80.0));
     GameServer()->Tuning()->Set("hook_drag_speed", static_cast<float>(15.0));
+    GameServer()->Tuning()->Set("ground_jump_impulse", static_cast<float>(13.2f));
+    GameServer()->Tuning()->Set("air_jump_impulse", static_cast<float>(12.0f));
 
     GameServer()->Tuning()->Set("gun_speed", static_cast<float>(2200.0));
     GameServer()->Tuning()->Set("gun_lifetime", static_cast<float>(2.0));

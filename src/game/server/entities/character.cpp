@@ -1239,11 +1239,14 @@ void CCharacter::Tick()
         m_pPlayer->m_ForceBalanced = false;
     }
 
-    if(m_Core.m_Jumped & 2 && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000)
+    if (IsGrounded())
+        m_NumJumped = 1;
+
+    if(m_Core.m_Jumped & 2 && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000 && (GameServer()->m_pEventsGame->IsActualEvent(JUMP_UNLIMITED) || m_NumJumped < m_stat_move->m_num_jump || m_stat_move->m_num_jump == -1))
         m_Core.m_Jumped &= ~2;
 
     m_Core.m_Input = m_Input;
-    m_Core.Tick(true, m_stat_move->m_rate_speed, m_stat_move->m_rate_accel, m_stat_move->m_rate_high_jump);
+    m_Core.Tick(true, m_stat_move->m_rate_speed, m_stat_move->m_rate_accel, m_stat_move->m_rate_high_jump * static_cast<float>(GameServer()->m_pEventsGame->IsActualEvent(JUMP_X1_5) ? 1.5f : 1));
 
     if(m_Input.m_Jump && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000)
          m_JumpTick = Server()->Tick();
@@ -1713,10 +1716,24 @@ void CCharacter::Snap(int SnappingClient)
     if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1 ||
             (!g_Config.m_SvStrictSpectateMode && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
     {
-        pCharacter->m_Health = m_Health;
-        pCharacter->m_Armor = m_Armor;
+        if(GameServer()->m_pStatistiques->GetConf(m_pPlayer->GetSID()).m_LifeAbsolute)
+        {
+            pCharacter->m_Health = m_Health;
+            pCharacter->m_Armor = m_Armor;
+        }
+        else
+        {
+            float Ratio[2] = { 10.0f/m_stat_life->m_stockage[0], 10.0f/m_stat_life->m_stockage[1] };
+            pCharacter->m_Health = m_Health * Ratio[0];
+            pCharacter->m_Armor = m_Armor * Ratio[1];
+        }
         if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
-            pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo;
+        {
+            if (GameServer()->m_pStatistiques->GetConf(m_pPlayer->GetSID()).m_AmmoAbsolute)
+                pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo;
+            else
+                pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo * 10.0f/m_stat_weapon->m_stockage;
+        }
     }
 
     if(pCharacter->m_Emote == EMOTE_NORMAL)

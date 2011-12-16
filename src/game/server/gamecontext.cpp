@@ -1287,6 +1287,20 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 m_pStatistiques->DisableAllInfo(m_apPlayers[ClientID]->GetSID());
                 SendChatTarget(ClientID, "All information are disabled");
             }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf AmmoAbsolute") == 0)
+            {
+                bool statut = m_pStatistiques->AmmoAbsolute(m_apPlayers[ClientID]->GetSID());
+                char a[256] = "";
+                str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Absolute" : "Relative");
+                SendChatTarget(ClientID, a);
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/conf LifeAbsolute") == 0)
+            {
+                bool statut = m_pStatistiques->LifeAbsolute(m_apPlayers[ClientID]->GetSID());
+                char a[256] = "";
+                str_format(a, 256, "Information of Life is now : %s. ", statut ? "Absolute" : "Relative");
+                SendChatTarget(ClientID, a);
+            }
             else if(str_comp_nocase(pMsg->m_pMessage, "/conf Lock") == 0)
             {
                 bool lock = m_pStatistiques->Lock(m_apPlayers[ClientID]->GetSID());
@@ -1297,7 +1311,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             else if(str_comp_nocase(pMsg->m_pMessage, "/conf") == 0)
             {
                 SendChatTarget(ClientID, "Usage : /conf <type>");
-                SendChatTarget(ClientID, "Type : InfoHealKiller or InfoXP or InfoLevelUp or InfoKillingSpree or InfoRace or InfoAmmo or InfoVoter or EnableAllInfo or DisableAllInfo or Lock");
+                SendChatTarget(ClientID, "Type : InfoHealKiller or InfoXP or InfoLevelUp or InfoKillingSpree or InfoRace or InfoAmmo or InfoVoter or EnableAllInfo or DisableAllInfo or AmmoAbsolute or LifeAbsolute or Lock");
                 SendChatTarget(ClientID, "Description : Enable or disable functionnality.");
             }
             else if(str_comp_nocase(pMsg->m_pMessage, "/reset_stats") == 0)

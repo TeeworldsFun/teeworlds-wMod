@@ -76,6 +76,8 @@ struct Conf
     bool m_InfoRace;
     bool m_InfoAmmo;
     bool m_ShowVoter;
+    bool m_AmmoAbsolute;
+    bool m_LifeAbsolute;
     bool m_Lock;
     int m_Weapon[NUM_WEAPONS];
 };
@@ -116,6 +118,8 @@ struct Stats
         m_conf.m_InfoRace = true;
         m_conf.m_InfoAmmo = true;
         m_conf.m_ShowVoter = true;
+        m_conf.m_AmmoAbsolute = true;
+        m_conf.m_LifeAbsolute = true;
         m_conf.m_Lock = false;
         for ( int i = 0; i < NUM_WEAPONS; i++ )
             m_conf.m_Weapon[i] = WARRIOR;
@@ -368,6 +372,14 @@ public:
     inline bool ShowVoter(long id)
     {
         return m_statistiques[id].m_conf.m_ShowVoter = m_statistiques[id].m_conf.m_ShowVoter ? false : true;
+    }
+    inline bool AmmoAbsolute(long id)
+    {
+        return m_statistiques[id].m_conf.m_AmmoAbsolute = m_statistiques[id].m_conf.m_AmmoAbsolute ? false : true;
+    }
+    inline bool LifeAbsolute(long id)
+    {
+        return m_statistiques[id].m_conf.m_LifeAbsolute = m_statistiques[id].m_conf.m_LifeAbsolute ? false : true;
     }
     inline void EnableAllInfo(long id)
     {
