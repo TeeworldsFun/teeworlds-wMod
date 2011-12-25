@@ -107,6 +107,14 @@ CCharacter::~CCharacter()
     delete m_stat_life;
     delete m_stat_move;
     delete m_stat_hook;
+
+    if (m_stat_move->m_rate_speed != GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID()).m_rate_speed || 
+        m_stat_move->m_rate_accel != GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID()).m_rate_accel || 
+        m_stat_move->m_rate_high_jump != GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID()).m_rate_high_jump || 
+        m_stat_hook->m_rate_length != GameServer()->m_pStatistiques->GetStatHook(m_pPlayer->GetSID()).m_rate_length ||
+        m_stat_hook->m_rate_time != GameServer()->m_pStatistiques->GetStatHook(m_pPlayer->GetSID()).m_rate_time ||
+        m_stat_hook->m_rate_speed != GameServer()->m_pStatistiques->GetStatHook(m_pPlayer->GetSID()).m_rate_speed )
+        GameServer()->SendTuningParams(m_pPlayer->GetCID());
 }
 
 void CCharacter::Reset()

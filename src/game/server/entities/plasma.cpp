@@ -5,6 +5,7 @@
 #include <game/server/event.h>
 #include "plasma.h"
 #include "turret.h"
+#include "teleporter.h"
 
 CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner)
     : CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER)
@@ -73,7 +74,14 @@ void CPlasma::Tick()
     else
         m_Vel += 0.01f;
 
-    if(!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE) && GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
+    vec2 At;
+    CTeleporter *pTeleporter = (CTeleporter *)GameServer()->m_World.IntersectEntity(m_Pos, To, 12.0f, At, CGameWorld::ENTTYPE_TELEPORTER);
+    if (pTeleporter && pTeleporter->GetNext())
+    {
+        if(!HitCharacter(m_Pos, To))
+            m_Pos = pTeleporter->GetNext()->m_Pos + (m_Dir * 20.0f);
+    }
+    else if(!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE) && GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
     {
         if(!HitCharacter(m_Pos, To))
         {

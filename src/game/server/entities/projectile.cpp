@@ -5,6 +5,7 @@
 #include "game/server/event.h"
 #include "projectile.h"
 #include "turret.h"
+#include "teleporter.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
                          int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Limit, bool Smoke, bool Deploy, int Bounce)
@@ -70,10 +71,24 @@ void CProjectile::Tick()
     float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
     vec2 PrevPos = GetPos(Pt);
     vec2 CurPos = GetPos(Ct);
+
+    vec2 At;
+    CTeleporter *CollideTeleporter = (CTeleporter *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 12.0f, At, CGameWorld::ENTTYPE_TELEPORTER);
+    if (CollideTeleporter && CollideTeleporter->GetNext())
+    {
+        m_Direction = normalize(GetPos(Ct) - PrevPos);
+        m_Pos = CollideTeleporter->GetNext()->m_Pos + (m_Direction * (50.0f));
+        m_StartTick = Server()->Tick();
+        Pt = (Server()->Tick()-m_StartTick-1)/(float)Server()->TickSpeed();
+        Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
+        PrevPos = GetPos(Pt);
+        CurPos = GetPos(Ct);
+    }
+
     int Collide = distance(CurPos, PrevPos) ? GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0) : GameServer()->Collision()->CheckPoint(CurPos);
     CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
     CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
-    CTurret *TargetTurret = (CTurret *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 6.f, CurPos, CGameWorld::ENTTYPE_TURRET);
+    CTurret *TargetTurret = (CTurret *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 6.0f, CurPos, CGameWorld::ENTTYPE_TURRET);
 
     if ( !distance(CurPos, PrevPos) && !TargetChr )
     {
@@ -193,3 +208,4 @@ void CProjectile::Snap(int SnappingClient)
     if(pProj)
         FillInfo(pProj);
 }
+

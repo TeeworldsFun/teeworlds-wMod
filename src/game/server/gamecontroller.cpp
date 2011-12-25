@@ -425,6 +425,10 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
                 str_format(Text, 256, "You've get %s by killing spree !", bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
                 GameServer()->SendChatTarget(pKiller->GetCID(), Text);
 
+                if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 1)
+                {
+                    GameServer()->SendTuningParams(pKiller->GetCID());
+                }
                 if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 2)
                 {
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_GUN, -2);
@@ -463,6 +467,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
         GameServer()->CreateExplosion(pVictim->m_Pos, pVictim->GetPlayer()->GetCID(), WEAPON_GAME, true, false);
         GameServer()->CreateSound(pVictim->m_Pos, SOUND_GRENADE_EXPLODE);
         GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
+        GameServer()->SendTuningParams(pVictim->GetPlayer()->GetCID());
     }
 
     m_pGameServer->m_pStatistiques->AddDead(pVictim->GetPlayer()->GetSID());

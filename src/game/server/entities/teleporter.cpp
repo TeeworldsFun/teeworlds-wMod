@@ -6,7 +6,7 @@
 #include "plasma.h"
 
 CTeleporter::CTeleporter(CGameWorld *pGameWorld, vec2 Pos, int Owner, CTeleporter *Next)
-    : CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE)
+    : CEntity(pGameWorld, CGameWorld::ENTTYPE_TELEPORTER)
 {
     m_Pos = Pos;
     m_Owner = Owner;
@@ -21,31 +21,26 @@ void CTeleporter::Tick()
     if (!m_Next)
         return;
 
-    CCharacter *TargetChr = 0;
-
     CCharacter *apEnts[MAX_CLIENTS] = {0};
     int Num = GameServer()->m_World.FindEntities(m_Pos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
     for(int i = 0; i < Num; i++)
     {
-            TargetChr = apEnts[i];
-            break;
-    }
-    
-    if(!TargetChr)
-        return;
+        if(!apEnts[i])
+            continue;
 
-    vec2 alea(0,0);
-    vec2 To(0,0);
-    do
-    {
-        alea.x = (rand() % 201) - 100;
-        alea.y = (rand() % 201) - 100;
-        To.x = m_Next->m_Pos.x + alea.x;
-        To.y = m_Next->m_Pos.y + alea.y;
-    }
-    while (GameServer()->Collision()->TestBox(To, vec2(CCharacter::ms_PhysSize, CCharacter::ms_PhysSize)) || ((alea.x > 0 && alea.x < 10) || (alea.x < 0 && alea.x > -10)) || GameServer()->Collision()->IntersectLine(m_Next->m_Pos, To, 0, 0));
+        vec2 alea(0,0);
+        vec2 To(0,0);
+        do
+        {
+            alea.x = (rand() % 201) - 100;
+            alea.y = (rand() % 201) - 100;
+            To.x = m_Next->m_Pos.x + alea.x;
+            To.y = m_Next->m_Pos.y + alea.y;
+        }
+        while (GameServer()->Collision()->TestBox(To, vec2(CCharacter::ms_PhysSize, CCharacter::ms_PhysSize)) || ((alea.x > 0 && alea.x < CCharacter::ms_PhysSize+6.0f) || (alea.x < 0 && alea.x > -(CCharacter::ms_PhysSize+6.0f))) || GameServer()->Collision()->IntersectLine(m_Next->m_Pos, To, 0, 0));
 
-    TargetChr->SetPos(To);
+        apEnts[i]->SetPos(To);
+    }
 }
 
 void CTeleporter::Snap(int SnappingClient)

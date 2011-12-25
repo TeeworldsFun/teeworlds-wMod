@@ -4,6 +4,8 @@
 #include <game/server/gamecontext.h>
 #include <game/server/event.h>
 #include "laser.h"
+#include "turret.h"
+#include "teleporter.h"
 
 CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner)
     : CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER)
@@ -23,16 +25,21 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 {
     vec2 At;
     CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
+    CTurret *pHitTurret = (CTurret*) GameServer()->m_World.IntersectEntity(m_Pos, m_From, 0.f, At, CGameWorld::ENTTYPE_TURRET);
     CCharacter *pHit = GameServer()->m_World.IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
-    if(!pHit)
+
+    if(!pHit && !pHitTurret)
         return false;
 
     m_From = From;
     m_Pos = At;
     m_Energy = -1;
 
-    if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || (m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
+    if ( pHit && (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
         pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+    else if ( pHitTurret && (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
+        pHitTurret->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+
     return true;
 }
 
@@ -47,6 +54,24 @@ void CLaser::DoBounce()
     }
 
     vec2 To = m_Pos + m_Dir * m_Energy;
+
+    vec2 At;
+    CTeleporter *pTeleporter = (CTeleporter *)GameServer()->m_World.IntersectEntity(m_Pos, To, 12.0f, At, CGameWorld::ENTTYPE_TELEPORTER);
+    if (pTeleporter && pTeleporter->GetNext() && m_Pos == pTeleporter->m_Pos)
+    {
+        m_Pos = pTeleporter->GetNext()->m_Pos + m_Dir;
+        To = m_Pos + m_Dir * m_Energy;
+    }
+    else if (pTeleporter && pTeleporter->GetNext())
+    {
+        if(!HitCharacter(m_Pos, pTeleporter->m_Pos))
+        {
+            m_From = m_Pos;
+            m_Pos = pTeleporter->m_Pos;
+            m_Energy -= distance(m_From, m_Pos) + GameServer()->Tuning()->m_LaserBounceCost;
+            return;
+        }
+    } 
 
     if(!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE) && GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
     {

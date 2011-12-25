@@ -20,7 +20,6 @@ public:
     {
         return m_Owner;
     }
-
 private:
     vec2 m_Direction;
     int m_LifeSpan;

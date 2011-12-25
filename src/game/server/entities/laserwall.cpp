@@ -4,6 +4,7 @@
 #include <game/server/gamecontext.h>
 #include <game/server/event.h>
 #include "laserwall.h"
+#include "turret.h"
 
 CLaserWall::CLaserWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner, bool Double)
     : CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER)
@@ -48,8 +49,9 @@ void CLaserWall::Tick()
     if (pHit->TakeDamage(vec2(0,0), 100, m_Owner, WEAPON_HAMMER, true))
         m_Killed++;
 
-    if(pOwnerChar)
-        pOwnerChar->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
+    CTurret *pHitTurret = (CTurret *)GameServer()->m_World.IntersectEntity(m_Pos, m_From, 0.f, At, CGameWorld::ENTTYPE_TURRET);
+    if (pHitTurret)
+        pHitTurret->TakeDamage(100, m_Owner, WEAPON_HAMMER, true);
 }
 
 void CLaserWall::CreateDouble()
