@@ -4,6 +4,7 @@
 #include <game/server/gamecontext.h>
 #include <game/server/event.h>
 #include "plasma.h"
+#include "turret.h"
 
 CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner)
     : CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER)
@@ -24,15 +25,32 @@ bool CPlasma::HitCharacter(vec2 From, vec2 To)
     vec2 At;
     CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
     CCharacter *pHit = GameServer()->m_World.IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
-    if(!pHit)
-        return false;
+    if(pHit)
+    {
+        m_Pos = At;
+        if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
+            m_Energy = -1;
+        if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
+            pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+        return true;
+    }
+    else
+    {
+        CTurret *pHitTurret = (CTurret *)GameServer()->m_World.IntersectEntity(m_Pos, To, 0.f, At, CGameWorld::ENTTYPE_TURRET);
+        if (pHitTurret && pHitTurret->GetOwner() != m_Owner)
+        {
+            m_Pos = At;
+            if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
+                m_Energy = -1;
+            if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
+                pHitTurret->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+            return true;
+        }
+        else
+            return false;
+    }
 
-    m_Pos = At;
-    if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
-        m_Energy = -1;
-    if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
-        pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
-    return true;
+    return false;
 }
 
 void CPlasma::Reset()

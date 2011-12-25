@@ -9,7 +9,6 @@ CEvent::CEvent(CGameContext *GameServer)
     m_StartEvent[1] = 0;
     m_StartEventTeam = 0;
     m_StartEventRound = 0;
-    m_TwoEvent = false;
     m_ActualEvent[0] = -1;
     m_ActualEvent[1] = -1;
     m_ActualEventTeam = -1;
@@ -23,15 +22,15 @@ CEvent::~CEvent()
 
 void CEvent::Tick()
 {
-    if ( m_TwoEvent && Controller()->IsTeamplay() )
-        m_TwoEvent = false;
+    if ( g_Config.m_SvTwoEvent && Controller()->IsTeamplay() )
+        g_Config.m_SvTwoEvent = false;
 
     int Elapsed[2] = {0, 0};
     char Text[256] = "";
 
     for ( int i = 0; i < 2; i++ )
     {
-        if ( i == 1 && !m_TwoEvent )
+        if ( i == 1 && !g_Config.m_SvTwoEvent )
             break;
 
         Elapsed[i] = Server()->Tick() - m_StartEvent[i];
@@ -67,52 +66,52 @@ void CEvent::Tick()
             str_format(aBuf, 256, "%s : Nothing. | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case HAMMER:
-            str_format(aBuf, 256, "%s : All Get Hammer ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Hammer ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case GUN:
-            str_format(aBuf, 256, "%s : All Get Gun ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Gun ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case SHOTGUN:
-            str_format(aBuf, 256, "%s : All Get Shotgun ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Shotgun ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case GRENADE:
-            str_format(aBuf, 256, "%s : All Get Grenade ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Grenade ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case RIFLE:
-            str_format(aBuf, 256, "%s : All Get Rifle ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Rifle ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case KATANA:
-            str_format(aBuf, 256, "%s : All Get Katana ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Katana ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case UNLIMITED_AMMO:
-            str_format(aBuf, 256, "%s : All Get Unlimited Ammo ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Unlimited Ammo ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case LIFE_ARMOR_CRAZY:
-            str_format(aBuf, 256, "%s : All Get Life and Armor Crazy ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Get Life and Armor Crazy ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case SURVIVOR:
-            str_format(aBuf, 256, "%s : Mode Survivor ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Mode Survivor ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case PROTECT_X2:
             str_format(aBuf, 256, "%s : All Get Protect X2 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case INSTAGIB:
-            str_format(aBuf, 256, "%s : Mode Instagib ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Mode Instagib ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case WALLSHOT:
-            str_format(aBuf, 256, "%s : Mode WallShot ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : Mode WallShot ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case BULLET_PIERCING:
-            str_format(aBuf, 256, "%s : All Bullets can pierce Tee and Tiles ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Bullets can pierce Tee and Tiles ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case BULLET_BOUNCE:
-            str_format(aBuf, 256, "%s : All Bullets can bounce ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Bullets can bounce ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case BULLET_GLUE:
-            str_format(aBuf, 256, "%s : All Bullets are glue ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All Bullets are glue ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case HAVE_ALL_WEAPON:
-            str_format(aBuf, 256, "%s : All get all weapons when respawn ! | Remaininig %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            str_format(aBuf, 256, "%s : All get all weapons when respawn ! | Remaining %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
         case GRAVITY_0_25:
             str_format(aBuf, 256, "%s : Gravity modified to 0.25 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
@@ -280,11 +279,11 @@ bool CEvent::CanBeUsed(int NewEvent, int Type, bool Canuseactual)
     {
         if (NewEvent == m_ActualEvent[0] && !Canuseactual)
             return false;
-        else if (m_TwoEvent && NewEvent == m_ActualEvent[1] && !Canuseactual)
+        else if (g_Config.m_SvTwoEvent && NewEvent == m_ActualEvent[1] && !Canuseactual)
             return false;
-        else if (m_TwoEvent && NewEvent >= GUN && NewEvent <= KATANA && m_ActualEvent[1] >= GUN && m_ActualEvent[1] <= KATANA)
+        else if (g_Config.m_SvTwoEvent && NewEvent >= GUN && NewEvent <= KATANA && m_ActualEvent[1] >= GUN && m_ActualEvent[1] <= KATANA)
             return false;
-        else if (m_TwoEvent && NewEvent >= RACE_WARRIOR && NewEvent <= RACE_RANDOM && m_ActualEvent[1] >= RACE_WARRIOR && m_ActualEvent[1] <= RACE_RANDOM)
+        else if (g_Config.m_SvTwoEvent && NewEvent >= RACE_WARRIOR && NewEvent <= RACE_RANDOM && m_ActualEvent[1] >= RACE_WARRIOR && m_ActualEvent[1] <= RACE_RANDOM)
             return false;
         else if (NewEvent == SURVIVOR && Controller()->IsTeamplay())
             return false;
@@ -326,11 +325,13 @@ bool CEvent::CanBeUsed(int NewEvent, int Type, bool Canuseactual)
                 return false;
             else if (m_ActualEvent[0] == BULLET_GLUE && (NewEvent == BULLET_PIERCING || NewEvent == BULLET_BOUNCE))
                 return false;
+            else if (NewEvent == ALL)
+                return false;
         }
     }
     else if ( Type == 3 )
     {
-        if (NewEvent == m_ActualEventTeam&& !Canuseactual)
+        if (NewEvent == m_ActualEventTeam && !Canuseactual)
             return false;
         else if (NewEvent >= T_SURVIVOR && str_comp(g_Config.m_SvGametype, "ctf") == 0)
             return false;

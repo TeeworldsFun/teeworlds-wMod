@@ -14,6 +14,7 @@
 #include "gamemodes/ctf.h"
 #include "gamemodes/mod.h"
 #include "entities/projectile.h"
+#include "entities/turret.h"
 #include "statistiques.h"
 #include "event.h"
 
@@ -177,6 +178,18 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
             float Dmg = 6 * l;
             if((int)Dmg)
                 apEnts[i]->TakeDamage(ForceDir*Dmg*2, (int)Dmg, Owner, Weapon, false);
+        }
+
+        CTurret *apEntsTurret[MAX_CLIENTS * 5];
+        Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEntsTurret, MAX_CLIENTS * 5, CGameWorld::ENTTYPE_TURRET);
+        for(int i = 0; i < Num; i++)
+        {
+            vec2 Diff = apEntsTurret[i]->m_Pos - Pos;
+            float l = length(Diff);
+            l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
+            float Dmg = 6 * l;
+            if((int)Dmg)
+                apEntsTurret[i]->TakeDamage((int)Dmg, Owner, Weapon, false);
         }
     }
 }
@@ -441,12 +454,35 @@ void CGameContext::SendTuningParams(int ClientID)
     CTuningParams User = m_Tuning;
     if ( ClientID >= 0 )
     {
-        User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_speed);
-        User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_speed);
-        User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_accel);
-        User.Set("air_control_accel", m_Tuning.m_AirControlAccel * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_accel);
-        User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_high_jump);
-        User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_high_jump);
+        float RateSpeed = 1.0f;
+        float RateAccel = 1.0f;
+        float RateHighJump = 1.0f;
+        float RateLengthHook = 1.0f;
+        float RateSpeedHook = 1.0f;
+        if (m_pStatistiques->GetActualKill(m_apPlayers[ClientID]->GetSID()) >= 5)
+        {
+            RateSpeed *= 1.5f;
+            RateAccel *= 1.5f;
+        }
+        if (!m_pEventsGame->IsActualEvent(SPEED_X10))
+        {
+            RateSpeed *= m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_speed;
+            RateAccel *= m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_accel;
+            RateSpeedHook *= m_pStatistiques->GetStatHook(m_apPlayers[ClientID]->GetSID()).m_rate_speed;
+        }
+        if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
+            RateHighJump *= m_pStatistiques->GetStatMove(m_apPlayers[ClientID]->GetSID()).m_rate_high_jump;
+        if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
+            RateLengthHook *= m_pStatistiques->GetStatHook(m_apPlayers[ClientID]->GetSID()).m_rate_length;
+
+        User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
+        User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
+        User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
+        User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
+        User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
+        User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
+        User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
+        User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
 
         CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
         int *pParams = (int *)&User;
@@ -461,12 +497,36 @@ void CGameContext::SendTuningParams(int ClientID)
             if(!m_apPlayers[i])
                 continue;
 
-            User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_speed);
-            User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_speed);
-            User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_accel);
-            User.Set("air_control_accel", m_Tuning.m_AirControlAccel * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_accel);
-            User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_high_jump);
-            User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_high_jump);
+            float RateSpeed = 1.0f;
+            float RateAccel = 1.0f;
+            float RateHighJump = 1.0f;
+            float RateLengthHook = 1.0f;
+            float RateSpeedHook = 1.0f;
+            if (m_pStatistiques->GetActualKill(m_apPlayers[i]->GetSID()) >= 5)
+            {
+                RateSpeed *= 1.5f;
+                RateAccel *= 1.5f;
+            }
+            if (!m_pEventsGame->IsActualEvent(SPEED_X10))
+            {
+                RateSpeed *= m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_speed;
+                RateAccel *= m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_accel;
+                RateSpeedHook *= m_pStatistiques->GetStatHook(m_apPlayers[i]->GetSID()).m_rate_speed;
+            }
+            if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
+                RateHighJump *= m_pStatistiques->GetStatMove(m_apPlayers[i]->GetSID()).m_rate_high_jump;
+            if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
+                RateLengthHook *= m_pStatistiques->GetStatHook(m_apPlayers[i]->GetSID()).m_rate_length;
+
+            User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
+            User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
+            User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
+            User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
+            User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
+            User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
+            User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
+            User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
+            User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
 
             CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
             int *pParams = (int *)&User;
@@ -725,11 +785,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
         else
             Team = CGameContext::CHAT_ALL;
 
-        if(g_Config.m_SvSpamprotection && pPlayer->m_LastChat && pPlayer->m_LastChat+Server()->TickSpeed() > Server()->Tick())
-            return;
-
-        pPlayer->m_LastChat = Server()->Tick();
-
         // check for invalid chars
         unsigned char *pMessage = (unsigned char *)pMsg->m_pMessage;
         while (*pMessage)
@@ -738,6 +793,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 *pMessage = ' ';
             pMessage++;
         }
+
+        if(g_Config.m_SvSpamprotection && pPlayer->m_LastChat && pPlayer->m_LastChat+Server()->TickSpeed() > Server()->Tick() && pMsg->m_pMessage[0] != '/')
+            return;
+
+        pPlayer->m_LastChat = Server()->Tick();
 
         if(pMsg->m_pMessage[0]=='/')
         {
@@ -751,7 +811,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 SendChatTarget(ClientID, "/stats or /ranks : To get your statistics or your rank.");
                 SendChatTarget(ClientID, "/player or /upgr : To get or to add your upgrades.");
                 SendChatTarget(ClientID, "/conf : To change yours settings.");
-                SendChatTarget(ClientID, "/reset_stats or /reset_all_stats : To reset partially or all your statistics.");
+                SendChatTarget(ClientID, "/reset_stats or /reset_all_stats or /reset_upgr: To reset partially or all your statistics.");
             }
             else if(str_comp_nocase(pMsg->m_pMessage, "/info") == 0)
             {
@@ -1315,9 +1375,20 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 SendChatTarget(ClientID, "Description : Enable or disable functionnality.");
             }
             else if(str_comp_nocase(pMsg->m_pMessage, "/reset_stats") == 0)
+            {
                 m_pStatistiques->ResetPartialStat(m_apPlayers[ClientID]->GetSID());
+                SendChatTarget(ClientID, "Your statistics have been partially resetted !");
+            }
             else if(str_comp_nocase(pMsg->m_pMessage, "/reset_all_stats") == 0)
+            {
                 m_pStatistiques->ResetAllStat(m_apPlayers[ClientID]->GetSID());
+                SendChatTarget(ClientID, "Your statistics have been resetted !");
+            }
+            else if(str_comp_nocase(pMsg->m_pMessage, "/reset_upgr") == 0)
+            {
+                m_pStatistiques->ResetUpgr(m_apPlayers[ClientID]->GetSID());
+                SendChatTarget(ClientID, "Your upgrades have been resetted !");
+            }
             else
             {
                 char error[256] = "";
@@ -1452,7 +1523,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
         }
         else if(str_comp_nocase(pMsg->m_Type, "spectate") == 0)
         {
-            if(!g_Config.m_SvVoteSpectate)
+            if(!g_Config.m_SvVoteSpectate && !m_pEventsGame->IsActualEvent(SURVIVOR) && (!m_pController->IsTeamplay() || !m_pEventsGame->GetActualEventTeam() != T_SURVIVOR) )
             {
                 SendChatTarget(ClientID, "Server does not allow voting to move players to spectators");
                 return;
@@ -1501,7 +1572,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             CNetMsg_Cl_Vote *pMsg = (CNetMsg_Cl_Vote *)pRawMsg;
             if(!pMsg->m_Vote)
                 return;
-
 
             if(g_Config.m_SvShowPersonalVote)
             {
@@ -2199,18 +2269,6 @@ void CGameContext::ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserDa
         pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
 }
 
-void CGameContext::ConSetTwoEvent(IConsole::IResult *pResult, void *pUserData)
-{
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    if ( !pSelf->m_pController->IsTeamplay() )
-        pSelf->m_pEventsGame->SetTwoEvent();
-    else
-    {
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Can't activate Two Events with teams");
-        pSelf->SendChatTarget(-1, "Can't activate Two Events with teams !");
-    }
-}
-
 void CGameContext::ConListPlayer(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
@@ -2573,8 +2631,6 @@ void CGameContext::OnConsoleInit()
     Console()->Register("next_random_event_team", "", CFGFLAG_SERVER, ConNextRandomEventTeam, this, "Next Random Event for the game.");
     Console()->Register("set_event_team", "i", CFGFLAG_SERVER, ConSetEventTeam, this, "Set Event for the game.");
     Console()->Register("add_time_event_team", "?i", CFGFLAG_SERVER, ConAddTimeEventTeam, this, "Add more time to the actual Event.");
-
-    Console()->Register("set_two_event", "", CFGFLAG_SERVER, ConSetTwoEvent, this, "Activate/Desactivate Two Events");
 
     Console()->Register("list_player", "", CFGFLAG_SERVER, ConListPlayer, this, "List name players, clients id and statistics id.");
     Console()->Register("shotgun", "i", CFGFLAG_SERVER, ConGiveShotgun, this, "Give shotgun to the player with this client id.");

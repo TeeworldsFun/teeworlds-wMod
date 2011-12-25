@@ -44,7 +44,7 @@ enum
 {
     NET_VERSION = 2,
 
-    NET_MAX_PACKETSIZE = 2048,
+	NET_MAX_PACKETSIZE = 1400,
     NET_MAX_PAYLOAD = NET_MAX_PACKETSIZE-6,
     NET_MAX_CHUNKHEADERSIZE = 5,
     NET_PACKETHEADERSIZE = 3,
@@ -181,34 +181,16 @@ public:
 
     const char *ErrorString();
     void SignalResend();
-    int State() const
-    {
-        return m_State;
-    }
-    NETADDR PeerAddress() const
-    {
-        return m_PeerAddr;
-    }
+	int State() const { return m_State; }
+	NETADDR PeerAddress() const { return m_PeerAddr; }
 
-    void ResetErrorString()
-    {
-        m_ErrorString[0] = 0;
-    }
-    const char *ErrorString() const
-    {
-        return m_ErrorString;
-    }
+	void ResetErrorString() { m_ErrorString[0] = 0; }
+	const char *ErrorString() const { return m_ErrorString; }
 
-    // Needed for GotProblems in NetClient
-    int64 LastRecvTime() const
-    {
-        return m_LastRecvTime;
-    }
+	// Needed for GotProblems in NetClient
+	int64 LastRecvTime() const { return m_LastRecvTime; }
 
-    int AckSequence() const
-    {
-        return m_Ack;
-    }
+	int AckSequence() const { return m_Ack; }
 };
 
 class CConsoleNetConnection
@@ -231,18 +213,9 @@ public:
     void Init(NETSOCKET Socket, const NETADDR *pAddr);
     void Disconnect(const char *pReason);
 
-    int State() const
-    {
-        return m_State;
-    }
-    NETADDR PeerAddress() const
-    {
-        return m_PeerAddr;
-    }
-    const char *ErrorString() const
-    {
-        return m_aErrorString;
-    }
+	int State() const { return m_State; }
+	NETADDR PeerAddress() const { return m_PeerAddr; }
+	const char *ErrorString() const { return m_aErrorString; }
 
     void Reset();
     int Update();
@@ -262,10 +235,7 @@ public:
     CNetPacketConstruct m_Data;
     unsigned char m_aBuffer[NET_MAX_PACKETSIZE];
 
-    CNetRecvUnpacker()
-    {
-        Clear();
-    }
+	CNetRecvUnpacker() { Clear(); }
     void Clear();
     void Start(const NETADDR *pAddr, CNetConnection *pConnection, int ClientID);
     int FetchChunk(CNetChunk *pChunk);
@@ -404,10 +374,7 @@ public:
     bool AddBan(NETADDR Addr, int Seconds);
 
     // status requests
-    NETADDR ClientAddr(int ClientID) const
-    {
-        return m_aSlots[ClientID].m_Connection.PeerAddress();
-    }
+	NETADDR ClientAddr(int ClientID) const { return m_aSlots[ClientID].m_Connection.PeerAddress(); }
 };
 
 
@@ -439,10 +406,7 @@ public:
     int ResetErrorString();
 
     // error and state
-    int NetType()
-    {
-        return m_Socket.type;
-    }
+	int NetType() { return m_Socket.type; }
     int State();
     int GotProblems();
     const char *ErrorString();

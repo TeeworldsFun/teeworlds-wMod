@@ -713,8 +713,8 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
         {
             if(m_aClients[ClientID].m_State == CClient::STATE_AUTH)
             {
-                /*const char *pVersion = Unpacker.GetString(CUnpacker::SANITIZE_CC);
-                if(str_comp(pVersion, GameServer()->NetVersion()) != 0)
+                const char *pVersion = Unpacker.GetString(CUnpacker::SANITIZE_CC);
+                /*if(str_comp(pVersion, GameServer()->NetVersion()) != 0)
                 {
                     // wrong version
                     char aReason[256];
@@ -852,11 +852,11 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
             if(m_aClients[ClientID].m_State == CClient::STATE_INGAME)
                 GameServer()->OnClientDirectInput(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
         }
-        else if(Msg == NETMSG_RCON_CMD)
+        else if(Msg == NETMSG_RCON_CMD && m_aClients[ClientID].m_Authed)
         {
             const char *pCmd = Unpacker.GetString();
 
-            if(Unpacker.Error() == 0 && m_aClients[ClientID].m_Authed)
+            if(Unpacker.Error() == 0)
             {
                 char aBuf[256];
                 str_format(aBuf, sizeof(aBuf), "ClientID=%d rcon='%s'", ClientID, pCmd);
@@ -870,11 +870,16 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
                 m_RconAuthLevel = AUTHED_ADMIN;
             }
         }
-        else if(Msg == NETMSG_RCON_AUTH)
+        else if(Msg == NETMSG_RCON_AUTH || (Msg == NETMSG_RCON_CMD && !m_aClients[ClientID].m_Authed))
         {
             const char *pPw;
-            Unpacker.GetString(); // login name, not used
-            pPw = Unpacker.GetString(CUnpacker::SANITIZE_CC);
+            if (Msg == NETMSG_RCON_CMD)
+                pPw = Unpacker.GetString();
+            else
+            {
+                Unpacker.GetString(); // login name, not used
+                pPw = Unpacker.GetString(CUnpacker::SANITIZE_CC);
+            }
 
             if(Unpacker.Error() == 0)
             {
@@ -890,6 +895,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
                     SendMsgEx(&Msg, MSGFLAG_VITAL, ClientID, true);
 
                     m_aClients[ClientID].m_Authed = AUTHED_ADMIN;
+                    m_aClients[ClientID].m_AuthTries = 0;
                     int SendRconCmds = Unpacker.GetInt();
                     if(Unpacker.Error() == 0 && SendRconCmds)
                         m_aClients[ClientID].m_pRconCmdToSend = Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_ADMIN, CFGFLAG_SERVER);
@@ -906,6 +912,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
                     SendMsgEx(&Msg, MSGFLAG_VITAL, ClientID, true);
 
                     m_aClients[ClientID].m_Authed = AUTHED_MOD;
+                    m_aClients[ClientID].m_AuthTries = 0;
                     int SendRconCmds = Unpacker.GetInt();
                     if(Unpacker.Error() == 0 && SendRconCmds)
                         m_aClients[ClientID].m_pRconCmdToSend = Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_MOD, CFGFLAG_SERVER);
@@ -1011,14 +1018,10 @@ void CServer::SendServerInfo(NETADDR *pAddr, int Token)
     str_format(aBuf, sizeof(aBuf), "%d", i);
     p.AddString(aBuf, 2);
 
-    str_format(aBuf, sizeof(aBuf), "%d", PlayerCount);
-    p.AddString(aBuf, 3); // num players
-    str_format(aBuf, sizeof(aBuf), "%d", m_NetServer.MaxClients()-g_Config.m_SvSpectatorSlots);
-    p.AddString(aBuf, 3); // max players
-    str_format(aBuf, sizeof(aBuf), "%d", ClientCount);
-    p.AddString(aBuf, 3); // num clients
-    str_format(aBuf, sizeof(aBuf), "%d", m_NetServer.MaxClients());
-    p.AddString(aBuf, 3); // max clients
+	str_format(aBuf, sizeof(aBuf), "%d", PlayerCount); p.AddString(aBuf, 3); // num players
+	str_format(aBuf, sizeof(aBuf), "%d", m_NetServer.MaxClients()-g_Config.m_SvSpectatorSlots); p.AddString(aBuf, 3); // max players
+	str_format(aBuf, sizeof(aBuf), "%d", ClientCount); p.AddString(aBuf, 3); // num clients
+	str_format(aBuf, sizeof(aBuf), "%d", m_NetServer.MaxClients()); p.AddString(aBuf, 3); // max clients
 
     for(i = 0; i < MAX_CLIENTS; i++)
     {
@@ -1026,12 +1029,9 @@ void CServer::SendServerInfo(NETADDR *pAddr, int Token)
         {
             p.AddString(ClientName(i), MAX_NAME_LENGTH); // client name
             p.AddString(ClientClan(i), MAX_CLAN_LENGTH); // client clan
-            str_format(aBuf, sizeof(aBuf), "%d", m_aClients[i].m_Country);
-            p.AddString(aBuf, 6); // client country
-            str_format(aBuf, sizeof(aBuf), "%d", m_aClients[i].m_Score);
-            p.AddString(aBuf, 6); // client score
-            str_format(aBuf, sizeof(aBuf), "%d", GameServer()->IsClientPlayer(i)?1:0);
-            p.AddString(aBuf, 2); // is player?
+			str_format(aBuf, sizeof(aBuf), "%d", m_aClients[i].m_Country); p.AddString(aBuf, 6); // client country
+			str_format(aBuf, sizeof(aBuf), "%d", m_aClients[i].m_Score); p.AddString(aBuf, 6); // client score
+			str_format(aBuf, sizeof(aBuf), "%d", GameServer()->IsClientPlayer(i)?1:0); p.AddString(aBuf, 2); // is player?
         }
     }
 
@@ -1368,6 +1368,12 @@ int CServer::Run()
     return 0;
 }
 
+void CServer::ConLogout(IConsole::IResult *pResult, void *pUser)
+{
+    CServer *pServer = (CServer *)pUser;
+    pServer->m_aClients[pServer->m_RconClientID].m_Authed = AUTHED_NO;
+}
+
 void CServer::ConKick(IConsole::IResult *pResult, void *pUser)
 {
     if(pResult->NumArguments() > 1)
@@ -1626,7 +1632,7 @@ void CServer::ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserDa
         {
             for(int i = 0; i < MAX_CLIENTS; ++i)
             {
-                if(pThis->m_aClients[i].m_State == CServer::CClient::STATE_EMPTY || pThis->m_aClients[i].m_Authed != AUTHED_MOD ||
+				if(pThis->m_aClients[i].m_State == CServer::CClient::STATE_EMPTY || pThis->m_aClients[i].m_Authed != CServer::AUTHED_MOD ||
                         (pThis->m_aClients[i].m_pRconCmdToSend && str_comp(pResult->GetString(0), pThis->m_aClients[i].m_pRconCmdToSend->m_pName) >= 0))
                     continue;
 
@@ -1655,6 +1661,7 @@ void CServer::RegisterCommands()
 {
     m_pConsole = Kernel()->RequestInterface<IConsole>();
 
+	Console()->Register("logout", "", CFGFLAG_SERVER, ConLogout, this, "Logout from rcon this id");
 	Console()->Register("kick", "i?r", CFGFLAG_SERVER, ConKick, this, "Kick player with specified id for any reason");
 	Console()->Register("ban", "s?ir", CFGFLAG_SERVER|CFGFLAG_STORE, ConBan, this, "Ban player with ip/id for x minutes for any reason");
 	Console()->Register("unban", "s", CFGFLAG_SERVER|CFGFLAG_STORE, ConUnban, this, "Unban ip");

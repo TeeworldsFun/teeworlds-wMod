@@ -102,6 +102,7 @@ private:
     struct StatWeapon *m_stat_weapon;
     struct StatLife *m_stat_life;
     struct StatMove *m_stat_move;
+    struct StatHook *m_stat_hook;
 
     struct WeaponStat
     {
@@ -119,6 +120,8 @@ private:
     int m_ReloadTimer;
     int m_AttackTick;
     int m_SoundReloadStart;
+
+    int m_AttackHookTick;
 
     int m_DamageTaken;
 

@@ -37,6 +37,14 @@ struct StatMove
     int m_num_jump;
 };
 
+struct StatHook
+{
+    float m_rate_length;
+    float m_rate_time;
+    float m_rate_speed;
+    bool m_hook_damage;
+};
+
 struct Upgrade
 {
     unsigned long m_money;
@@ -47,6 +55,7 @@ struct Upgrade
     StatWeapon m_stat_weapon;
     StatLife m_stat_life;
     StatMove m_stat_move;
+    StatHook m_stat_hook;
 };
 
 struct Rank
@@ -107,6 +116,7 @@ struct Stats
         m_killing_spree = 0;
         m_max_killing_spree = 0;
         m_flag_capture = 0;
+        m_bonus_xp = 0;
         m_start_time = 0;
         m_actual_kill = 0;
         m_last_connect = 0;
@@ -170,6 +180,7 @@ struct Stats
     unsigned long m_killing_spree;
     unsigned long m_max_killing_spree;
     unsigned long m_flag_capture;
+    unsigned long m_bonus_xp;
     unsigned long m_last_connect;
 
     Conf m_conf;
@@ -220,6 +231,10 @@ public:
     {
         return m_statistiques[id].m_upgrade.m_stat_move;
     }
+    inline StatHook GetStatHook(long id)
+    {
+        return m_statistiques[id].m_upgrade.m_stat_hook;
+    }
     inline Conf GetConf(long id)
     {
         return m_statistiques[id].m_conf;
@@ -238,15 +253,19 @@ public:
 
     void ResetPartialStat(long id);
     void ResetAllStat(long id);
+    void ResetUpgr(long id);
 
-    inline void AddKill(long id)
+    inline void AddKill(long id, long id_victim)
     {
         m_statistiques[id].m_actual_kill++;
         if ( m_statistiques[id].m_conf.m_Lock )
-        {
             return;
-        }
+
         m_statistiques[id].m_kill++;
+        if (!m_statistiques[id].m_level)
+            m_statistiques[id].m_level = 1;
+        if (static_cast<long long>(m_statistiques[id_victim].m_level/m_statistiques[id].m_level) - 1 > 0)
+            m_statistiques[id].m_bonus_xp += (m_statistiques[id_victim].m_level/m_statistiques[id].m_level) - 1;
     }
     inline void AddDead(long id)
     {

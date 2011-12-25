@@ -13,12 +13,19 @@ public:
     virtual void Tick();
     virtual void Snap(int SnappingClient);
 
+    int GetOwner() { return m_Owner; };
     int GetStartTick() { return m_StartTick; };
     void ResetStartTick() { m_StartTick = Server()->Tick(); m_LastTick = m_StartTick; };
+    bool TakeDamage(int Dmg, int From, int Weapon, bool Instagib);
+    
+    bool m_Destroy;
 private:
     int m_Owner;
     int m_StartTick;
     int m_LastTick;
+    int m_Health;
+    int m_DamageTaken;
+    int m_DamageTakenTick;
 };
 
 #endif

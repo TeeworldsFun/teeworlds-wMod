@@ -2,6 +2,7 @@
 #define GAME_SERVER_EVENT_H
 
 #include <game/server/gamecontext.h>
+#include <engine/shared/config.h>
 
 enum {NOTHING, HAMMER, GUN, SHOTGUN, GRENADE, RIFLE, KATANA, UNLIMITED_AMMO, LIFE_ARMOR_CRAZY, SURVIVOR, PROTECT_X2, INSTAGIB, WALLSHOT, BULLET_PIERCING, BULLET_BOUNCE, BULLET_GLUE, HAVE_ALL_WEAPON, GRAVITY_0_25, GRAVITY_0, GRAVITY_M0_25, GRAVITY_M0_5, BOUNCE_10, HOOK_VERY_LONG, SPEED_X10,  WEAPON_SLOW, RACE_WARRIOR, RACE_ENGINEER, RACE_ORC, RACE_MINER, RACE_RANDOM, JUMP_UNLIMITED, JUMP_X1_5, ALL, END};
 
@@ -14,13 +15,9 @@ public:
     ~CEvent();
     void Tick();
 
-    inline bool IsTwoEvent()
-    {
-        return m_TwoEvent;
-    };
     inline bool IsActualEvent(int Event)
     {
-        if (Event == m_ActualEvent[0] || (IsTwoEvent() && Event == m_ActualEvent[1]) || (m_ActualEvent[0] == ALL && (Event > KATANA || Event < SHOTGUN) && Event != WALLSHOT && Event != SURVIVOR && Event != GRAVITY_0 && Event != GRAVITY_M0_25 && Event != GRAVITY_M0_5 && Event != BULLET_PIERCING && Event != BULLET_GLUE && (Event <= RACE_WARRIOR || Event > RACE_RANDOM)))
+        if (Event == m_ActualEvent[0] || (g_Config.m_SvTwoEvent && Event == m_ActualEvent[1]) || (m_ActualEvent[0] == ALL && (Event > KATANA || Event < SHOTGUN) && Event != WALLSHOT && Event != SURVIVOR && Event != GRAVITY_0 && Event != GRAVITY_M0_25 && Event != GRAVITY_M0_5 && Event != BULLET_PIERCING && Event != BULLET_GLUE && (Event <= RACE_WARRIOR || Event > RACE_RANDOM)))
         {
             return true;
         }
@@ -39,20 +36,6 @@ public:
     void NextRandomEvent();
     bool SetEvent(int event);
     bool AddTime(long secondes = 150);
-
-    inline void SetTwoEvent()
-    {
-        if (m_TwoEvent)
-        {
-            m_TwoEvent = false;
-            return;
-        }
-        else if ( !Controller()->IsTeamplay() )
-        {
-            m_TwoEvent = true;
-            return;
-        }
-    };
 
     void NextEventTeam();
     void NextRandomEventTeam();
@@ -78,7 +61,6 @@ private:
     bool CanBeUsed(int NewEvent, int Type = 0, bool Canuseactual = false);
     void SetTune();
     void ResetTune();
-    bool m_TwoEvent;
     int m_ActualEvent[2];
     int m_ActualEventTeam;
     int m_StartEvent[2];

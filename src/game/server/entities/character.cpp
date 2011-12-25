@@ -61,6 +61,7 @@ CCharacter::CCharacter(CGameWorld *pWorld)
     m_stat_weapon = new StatWeapon;
     m_stat_life = new StatLife;
     m_stat_move = new StatMove;
+    m_stat_hook = new StatHook;
 }
 
 CCharacter::~CCharacter()
@@ -105,6 +106,7 @@ CCharacter::~CCharacter()
     delete m_stat_weapon;
     delete m_stat_life;
     delete m_stat_move;
+    delete m_stat_hook;
 }
 
 void CCharacter::Reset()
@@ -139,6 +141,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
     *m_stat_weapon = GameServer()->m_pStatistiques->GetStatWeapon(m_pPlayer->GetSID());
     *m_stat_life = GameServer()->m_pStatistiques->GetStatLife(m_pPlayer->GetSID());
     *m_stat_move = GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID());
+    *m_stat_hook = GameServer()->m_pStatistiques->GetStatHook(m_pPlayer->GetSID());
 
     m_Protect = Server()->Tick();
     m_AuraProtect[0] = 0;
@@ -167,6 +170,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
     m_Teleporter[9] = 0;
 
     m_JumpTick = 0;
+    m_AttackHookTick = 0;
 
     GameServer()->m_World.InsertEntity(this);
     m_Alive = true;
@@ -685,19 +689,19 @@ void CCharacter::FireWeapon()
         }
         else if ( Race == ENGINEER )
         {
-            int ShotSpread = 72;
+            int ShotSpread = 36;
 
             CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
             Msg.AddInt(ShotSpread*2+1);
 
-            float Spreading[145] = {0};
+            float Spreading[73] = {0};
             for (int i = -ShotSpread; i <= ShotSpread; ++i)
-                Spreading[i+72] = (i * 2.5f)*M_PIl/180;
+                Spreading[i+36] = (i * 5.0f)*M_PIl/180;
 
             for(int i = -ShotSpread; i <= ShotSpread; ++i)
             {
                 float a = GetAngle(Direction);
-                a += Spreading[i+72];
+                a += Spreading[i+36];
                 float v = 1-(absolute(i)/(float)ShotSpread);
                 float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
                 CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
@@ -1143,7 +1147,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 
 bool CCharacter::GiveNinja()
 {
-    if ( !m_aWeapons[WEAPON_NINJA].m_Got || m_Ninja.m_Killed > 0 )
+    if ( !m_aWeapons[WEAPON_NINJA].m_Got || m_Ninja.m_Killed > 0 || GameServer()->m_pEventsGame->IsActualEvent(KATANA) )
     {
         m_aWeapons[WEAPON_NINJA].m_Got = true;
         m_aWeapons[WEAPON_NINJA].m_Ammo = -1;
@@ -1242,14 +1246,44 @@ void CCharacter::Tick()
     if (IsGrounded())
         m_NumJumped = 1;
 
-    if(m_Core.m_Jumped & 2 && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000 && (GameServer()->m_pEventsGame->IsActualEvent(JUMP_UNLIMITED) || m_NumJumped < m_stat_move->m_num_jump || m_stat_move->m_num_jump == -1))
+    if(m_Core.m_Jumped & 2 && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000 && (GameServer()->m_pEventsGame->IsActualEvent(JUMP_UNLIMITED) || m_NumJumped < m_stat_move->m_num_jump || m_stat_move->m_num_jump == -1 || GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) >= 5))
         m_Core.m_Jumped &= ~2;
 
     m_Core.m_Input = m_Input;
-    m_Core.Tick(true, m_stat_move->m_rate_speed, m_stat_move->m_rate_accel, m_stat_move->m_rate_high_jump * static_cast<float>(GameServer()->m_pEventsGame->IsActualEvent(JUMP_X1_5) ? 1.5f : 1));
+    float RateSpeed = 1.0f;
+    float RateAccel = 1.0f;
+    float RateHighJump = 1.0f;
+    float RateLengthHook = 1.0f;
+    float RateTimeHook = m_stat_hook->m_rate_time;
+    float RateSpeedHook = 1.0f;
+    if (GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) >= 5)
+    {
+        RateSpeed *= 1.5f;
+        RateAccel *= 1.5f;
+    }
+    if (!GameServer()->m_pEventsGame->IsActualEvent(SPEED_X10))
+    {
+        RateSpeed *= m_stat_move->m_rate_speed;
+        RateAccel *= m_stat_move->m_rate_accel;
+        RateSpeedHook *= m_stat_hook->m_rate_speed;
+    }
+    if (!GameServer()->m_pEventsGame->IsActualEvent(JUMP_X1_5))
+        RateHighJump *= m_stat_move->m_rate_high_jump;
+    if (!GameServer()->m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
+        RateLengthHook *= m_stat_hook->m_rate_length;
+
+    m_Core.Tick(true, RateSpeed, RateAccel, RateHighJump, RateLengthHook, RateTimeHook, RateSpeedHook);
 
     if(m_Input.m_Jump && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000)
          m_JumpTick = Server()->Tick();
+
+    if (m_stat_hook->m_hook_damage && Server()->Tick()-m_AttackHookTick >= 350 * Server()->TickSpeed()/1000 &&
+        m_Core.m_HookedPlayer >= 0 && GameServer()->m_apPlayers[m_Core.m_HookedPlayer] && GameServer()->m_apPlayers[m_Core.m_HookedPlayer]->GetCharacter() &&
+        (!GameServer()->m_pController->IsTeamplay() || GameServer()->m_apPlayers[m_Core.m_HookedPlayer]->GetTeam() != m_pPlayer->GetTeam()))
+    {
+        GameServer()->m_apPlayers[m_Core.m_HookedPlayer]->GetCharacter()->TakeDamage(vec2(0,0), 1, m_pPlayer->GetCID(), WEAPON_NINJA, false);
+        m_AttackHookTick = Server()->Tick();
+    }
 
     // handle death-tiles and leaving gamelayer
     if(GameServer()->Collision()->GetCollisionAt(m_Pos.x+m_ProximityRadius/3.f, m_Pos.y-m_ProximityRadius/3.f)&CCollision::COLFLAG_DEATH ||
@@ -1268,6 +1302,15 @@ void CCharacter::Tick()
             delete m_LaserWall[i];
             m_LaserWall[i] = 0;
             m_NumLaserWall--;
+        }
+    }
+
+    for ( int i = 0; i < 5; i++ )
+    {
+        if (m_Turret[i] != 0 && m_Turret[i]->m_Destroy)
+        {
+            delete m_Turret[i];
+            m_Turret[i] = 0;
         }
     }
 
@@ -1502,6 +1545,9 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib)
 {
+    if (!m_Alive)
+        return false;
+
     int FromRace = 0;
     if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_WARRIOR) )
         FromRace = WARRIOR;
@@ -1519,7 +1565,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
     if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || (FromRace == ORC && Weapon == WEAPON_RIFLE))
         Instagib = true;
 
-    if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) )
+    if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) || From == m_pPlayer->GetCID() )
         m_Core.m_Vel += Force;
 
     if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) &&
@@ -1584,7 +1630,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
             return false;
         }
     }
-    else if (Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && m_pPlayer->m_WeaponType[WEAPON_HAMMER] == WARRIOR && (!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || FromRace != WARRIOR))
+    else if (Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && m_pPlayer->m_WeaponType[WEAPON_HAMMER] == WARRIOR &&
+            (!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || FromRace != WARRIOR) && (FromRace != ENGINEER || Weapon != WEAPON_HAMMER))
         return false;
     else if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
         Dmg = max(1, Dmg/2);
@@ -1743,4 +1790,7 @@ void CCharacter::Snap(int SnappingClient)
     }
 
     pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
+    
+    if (pCharacter->m_HookTick > (SERVER_TICK_SPEED+SERVER_TICK_SPEED/5))
+        pCharacter->m_HookTick = SERVER_TICK_SPEED+SERVER_TICK_SPEED/10;
 }

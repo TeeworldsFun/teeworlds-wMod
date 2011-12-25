@@ -43,7 +43,7 @@ void CTeleporter::Tick()
         To.x = m_Next->m_Pos.x + alea.x;
         To.y = m_Next->m_Pos.y + alea.y;
     }
-    while (GameServer()->Collision()->TestBox(To, vec2(CCharacter::ms_PhysSize, CCharacter::ms_PhysSize)) || ((alea.x > 0 && alea.x < 10) || (alea.x < 0 && alea.x > -10)));
+    while (GameServer()->Collision()->TestBox(To, vec2(CCharacter::ms_PhysSize, CCharacter::ms_PhysSize)) || ((alea.x > 0 && alea.x < 10) || (alea.x < 0 && alea.x > -10)) || GameServer()->Collision()->IntersectLine(m_Next->m_Pos, To, 0, 0));
 
     TargetChr->SetPos(To);
 }

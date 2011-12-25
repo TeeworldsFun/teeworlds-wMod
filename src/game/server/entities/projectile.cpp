@@ -4,6 +4,7 @@
 #include <game/server/gamecontext.h>
 #include "game/server/event.h"
 #include "projectile.h"
+#include "turret.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
                          int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Limit, bool Smoke, bool Deploy, int Bounce)
@@ -72,6 +73,8 @@ void CProjectile::Tick()
     int Collide = distance(CurPos, PrevPos) ? GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0) : GameServer()->Collision()->CheckPoint(CurPos);
     CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
     CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
+    CTurret *TargetTurret = (CTurret *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 6.f, CurPos, CGameWorld::ENTTYPE_TURRET);
+
     if ( !distance(CurPos, PrevPos) && !TargetChr )
     {
         CCharacter *apEnts[MAX_CLIENTS] = {0};
@@ -124,7 +127,7 @@ void CProjectile::Tick()
         Server()->SendMsg(&Msg, 0, m_Owner);
     }
 
-    if(TargetChr || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
+    if(TargetChr || TargetTurret || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
     {
         if(Collide && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
             GameServer()->CreateSound(CurPos, m_SoundImpact);
@@ -134,6 +137,9 @@ void CProjectile::Tick()
 
         if(TargetChr && TargetChr->IsAlive())
             TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon, false);
+
+        if(TargetTurret)
+            TargetTurret->TakeDamage(m_Damage, m_Owner, m_Weapon, false);
 
         if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) && m_Bounce <= 0 && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE)) || m_LifeSpan < 0)
         {

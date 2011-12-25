@@ -157,6 +157,7 @@ public:
 	int Init();
 
 	int IsAuthed(int ClientID);
+	void Logout(int ClientID);
 	int GetClientInfo(int ClientID, CClientInfo *pInfo);
 	void GetClientAddr(int ClientID, char *pAddrStr, int Size);
 	const char *ClientName(int ClientID);
@@ -199,6 +200,7 @@ public:
 	void InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole);
 	int Run();
 
+    static void ConLogout(IConsole::IResult *pResult, void *pUser);
 	static void ConKick(IConsole::IResult *pResult, void *pUser);
 	static void ConBan(IConsole::IResult *pResult, void *pUser);
 	static void ConUnban(IConsole::IResult *pResult, void *pUser);

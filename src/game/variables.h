@@ -83,7 +83,7 @@ MACRO_CONFIG_INT(SvVoteKickBantime, sv_vote_kick_bantime, 5, 0, 1440, CFGFLAG_SE
 MACRO_CONFIG_INT(SvShowPersonalVote, sv_show_personalvote, 1, 0, 1, CFGFLAG_SERVER, "Shows from message on vote")
 MACRO_CONFIG_INT(SvForceVoteReason, sv_force_votereason, 0, 0, 1, CFGFLAG_SERVER, "Votereason needed or not")
 
-MACRO_CONFIG_INT(SvAnticamper, sv_anticamper, 1, 0, 1, CFGFLAG_SERVER, "Anticamper")
+MACRO_CONFIG_INT(SvTwoEvent, sv_two_event, 0, 0, 1, CFGFLAG_SERVER, "Two Event")
 
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly

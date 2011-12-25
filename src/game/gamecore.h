@@ -216,7 +216,7 @@ public:
 
     void Init(CWorldCore *pWorld, CCollision *pCollision);
     void Reset();
-    void Tick(bool UseInput, float RateSpeed = 1, float RateAccel = 1, float RateHighJump = 1);
+    void Tick(bool UseInput, float RateSpeed = 1, float RateAccel = 1, float RateHighJump = 1, float RateLengthHook = 1, float RateTimeHook = 1, float RateSpeedHook = 1);
     void Move();
 
     void Read(const CNetObj_CharacterCore *pObjCore);

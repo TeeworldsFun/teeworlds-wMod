@@ -60,6 +60,7 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
             m_statistiques[i].m_start_time = 0;
             m_statistiques[i].m_actual_kill = 0;
             UpdateStat(i);
+            ResetUpgr(i);
             UpdateUpgrade(i);
         }
     }
@@ -86,6 +87,7 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
             fichier >> m_statistiques[i].m_killing_spree;
             fichier >> m_statistiques[i].m_max_killing_spree;
             fichier >> m_statistiques[i].m_flag_capture;
+            fichier >> m_statistiques[i].m_bonus_xp;
             fichier >> m_statistiques[i].m_last_connect;
             fichier >> m_statistiques[i].m_conf.m_InfoHealKiller;
             fichier >> m_statistiques[i].m_conf.m_InfoXP;
@@ -304,8 +306,8 @@ void CStatistiques::UpdateStat(long id)
     else
         m_statistiques[id].m_score = 0;
 
-    m_statistiques[id].m_level = floor(((-1)+sqrt(1+(8*(m_statistiques[id].m_kill + m_statistiques[id].m_killing_spree + (m_statistiques[id].m_flag_capture * 5)))))/2);
-    m_statistiques[id].m_xp = (m_statistiques[id].m_kill + m_statistiques[id].m_killing_spree + (m_statistiques[id].m_flag_capture * 5)) - (m_statistiques[id].m_level * (m_statistiques[id].m_level + 1))/2;
+    m_statistiques[id].m_level = floor(((-1)+sqrt(1+(8*(m_statistiques[id].m_kill + m_statistiques[id].m_killing_spree + (m_statistiques[id].m_flag_capture * 5) + m_statistiques[id].m_bonus_xp))))/2);
+    m_statistiques[id].m_xp = (m_statistiques[id].m_kill + m_statistiques[id].m_killing_spree + (m_statistiques[id].m_flag_capture * 5) + m_statistiques[id].m_bonus_xp) - ((m_statistiques[id].m_level * (m_statistiques[id].m_level + 1))/2);
 
     if ( m_statistiques[id].m_start_time != 0 && !m_statistiques[id].m_conf.m_Lock)
     {
@@ -357,18 +359,18 @@ void CStatistiques::UpdateUpgrade(long id)
     else
         m_statistiques[id].m_upgrade.m_stat_weapon.m_bounce = 0;
 
-    m_statistiques[id].m_upgrade.m_stat_life.m_protection = 1 + ((int)((m_statistiques[id].m_upgrade.m_life + 3)/4) / 10.0f);
+    m_statistiques[id].m_upgrade.m_stat_life.m_protection = 1 + ((int)((m_statistiques[id].m_upgrade.m_life + 3)/4) / 5.0f);
     m_statistiques[id].m_upgrade.m_stat_life.m_start_armor = (int)(m_statistiques[id].m_upgrade.m_life + 2)/4;
     m_statistiques[id].m_upgrade.m_stat_life.m_regeneration = (int)(m_statistiques[id].m_upgrade.m_life + 1)/4;
     if ( m_statistiques[id].m_upgrade.m_life <= 20 )
     {
-        m_statistiques[id].m_upgrade.m_stat_life.m_stockage[0] = 10 + (int)(m_statistiques[id].m_upgrade.m_life / 4);
+        m_statistiques[id].m_upgrade.m_stat_life.m_stockage[0] = 10 + (int)(m_statistiques[id].m_upgrade.m_life / 2);
         m_statistiques[id].m_upgrade.m_stat_life.m_stockage[1] = 10;
     }
     else
     {
-        m_statistiques[id].m_upgrade.m_stat_life.m_stockage[0] = 15;
-        m_statistiques[id].m_upgrade.m_stat_life.m_stockage[1] = (10 + (int)(m_statistiques[id].m_upgrade.m_life / 4)) - 5;
+        m_statistiques[id].m_upgrade.m_stat_life.m_stockage[0] = 20;
+        m_statistiques[id].m_upgrade.m_stat_life.m_stockage[1] = (int)(m_statistiques[id].m_upgrade.m_life / 2);
     }
     
     m_statistiques[id].m_upgrade.m_stat_move.m_rate_speed = 1 + ((int)((m_statistiques[id].m_upgrade.m_move + 3)/ 4) * 0.2f);
@@ -377,6 +379,14 @@ void CStatistiques::UpdateUpgrade(long id)
     m_statistiques[id].m_upgrade.m_stat_move.m_num_jump = 1 + (int)(m_statistiques[id].m_upgrade.m_move / 4);
     if ( m_statistiques[id].m_upgrade.m_move == 40 )
         m_statistiques[id].m_upgrade.m_stat_move.m_num_jump = -1;
+    
+    m_statistiques[id].m_upgrade.m_stat_hook.m_rate_length = 1 + ((int)((m_statistiques[id].m_upgrade.m_hook + 2)/ 3) * (2.0f/13.0f));
+    m_statistiques[id].m_upgrade.m_stat_hook.m_rate_time = 1 + ((int)((m_statistiques[id].m_upgrade.m_hook + 1)/ 3) * (7.0f/13.0f));
+    m_statistiques[id].m_upgrade.m_stat_hook.m_rate_speed = 1 + ((int)(m_statistiques[id].m_upgrade.m_hook/ 3) * (2.0f/13.0f));
+    if ( m_statistiques[id].m_upgrade.m_hook == 40 )
+        m_statistiques[id].m_upgrade.m_stat_hook.m_hook_damage = true;
+    else
+        m_statistiques[id].m_upgrade.m_stat_hook.m_hook_damage = false;
 }
 
 class Trier
@@ -722,6 +732,7 @@ void CStatistiques::WriteStat()
                 fichier << m_statistiques[i].m_killing_spree << " ";
                 fichier << m_statistiques[i].m_max_killing_spree << " ";
                 fichier << m_statistiques[i].m_flag_capture << " ";
+                fichier << m_statistiques[i].m_bonus_xp << " ";
                 fichier << m_statistiques[i].m_last_connect << " ";
                 fichier << m_statistiques[i].m_conf.m_InfoHealKiller << " ";
                 fichier << m_statistiques[i].m_conf.m_InfoXP << " ";
@@ -766,6 +777,7 @@ void CStatistiques::ResetPartialStat(long id)
     m_statistiques[id].m_killing_spree = 0;
     m_statistiques[id].m_max_killing_spree = 0;
     m_statistiques[id].m_flag_capture = 0;
+    m_statistiques[id].m_bonus_xp = 0;
 
     m_statistiques[id].m_upgrade.m_weapon = 0;
     m_statistiques[id].m_upgrade.m_life = 0;
@@ -790,11 +802,21 @@ void CStatistiques::ResetAllStat(long id)
     m_statistiques[id].m_killing_spree = 0;
     m_statistiques[id].m_max_killing_spree = 0;
     m_statistiques[id].m_flag_capture = 0;
+    m_statistiques[id].m_bonus_xp = 0;
 
     m_statistiques[id].m_upgrade.m_weapon = 0;
     m_statistiques[id].m_upgrade.m_life = 0;
     m_statistiques[id].m_upgrade.m_move = 0;
     m_statistiques[id].m_upgrade.m_hook = 0;
     UpdateStat(id);
+    UpdateUpgrade(id);
+}
+
+void CStatistiques::ResetUpgr(long id)
+{
+    m_statistiques[id].m_upgrade.m_weapon = 0;
+    m_statistiques[id].m_upgrade.m_life = 0;
+    m_statistiques[id].m_upgrade.m_move = 0;
+    m_statistiques[id].m_upgrade.m_hook = 0;
     UpdateUpgrade(id);
 }

@@ -379,7 +379,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
     {
         if(!(IsTeamplay() && pVictim->GetPlayer()->GetTeam() == pKiller->GetTeam()))
         {
-            m_pGameServer->m_pStatistiques->AddKill(pKiller->GetSID());
+            m_pGameServer->m_pStatistiques->AddKill(pKiller->GetSID(), pVictim->GetPlayer()->GetSID());
             pKiller->m_Score = m_pGameServer->m_pStatistiques->GetScore(pKiller->GetSID());
 
             if( m_pGameServer->m_pStatistiques->GetLevel(pKiller->GetSID()) > pKiller->m_level )

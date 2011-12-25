@@ -23,6 +23,8 @@ public:
         ENTTYPE_PICKUP,
         ENTTYPE_FLAG,
         ENTTYPE_CHARACTER,
+        ENTTYPE_TURRET,
+        ENTTYPE_TELEPORTER,
         NUM_ENTTYPES
     };
 
@@ -75,7 +77,7 @@ public:
     int FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, int Type);
 
     /*
-    	Function: interserct_CCharacter
+    	Function: intersect_CCharacter
     		Finds the closest CCharacter that intersects the line.
 
     	Arguments:
@@ -89,6 +91,23 @@ public:
     		Returns a pointer to the closest hit or NULL of there is no intersection.
     */
     class CCharacter *IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, class CEntity *pNotThis = 0);
+
+    /*
+    	Function: intersect_CEntities
+    		Finds the closest CEntity that intersects the line.
+
+    	Arguments:
+    		pos0 - Start position
+    		pos2 - End position
+    		radius - How for from the line the CCharacter is allowed to be.
+    		new_pos - Intersection position
+    		notthis - Entity to ignore intersecting with
+    		type - Type of the entities to find.
+
+    	Returns:
+    		Returns a pointer to the closest hit or NULL of there is no intersection.
+    */
+    class CEntity *IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, int Type, class CEntity *pNotThis = 0);
 
     /*
     	Function: closest_CCharacter

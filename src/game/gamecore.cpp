@@ -74,7 +74,7 @@ void CCharacterCore::Reset()
     m_TriggeredEvents = 0;
 }
 
-void CCharacterCore::Tick(bool UseInput, float RateSpeed, float RateAccel, float RateHighJump)
+void CCharacterCore::Tick(bool UseInput, float RateSpeed, float RateAccel, float RateHighJump, float RateLengthHook, float RateTimeHook, float RateSpeedHook)
 {
     float PhysSize = 28.0f;
     m_TriggeredEvents = 0;
@@ -195,11 +195,11 @@ void CCharacterCore::Tick(bool UseInput, float RateSpeed, float RateAccel, float
     }
     else if(m_HookState == HOOK_FLYING)
     {
-        vec2 NewPos = m_HookPos+m_HookDir*m_pWorld->m_Tuning.m_HookFireSpeed;
-        if(distance(m_Pos, NewPos) > m_pWorld->m_Tuning.m_HookLength)
+        vec2 NewPos = m_HookPos+m_HookDir*m_pWorld->m_Tuning.m_HookFireSpeed*RateSpeedHook;
+        if(distance(m_Pos, NewPos) > m_pWorld->m_Tuning.m_HookLength * RateLengthHook)
         {
             m_HookState = HOOK_RETRACT_START;
-            NewPos = m_Pos + normalize(NewPos-m_Pos) * m_pWorld->m_Tuning.m_HookLength;
+            NewPos = m_Pos + normalize(NewPos-m_Pos) * m_pWorld->m_Tuning.m_HookLength * RateLengthHook;
         }
 
         // make sure that the hook doesn't go though the ground
@@ -295,14 +295,14 @@ void CCharacterCore::Tick(bool UseInput, float RateSpeed, float RateAccel, float
             vec2 NewVel = m_Vel+HookVel;
 
             // check if we are under the legal limit for the hook
-            if(length(NewVel) < m_pWorld->m_Tuning.m_HookDragSpeed || length(NewVel) < length(m_Vel))
+            if(length(NewVel) < m_pWorld->m_Tuning.m_HookDragSpeed * RateSpeedHook || length(NewVel) < length(m_Vel))
                 m_Vel = NewVel; // no problem. apply
 
         }
 
         // release hook (max hook time is 1.25
         m_HookTick++;
-        if(m_HookedPlayer != -1 && (m_HookTick > SERVER_TICK_SPEED+SERVER_TICK_SPEED/5 || !m_pWorld->m_apCharacters[m_HookedPlayer]))
+        if(m_HookedPlayer != -1 && (m_HookTick > (SERVER_TICK_SPEED+SERVER_TICK_SPEED/5) * RateTimeHook || !m_pWorld->m_apCharacters[m_HookedPlayer]))
         {
             m_HookedPlayer = -1;
             m_HookState = HOOK_RETRACTED;
@@ -344,8 +344,8 @@ void CCharacterCore::Tick(bool UseInput, float RateSpeed, float RateAccel, float
             {
                 if(Distance > PhysSize*1.50f) // TODO: fix tweakable variable
                 {
-                    float Accel = m_pWorld->m_Tuning.m_HookDragAccel * (Distance/m_pWorld->m_Tuning.m_HookLength);
-                    float DragSpeed = m_pWorld->m_Tuning.m_HookDragSpeed;
+                    float Accel = m_pWorld->m_Tuning.m_HookDragAccel * (Distance/(m_pWorld->m_Tuning.m_HookLength));
+                    float DragSpeed = m_pWorld->m_Tuning.m_HookDragSpeed * RateSpeedHook;
 
                     // add force to the hooked player
                     pCharCore->m_Vel.x = SaturatedAdd(-DragSpeed, DragSpeed, pCharCore->m_Vel.x, Accel*Dir.x*1.5f);
