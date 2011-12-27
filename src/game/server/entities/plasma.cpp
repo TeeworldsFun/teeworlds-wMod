@@ -87,8 +87,7 @@ bool CPlasma::HitCharacter(vec2 From, vec2 To)
             if (pHitExplodeWall)
             {
                 m_Pos = At;
-                if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
-                    m_Energy = -1;
+                m_Energy = -1;
                 if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
                     pHitExplodeWall->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
                 return true;

@@ -193,7 +193,7 @@ void CProjectile::Tick()
         if(TargetExplodeWall)
             TargetExplodeWall->TakeDamage(m_Damage, m_Owner, m_Weapon, false);
 
-        if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) && m_Bounce <= 0 && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE)) || m_LifeSpan < 0)
+        if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) && m_Bounce <= 0 && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE)) || m_LifeSpan < 0 || TargetExplodeWall)
         {
             if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
                 GameServer()->m_apPlayers[m_Owner]->m_Mine -= GameServer()->m_apPlayers[m_Owner]->m_Mine > 0 ? 1 : 0;
