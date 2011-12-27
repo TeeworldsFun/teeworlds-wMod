@@ -15,6 +15,7 @@
 #include "gamemodes/mod.h"
 #include "entities/projectile.h"
 #include "entities/turret.h"
+#include "entities/explodewall.h"
 #include "statistiques.h"
 #include "event.h"
 
@@ -190,6 +191,21 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
             float Dmg = 6 * l;
             if((int)Dmg)
                 apEntsTurret[i]->TakeDamage((int)Dmg, Owner, Weapon, false);
+        }
+
+        CExplodeWall *p = (CExplodeWall *)m_World.FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
+        for(; p; p = (CExplodeWall *)p->TypeNext())
+        {
+            vec2 IntersectPos = closest_point_on_line(p->m_From, p->m_Pos, Pos);
+            float Len = distance(Pos, IntersectPos);
+            if(Len < p->m_ProximityRadius+Radius)
+            {
+                Len = distance(Pos, IntersectPos);
+                float l = 1-clamp((Len-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
+                float Dmg = 6 * l;
+                if((int)Dmg)
+                    p->TakeDamage((int)Dmg, Owner, Weapon, false);
+            }
         }
     }
 }
@@ -2435,6 +2451,36 @@ void CGameContext::ConGiveProtect(IConsole::IResult *pResult, void *pUserData)
 
 }
 
+void CGameContext::ConGiveInvisibility(IConsole::IResult *pResult, void *pUserData)
+{
+    CGameContext *pSelf = (CGameContext *)pUserData;
+    if (pResult->NumArguments())
+    {
+        int id = pResult->GetInteger(0);
+        if ( id == -1 )
+        {
+            for (int i = 0; i < MAX_CLIENTS; i++ )
+            {
+                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+                {
+                    pSelf->m_apPlayers[i]->GetCharacter()->m_Invisibility = true;
+                    pSelf->SendChatTarget(i, "An admin give to you an invisibility");
+                }
+            }
+        }
+        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+        {
+            pSelf->m_apPlayers[id]->GetCharacter()->m_Invisibility = true;
+            pSelf->SendChatTarget(id, "An admin give to you an invisibility");
+        }
+        else
+            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+    }
+    else
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+
+}
+
 void CGameContext::ConRemoveShotgun(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
@@ -2566,17 +2612,46 @@ void CGameContext::ConRemoveProtect(IConsole::IResult *pResult, void *pUserData)
         {
             for (int i = 0; i < MAX_CLIENTS; i++ )
             {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() && pSelf->m_apPlayers[i]->GetCharacter()->m_Protect != 0)
                 {
                     pSelf->m_apPlayers[i]->GetCharacter()->m_Protect = 0;
                     pSelf->SendChatTarget(i, "An admin remove your protection");
                 }
             }
         }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() && pSelf->m_apPlayers[id]->GetCharacter()->m_Protect != 0)
         {
             pSelf->m_apPlayers[id]->GetCharacter()->m_Protect = 0;
             pSelf->SendChatTarget(id, "An admin remove your protection");
+        }
+        else
+            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+    }
+    else
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
+}
+
+void CGameContext::ConRemoveInvisibility(IConsole::IResult *pResult, void *pUserData)
+{
+    CGameContext *pSelf = (CGameContext *)pUserData;
+    if (pResult->NumArguments())
+    {
+        int id = pResult->GetInteger(0);
+        if ( id == -1 )
+        {
+            for (int i = 0; i < MAX_CLIENTS; i++ )
+            {
+                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() && pSelf->m_apPlayers[i]->GetCharacter()->m_Invisibility == true)
+                {
+                    pSelf->m_apPlayers[i]->GetCharacter()->m_Invisibility = false;
+                    pSelf->SendChatTarget(i, "An admin remove your invisibility");
+                }
+            }
+        }
+        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() && pSelf->m_apPlayers[id]->GetCharacter()->m_Invisibility == true)
+        {
+            pSelf->m_apPlayers[id]->GetCharacter()->m_Invisibility = false;
+            pSelf->SendChatTarget(id, "An admin remove your invisibility");
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
@@ -2638,11 +2713,13 @@ void CGameContext::OnConsoleInit()
     Console()->Register("rifle", "i", CFGFLAG_SERVER, ConGiveRifle, this, "Give rifle to the player with this client id.");
     Console()->Register("katana", "i", CFGFLAG_SERVER, ConGiveKatana, this, "Give katana to the player with this client id.");
     Console()->Register("protect", "i", CFGFLAG_SERVER, ConGiveProtect, this, "Give protection to the player with this client id.");
+    Console()->Register("invisibility", "i", CFGFLAG_SERVER, ConGiveInvisibility, this, "Give invisibility to the player with this client id.");
     Console()->Register("unshotgun", "i", CFGFLAG_SERVER, ConRemoveShotgun, this, "Remove shotgun from the player with this client id.");
     Console()->Register("ungrenade", "i", CFGFLAG_SERVER, ConRemoveGrenade, this, "Remove grenade from the player with this client id.");
     Console()->Register("unrifle", "i", CFGFLAG_SERVER, ConRemoveRifle, this, "Remove rifle from the player with this client id.");
     Console()->Register("unkatana", "i", CFGFLAG_SERVER, ConRemoveKatana, this, "Remove katana from the player with this client id.");
     Console()->Register("unprotect", "i", CFGFLAG_SERVER, ConRemoveProtect, this, "Remove protection from the player with this client id.");
+    Console()->Register("uninvisibility", "i", CFGFLAG_SERVER, ConRemoveInvisibility, this, "Remove invisibility from the player with this client id.");
 
     Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 }

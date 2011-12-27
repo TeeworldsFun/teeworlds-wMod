@@ -15,6 +15,7 @@
 #include "plasma.h"
 #include "turret.h"
 #include "teleporter.h"
+#include "explodewall.h"
 
 //input count
 struct CInputCount
@@ -90,6 +91,14 @@ CCharacter::~CCharacter()
             m_Teleporter[i] = 0;
         }
     }
+    for ( int i = 0; i < 3; i++ )
+    {
+        if (m_ExplodeWall[i] != 0)
+        {
+            delete m_ExplodeWall[i];
+            m_ExplodeWall[i] = 0;
+        }
+    }
     if ( m_AuraProtect[0] != 0 )
     {
         for ( int i = 0; i < 12; i++ )
@@ -155,6 +164,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
     m_AuraProtect[0] = 0;
     m_AuraCaptain[0] = 0;
 
+    m_Invisibility = false;
+
     m_LaserWall[0] = 0;
     m_LaserWall[1] = 0;
     m_LaserWall[2] = 0;
@@ -176,6 +187,10 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
     m_Teleporter[7] = 0;
     m_Teleporter[8] = 0;
     m_Teleporter[9] = 0;
+
+    m_ExplodeWall[0] = 0;
+    m_ExplodeWall[1] = 0;
+    m_ExplodeWall[2] = 0;
 
     m_JumpTick = 0;
     m_AttackHookTick = 0;
@@ -401,7 +416,7 @@ void CCharacter::FireWeapon()
     else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_MINER) )
         Race = MINER;
     else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
-        Race = (rand() % (MINER - WARRIOR)) + WARRIOR;
+        Race = (rand() % ((MINER + 1) - WARRIOR)) + WARRIOR;
     else
         Race = m_pPlayer->m_WeaponType[m_ActiveWeapon];
 
@@ -412,7 +427,7 @@ void CCharacter::FireWeapon()
     if((m_ActiveWeapon != WEAPON_HAMMER || (Race != ENGINEER && m_stat_weapon->m_auto_hammer)) &&
             (m_ActiveWeapon != WEAPON_GUN || m_stat_weapon->m_auto_gun) &&
             (m_ActiveWeapon != WEAPON_NINJA || m_stat_weapon->m_auto_ninja) &&
-            (Race != MINER || (m_ActiveWeapon != WEAPON_GUN && m_ActiveWeapon != WEAPON_GRENADE)))
+            (Race != MINER || m_ActiveWeapon == WEAPON_SHOTGUN || m_ActiveWeapon == WEAPON_HAMMER))
         FullAuto = true;
 
     // check if we gonna fire
@@ -428,14 +443,16 @@ void CCharacter::FireWeapon()
 
     bool Limit = false;
 
-    if((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_NINJA) ||
-       (Race == MINER && m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_NINJA && m_ActiveWeapon != WEAPON_GUN))
+    if(m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_NINJA && (
+       GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) ||
+      (Race == MINER && m_ActiveWeapon == WEAPON_SHOTGUN)))
         Limit = true;
 
     // check for ammo
     if(!m_aWeapons[m_ActiveWeapon].m_Ammo || (Race == MINER && m_ActiveWeapon == WEAPON_GUN && m_aWeapons[m_ActiveWeapon].m_Ammo < 5 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
         (Race == ORC && m_ActiveWeapon != WEAPON_RIFLE && m_aWeapons[m_ActiveWeapon].m_Ammo < 2 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
         (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3) ||
+        (Race == MINER && m_ActiveWeapon == WEAPON_RIFLE && m_NumExplodeWall >= 3) ||
         (Limit && m_pPlayer->m_Mine >= 100))
     {
         // 125ms is a magical limit of how fast a human can click
@@ -455,6 +472,9 @@ void CCharacter::FireWeapon()
             str_format(aBuf, 256, "Can't build more laserwall for now, Wait %d secs !", ((Older+Server()->TickSpeed()*30)-Server()->Tick())/Server()->TickSpeed());
             GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
         }
+        if (Race == MINER && m_ActiveWeapon == WEAPON_RIFLE && m_NumExplodeWall >= 3)
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Can't build more laserwall for now ! Max : 3");
+
         return;
     }
 
@@ -965,27 +985,26 @@ void CCharacter::FireWeapon()
         }
         else if ( Race == MINER )
         {
-            CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_RIFLE,
-                                                 m_pPlayer->GetCID(),
-                                                 ProjStartPos,
-                                                 Direction,
-                                                 Server()->TickSpeed()*30,
-                                                 1, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_RIFLE, Limit, false, false, Bounce);
-
-            // pack the Projectile and send it to the client Directly
-            CNetObj_Projectile p;
-            pProj->FillInfo(&p);
-
-            CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-            Msg.AddInt(1);
-            for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
-                Msg.AddInt(((int *)&p)[i]);
-
-            Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
-        }
-
-        if (sound)
+            if ( m_NumExplodeWall < 3 )
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    if ( m_ExplodeWall[i] == 0 )
+                    {
+                        m_ExplodeWall[i] = new CExplodeWall(GameWorld(), m_Pos, m_pPlayer->GetCID());
+                        break;
+                    }
+                    else if (m_ExplodeWall[i]->m_StartTick == 0)
+                    {
+                        m_ExplodeWall[i]->m_Pos = m_Pos;
+                        m_ExplodeWall[i]->m_StartTick = Server()->Tick();
+                        m_NumExplodeWall++;
+                        break;
+                    }
+                }
+            }
             GameServer()->CreateSound(m_Pos, SOUND_RIFLE_FIRE);
+        }
     }
     break;
 
@@ -1322,6 +1341,16 @@ void CCharacter::Tick()
         }
     }
 
+    for ( int i = 0; i < 3; i++ )
+    {
+        if (m_ExplodeWall[i] != 0 && m_ExplodeWall[i]->m_Destroy)
+        {
+            delete m_ExplodeWall[i];
+            m_ExplodeWall[i] = 0;
+            m_NumExplodeWall--;
+        }
+    }
+
     if (!m_AuraProtect[0] && (m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed() * m_stat_life->m_protection)))
     {
         for ( int i = 0; i < 12; i++ )
@@ -1566,7 +1595,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
     else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_MINER) )
         FromRace = MINER;
     else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
-        FromRace = (rand() % (RACE_MINER - RACE_WARRIOR)) + RACE_WARRIOR;
+        FromRace = (rand() % ((MINER + 1) - WARRIOR)) + WARRIOR;
     else if ( GameServer()->m_apPlayers[From] )
         FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
 
@@ -1729,7 +1758,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 
 void CCharacter::Snap(int SnappingClient)
 {
-    if(NetworkClipped(SnappingClient) || (m_pPlayer->GetCID() != SnappingClient && GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) >= 15))
+    if(NetworkClipped(SnappingClient) || (m_pPlayer->GetCID() != SnappingClient && m_Invisibility))
         return;
 
     CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));

@@ -25,6 +25,7 @@ public:
         ENTTYPE_CHARACTER,
         ENTTYPE_TURRET,
         ENTTYPE_TELEPORTER,
+        ENTTYPE_EXPLODEWALL,
         NUM_ENTTYPES
     };
 

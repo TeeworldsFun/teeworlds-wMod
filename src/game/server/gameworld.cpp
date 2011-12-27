@@ -213,7 +213,6 @@ CEntity *CGameWorld::IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, vec2& N
     if(Type < 0 || Type >= NUM_ENTTYPES)
         return 0;
 
-    // Find other players
     float ClosestLen = distance(Pos0, Pos1) * 100.0f;
     CEntity *pClosest = 0;
 

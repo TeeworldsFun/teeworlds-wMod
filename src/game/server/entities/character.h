@@ -56,6 +56,7 @@ public:
     bool IncreaseHealth(int Amount);
     bool IncreaseArmor(int Amount);
     int m_Protect;
+    bool m_Invisibility;
 
     bool GiveWeapon(int Weapon, int Ammo);
     bool GiveNinja();
@@ -156,6 +157,8 @@ private:
     int m_NumLaserWall;
     class CTurret *m_Turret[5];
     class CTeleporter *m_Teleporter[10];
+    int m_NumExplodeWall;
+    class CExplodeWall *m_ExplodeWall[3];
 
     int m_JumpTick;
 

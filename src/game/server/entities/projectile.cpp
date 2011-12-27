@@ -6,6 +6,7 @@
 #include "projectile.h"
 #include "turret.h"
 #include "teleporter.h"
+#include "explodewall.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
                          int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Limit, bool Smoke, bool Deploy, int Bounce)
@@ -73,7 +74,7 @@ void CProjectile::Tick()
     vec2 CurPos = GetPos(Ct);
 
     vec2 At;
-    CTeleporter *CollideTeleporter = (CTeleporter *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 12.0f, At, CGameWorld::ENTTYPE_TELEPORTER);
+    CTeleporter *CollideTeleporter = (CTeleporter *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 24.0f, At, CGameWorld::ENTTYPE_TELEPORTER);
     if (CollideTeleporter && CollideTeleporter->GetNext())
     {
         m_Direction = normalize(GetPos(Ct) - PrevPos);
@@ -89,6 +90,39 @@ void CProjectile::Tick()
     CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
     CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
     CTurret *TargetTurret = (CTurret *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 6.0f, CurPos, CGameWorld::ENTTYPE_TURRET);
+    CExplodeWall *TargetExplodeWall = 0;
+
+    {
+        CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
+        for(; p; p = (CExplodeWall *)p->TypeNext())
+        {
+            // Store the values for fast access and easy
+            // equations-to-code conversion
+            float x1 = PrevPos.x, x2 = CurPos.x, x3 = p->m_From.x, x4 = p->m_Pos.x;
+            float y1 = PrevPos.y, y2 = CurPos.y, y3 = p->m_From.y, y4 = p->m_Pos.y;
+
+            float d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            // If d is zero, there is no intersection
+            if (d == 0)
+                continue;
+
+            // Get the x and y
+            float pre = (x1*y2 - y1*x2), post = (x3*y4 - y3*x4);
+            float x = ( pre * (x3 - x4) - (x1 - x2) * post ) / d;
+            float y = ( pre * (y3 - y4) - (y1 - y2) * post ) / d;
+
+            // Check if the x and y coordinates are within both lines
+            if ( x < min(x1, x2) || x > max(x1, x2) || x < min(x3, x4) || x > max(x3, x4) )
+                continue;
+            if ( y < min(y1, y2) || y > max(y1, y2) || y < min(y3, y4) || y > max(y3, y4) )
+                continue;
+
+            CurPos.x = x;
+            CurPos.y = y;
+            TargetExplodeWall = p;
+            break;
+        }
+    }
 
     if ( !distance(CurPos, PrevPos) && !TargetChr )
     {
@@ -142,7 +176,7 @@ void CProjectile::Tick()
         Server()->SendMsg(&Msg, 0, m_Owner);
     }
 
-    if(TargetChr || TargetTurret || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
+    if(TargetChr || TargetTurret || TargetExplodeWall || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
     {
         if(Collide && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
             GameServer()->CreateSound(CurPos, m_SoundImpact);
@@ -155,6 +189,9 @@ void CProjectile::Tick()
 
         if(TargetTurret)
             TargetTurret->TakeDamage(m_Damage, m_Owner, m_Weapon, false);
+
+        if(TargetExplodeWall)
+            TargetExplodeWall->TakeDamage(m_Damage, m_Owner, m_Weapon, false);
 
         if ((!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) && m_Bounce <= 0 && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE)) || m_LifeSpan < 0)
         {

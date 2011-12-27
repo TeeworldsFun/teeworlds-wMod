@@ -158,6 +158,9 @@ void CEvent::Tick()
         case JUMP_X1_5:
             str_format(aBuf, 256, "%s : All can jump higher ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
+        case CURVATURE_0:
+            str_format(aBuf, 256, "%s : Bullets have curvature 0 ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
+            break;
         case ALL:
             str_format(aBuf, 256, "%s : All events are active ! | Remaining : %02d:%02d", Prefix, (150 - Elapsed[i]/Server()->TickSpeed()) / 60, (150 - Elapsed[i]/Server()->TickSpeed()) % 60);
             break;
@@ -414,21 +417,13 @@ void CEvent::SetTune()
         GameServer()->Tuning()->Set("laser_bounce_delay", static_cast<float>(1500.0));
         GameServer()->SendTuningParams(-1);
     }
-    if ( IsActualEvent(ALL) )
+    if ( IsActualEvent(CURVATURE_0) )
     {
-        GameServer()->Tuning()->Set("gravity", static_cast<float>(0.0));
-        GameServer()->Tuning()->Set("laser_bounce_num", static_cast<float>(10.0));
-        GameServer()->Tuning()->Set("hook_length", static_cast<float>(10000.0));
-        GameServer()->Tuning()->Set("hook_fire_speed", static_cast<float>(300.0));
-        GameServer()->Tuning()->Set("gun_speed", static_cast<float>(110.0));
-        GameServer()->Tuning()->Set("gun_lifetime", static_cast<float>(40.0));
-        GameServer()->Tuning()->Set("shotgun_speed", static_cast<float>(137.5));
-        GameServer()->Tuning()->Set("shotgun_lifetime", static_cast<float>(4.0));
-        GameServer()->Tuning()->Set("grenade_speed", static_cast<float>(50.0));
-        GameServer()->Tuning()->Set("grenade_lifetime", static_cast<float>(40.0));
-        GameServer()->Tuning()->Set("laser_bounce_delay", static_cast<float>(1500.0));
-        GameServer()->SendTuningParams(-1);
+        GameServer()->Tuning()->Set("gun_curvature", static_cast<float>(0.0));
+        GameServer()->Tuning()->Set("shotgun_curvature", static_cast<float>(0.0));
+        GameServer()->Tuning()->Set("grenade_curvature", static_cast<float>(0.0));
     }
+
 }
 void CEvent::ResetTune()
 {
@@ -450,6 +445,10 @@ void CEvent::ResetTune()
     GameServer()->Tuning()->Set("grenade_speed", static_cast<float>(1000.0));
     GameServer()->Tuning()->Set("grenade_lifetime", static_cast<float>(2.0));
     GameServer()->Tuning()->Set("laser_bounce_delay", static_cast<float>(150.0));
+
+    GameServer()->Tuning()->Set("gun_curvature", static_cast<float>(1.25f));
+    GameServer()->Tuning()->Set("shotgun_curvature", static_cast<float>(1.25f));
+    GameServer()->Tuning()->Set("grenade_curvature", static_cast<float>(5.5f));
 
     GameServer()->SendTuningParams(-1);
 }

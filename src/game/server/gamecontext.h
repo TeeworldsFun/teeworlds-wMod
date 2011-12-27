@@ -73,11 +73,13 @@ class CGameContext : public IGameServer
     static void ConGiveRifle(IConsole::IResult *pResult, void *pUserData);
     static void ConGiveKatana(IConsole::IResult *pResult, void *pUserData);
     static void ConGiveProtect(IConsole::IResult *pResult, void *pUserData);
+    static void ConGiveInvisibility(IConsole::IResult *pResult, void *pUserData);
     static void ConRemoveShotgun(IConsole::IResult *pResult, void *pUserData);
     static void ConRemoveGrenade(IConsole::IResult *pResult, void *pUserData);
     static void ConRemoveRifle(IConsole::IResult *pResult, void *pUserData);
     static void ConRemoveKatana(IConsole::IResult *pResult, void *pUserData);
     static void ConRemoveProtect(IConsole::IResult *pResult, void *pUserData);
+    static void ConRemoveInvisibility(IConsole::IResult *pResult, void *pUserData);
 
     static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 

@@ -5,6 +5,7 @@
 #include <game/server/event.h>
 #include "turret.h"
 #include "plasma.h"
+#include "explodewall.h"
 
 CTurret::CTurret(CGameWorld *pGameWorld, vec2 Pos, int Owner)
     : CEntity(pGameWorld, CGameWorld::ENTTYPE_TURRET)
@@ -13,7 +14,7 @@ CTurret::CTurret(CGameWorld *pGameWorld, vec2 Pos, int Owner)
     m_Owner = Owner;
     m_StartTick = Server()->Tick();
     m_LastTick = m_StartTick;
-    m_Health = 100;
+    m_Health = 500;
     m_DamageTaken = 0;
     m_DamageTakenTick = 0;
     m_Destroy = false;
@@ -30,10 +31,14 @@ void CTurret::Tick()
 
     CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
     CCharacter *TargetChr = 0;
-    CTurret *TargetTurret = 0;
-
     CCharacter *apEnts[MAX_CLIENTS] = {0};
+
+    CTurret *TargetTurret = 0;
     CTurret *apEntsTurret[MAX_CLIENTS] = {0};
+
+    bool TargetExplodeWall = false;
+    vec2 PosExplodeWall(0,0);
+
     int Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
     for(int i = 0; i < Num; i++)
     {
@@ -57,6 +62,26 @@ void CTurret::Tick()
                 break;
             }
         }
+        
+        if(!TargetTurret)
+        {
+            float ClosestLen = -1;
+            CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
+            for(; p; p = (CExplodeWall *)p->TypeNext())
+            {
+                vec2 IntersectPos = closest_point_on_line(p->m_From, p->m_Pos, m_Pos);
+                float Len = distance(m_Pos, IntersectPos);
+                if(Len < p->m_ProximityRadius+450.0f && !GameServer()->Collision()->IntersectLine(m_Pos, IntersectPos, 0, 0) && p->GetOwner() != m_Owner)
+                {
+                    if(Len < ClosestLen || ClosestLen == -1)
+                    {
+                        ClosestLen = Len;
+                        TargetExplodeWall = true;
+                        PosExplodeWall = IntersectPos;
+                    }
+                }
+            }
+        }
     }
 
     vec2 Direction(0,0);
@@ -64,6 +89,8 @@ void CTurret::Tick()
         Direction = normalize(TargetChr->m_Pos - m_Pos);
     else if (TargetTurret)
         Direction = normalize(TargetTurret->m_Pos - m_Pos);
+    else if (TargetExplodeWall)
+        Direction = normalize(PosExplodeWall - m_Pos);
     else
         return;
 
@@ -82,7 +109,7 @@ bool CTurret::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
     else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_MINER) )
         FromRace = MINER;
     else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
-        FromRace = (rand() % (RACE_MINER - RACE_WARRIOR)) + RACE_WARRIOR;
+        FromRace = (rand() % ((MINER + 1) - WARRIOR)) + WARRIOR;
     else if ( GameServer()->m_apPlayers[From] )
         FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
 
@@ -101,7 +128,7 @@ bool CTurret::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
     if (!Instagib)
         m_Health -= Dmg;
     else
-        m_Health = 0;
+        m_Health -= Dmg * 5;
 
     m_DamageTaken++;
 
