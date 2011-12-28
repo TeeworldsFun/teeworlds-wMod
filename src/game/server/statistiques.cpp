@@ -6,7 +6,7 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 {
     m_pGameServer = GameServer;
 
-    m_errors = 0;
+    m_pGameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "Init and reading the bdd ...");
     m_last_write = time_timestamp();
     std::ifstream fichier("Statistiques.txt");
     Stats stats;
@@ -16,7 +16,10 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 
         std::ofstream fichierOut("Statistiques.txt", std::ios::out);
         if ( !fichierOut.is_open() )
+        {
             m_write = false;
+            m_pGameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "Error : Can't open or write statistics !!!");
+        }
         else
             m_write = true;
 
@@ -30,6 +33,7 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
     {
         fichier.seekg (0, std::ios::beg);
 
+        m_pGameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "Reading the bdd ver. 0 and merging to ver. 1 ...");
         for ( int i = 0; !fichier.eof(); i++ )
         {
             m_statistiques.push_back(stats);
@@ -63,9 +67,12 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
             ResetUpgr(i);
             UpdateUpgrade(i);
         }
+        WriteStat();
+        m_pGameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "The bdd is loaded successfully !");
     }
     else
     {
+        m_pGameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "Reading the bdd ver. 1 ...");
         for ( int i = 0; !fichier.eof(); i++ )
         {
             m_statistiques.push_back(stats);
@@ -110,6 +117,7 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
             UpdateStat(i);
             UpdateUpgrade(i);
         }
+        m_pGameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "The bdd is loaded successfully !");
     }
 
     m_write = true;
@@ -137,8 +145,6 @@ void CStatistiques::Tick()
         m_last_write = time_timestamp();
         WriteStat();
         UpdateRank();
-        //if ( m_errors >= 5 )
-        //m_write = false;
     }
 }
 
@@ -755,17 +761,16 @@ void CStatistiques::WriteStat()
 
         fichier.close();
 
-        char NewName[256] = "";
-        str_format(NewName, 256, "Statistiques_%u.txt", time_timestamp() - 150);
-        if (fs_rename("Statistiques.txt", NewName) == 0 )
+        if (fs_remove("Statistiques.txt") == 0 )
         {
-            fs_rename("Statistiques.new", "Statistiques.txt");
+            if(fs_rename("Statistiques.new", "Statistiques.txt") && GameServer()->Console())
+                GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "Error : Can't rename Statistiques.new to Statistiques.txt !!!");
         }
-        else
-            m_errors++;
+        else if (GameServer()->Console())
+            GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "Error : Can't remove Statistiques.txt !!!");
     }
-    else
-        m_errors++;
+    else if (GameServer()->Console())
+        GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "Error : Can't write new statistics !!!");
 }
 
 void CStatistiques::ResetPartialStat(long id)

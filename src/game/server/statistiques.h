@@ -508,7 +508,6 @@ private:
     std::vector<Stats*> m_tri[14];
     bool m_write;
     unsigned m_last_write;
-    int m_errors;
 
     CGameContext *m_pGameServer;
 };
