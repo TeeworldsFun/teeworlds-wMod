@@ -163,125 +163,356 @@ long CStatistiques::GetId(const char ip[MAX_IP_LENGTH], const char a[], const ch
     std::vector<Stats>::iterator first = m_statistiques.begin();
     const std::vector<Stats>::iterator end = m_statistiques.end();
 
-    unsigned long occurences = 0;
     std::vector<unsigned long> id;
 
     for ( ; first != end; first++ )
     {
-        if ( str_comp(ip, first->m_ip) == 0 )
-        {
+        if ( str_comp(ip, first->m_ip) == 0 && first->m_to_remove == false )
             id.push_back(first->m_id);
-            occurences++;
-        }
     }
 
-    if ( occurences == 1 && m_statistiques[id[0]].m_start_time == 0 )
+    if ( id.size() == 1 && m_statistiques[id[0]].m_start_time == 0 )
     {
         m_statistiques[id[0]].m_name = Name;
         m_statistiques[id[0]].m_clan = Clan;
         m_statistiques[id[0]].m_country = country;
         return id[0];
     }
-    else if ( occurences > 1 )
+    else if ( id.size() > 1 )
     {
-        for ( unsigned long i = 0; i < occurences; i++ )
+    	std::vector<unsigned long> sous_id;
+        for ( unsigned long i = 0; i < id.size(); i++ )
         {
             if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_name == Name && m_statistiques[id[i]].m_clan == Clan && m_statistiques[id[i]].m_country == country)
             {
-                return id[i];
+                sous_id.push_back(id[i]);
             }
         }
+        if (sous_id.size() == 1)
+        	return sous_id[0];
+        else if (sous_id.size() > 1)
+        {
+            for ( unsigned long i = 1; i < sous_id.size(); i++ )
+            {
+                m_statistiques[sous_id[0]].m_kill += m_statistiques[sous_id[i]].m_kill;
+                m_statistiques[sous_id[0]].m_dead += m_statistiques[sous_id[i]].m_dead;
+                m_statistiques[sous_id[0]].m_suicide += m_statistiques[sous_id[i]].m_suicide;
+                m_statistiques[sous_id[0]].m_log_in += m_statistiques[sous_id[i]].m_log_in;
+                m_statistiques[sous_id[0]].m_fire += m_statistiques[sous_id[i]].m_fire;
+                m_statistiques[sous_id[0]].m_pickup_weapon += m_statistiques[sous_id[i]].m_pickup_weapon;
+                m_statistiques[sous_id[0]].m_pickup_ninja += m_statistiques[sous_id[i]].m_pickup_ninja;
+                m_statistiques[sous_id[0]].m_change_weapon += m_statistiques[sous_id[i]].m_change_weapon;
+                m_statistiques[sous_id[0]].m_time_play += m_statistiques[sous_id[i]].m_time_play;
+                m_statistiques[sous_id[0]].m_message += m_statistiques[sous_id[i]].m_message;
+                m_statistiques[sous_id[0]].m_killing_spree += m_statistiques[sous_id[i]].m_killing_spree;
+                m_statistiques[sous_id[0]].m_max_killing_spree += m_statistiques[sous_id[i]].m_max_killing_spree;
+                m_statistiques[sous_id[0]].m_flag_capture += m_statistiques[sous_id[i]].m_flag_capture;
+                m_statistiques[sous_id[0]].m_bonus_xp += m_statistiques[sous_id[i]].m_bonus_xp;
+                m_statistiques[sous_id[i]].m_to_remove = true;
+            }
+            UpdateStat(sous_id[0]);
+            UpdateUpgrade(sous_id[0]);
+            return sous_id[0];
+        }
+        
 
-        for ( unsigned long i = 0; i < occurences; i++ )
+        for ( unsigned long i = 0; i < id.size(); i++ )
         {
             if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_name == Name && m_statistiques[id[i]].m_clan == Clan )
             {
-                m_statistiques[id[i]].m_country = country;
-                return id[i];
+                sous_id.push_back(id[i]);
             }
         }
+        if (sous_id.size() == 1)
+        {
+                m_statistiques[sous_id[0]].m_country = country;
+                return sous_id[0];
+        }
+        else if (sous_id.size() > 1)
+        {
+            m_statistiques[id[0]].m_country = country;
+            for ( unsigned long i = 1; i < sous_id.size(); i++ )
+            {
+                m_statistiques[sous_id[0]].m_kill += m_statistiques[sous_id[i]].m_kill;
+                m_statistiques[sous_id[0]].m_dead += m_statistiques[sous_id[i]].m_dead;
+                m_statistiques[sous_id[0]].m_suicide += m_statistiques[sous_id[i]].m_suicide;
+                m_statistiques[sous_id[0]].m_log_in += m_statistiques[sous_id[i]].m_log_in;
+                m_statistiques[sous_id[0]].m_fire += m_statistiques[sous_id[i]].m_fire;
+                m_statistiques[sous_id[0]].m_pickup_weapon += m_statistiques[sous_id[i]].m_pickup_weapon;
+                m_statistiques[sous_id[0]].m_pickup_ninja += m_statistiques[sous_id[i]].m_pickup_ninja;
+                m_statistiques[sous_id[0]].m_change_weapon += m_statistiques[sous_id[i]].m_change_weapon;
+                m_statistiques[sous_id[0]].m_time_play += m_statistiques[sous_id[i]].m_time_play;
+                m_statistiques[sous_id[0]].m_message += m_statistiques[sous_id[i]].m_message;
+                m_statistiques[sous_id[0]].m_killing_spree += m_statistiques[sous_id[i]].m_killing_spree;
+                m_statistiques[sous_id[0]].m_max_killing_spree += m_statistiques[sous_id[i]].m_max_killing_spree;
+                m_statistiques[sous_id[0]].m_flag_capture += m_statistiques[sous_id[i]].m_flag_capture;
+                m_statistiques[sous_id[0]].m_bonus_xp += m_statistiques[sous_id[i]].m_bonus_xp;
+                m_statistiques[sous_id[i]].m_to_remove = true;
+            }
+            UpdateStat(sous_id[0]);
+            UpdateUpgrade(sous_id[0]);
+            return sous_id[0];
+        }
 
-        for ( unsigned long i = 0; i < occurences; i++ )
+        for ( unsigned long i = 0; i < id.size(); i++ )
         {
             if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_name == Name && m_statistiques[id[i]].m_country == country)
             {
-                m_statistiques[id[i]].m_clan = Clan;
-                return id[i];
+                sous_id.push_back(id[i]);
             }
         }
-
-        for ( unsigned long i = 0; i < occurences; i++ )
+        if (sous_id.size() == 1)
+        {
+                m_statistiques[sous_id[0]].m_clan = Clan;
+                return sous_id[0];
+        }
+        else if (sous_id.size() > 1)
+        {
+            m_statistiques[sous_id[0]].m_clan = Clan;
+            for ( unsigned long i = 1; i < sous_id.size(); i++ )
+            {
+                m_statistiques[sous_id[0]].m_kill += m_statistiques[sous_id[i]].m_kill;
+                m_statistiques[sous_id[0]].m_dead += m_statistiques[sous_id[i]].m_dead;
+                m_statistiques[sous_id[0]].m_suicide += m_statistiques[sous_id[i]].m_suicide;
+                m_statistiques[sous_id[0]].m_log_in += m_statistiques[sous_id[i]].m_log_in;
+                m_statistiques[sous_id[0]].m_fire += m_statistiques[sous_id[i]].m_fire;
+                m_statistiques[sous_id[0]].m_pickup_weapon += m_statistiques[sous_id[i]].m_pickup_weapon;
+                m_statistiques[sous_id[0]].m_pickup_ninja += m_statistiques[sous_id[i]].m_pickup_ninja;
+                m_statistiques[sous_id[0]].m_change_weapon += m_statistiques[sous_id[i]].m_change_weapon;
+                m_statistiques[sous_id[0]].m_time_play += m_statistiques[sous_id[i]].m_time_play;
+                m_statistiques[sous_id[0]].m_message += m_statistiques[sous_id[i]].m_message;
+                m_statistiques[sous_id[0]].m_killing_spree += m_statistiques[sous_id[i]].m_killing_spree;
+                m_statistiques[sous_id[0]].m_max_killing_spree += m_statistiques[sous_id[i]].m_max_killing_spree;
+                m_statistiques[sous_id[0]].m_flag_capture += m_statistiques[sous_id[i]].m_flag_capture;
+                m_statistiques[sous_id[0]].m_bonus_xp += m_statistiques[sous_id[i]].m_bonus_xp;
+                m_statistiques[sous_id[i]].m_to_remove = true;
+            }
+            UpdateStat(sous_id[0]);
+            UpdateUpgrade(sous_id[0]);
+            return sous_id[0];
+        }
+        
+        for ( unsigned long i = 0; i < id.size(); i++ )
         {
             if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_name == Name )
             {
-                m_statistiques[id[i]].m_clan = Clan;
-                m_statistiques[id[i]].m_country = country;
-                return id[i];
+                sous_id.push_back(id[i]);
             }
+        }
+        if (sous_id.size() == 1)
+        {
+                m_statistiques[sous_id[0]].m_clan = Clan;
+                m_statistiques[sous_id[0]].m_country = country;
+                return sous_id[0];
+        }
+        else if (sous_id.size() > 1)
+        {
+            m_statistiques[sous_id[0]].m_clan = Clan;
+            m_statistiques[sous_id[0]].m_country = country;
+            for ( unsigned long i = 1; i < sous_id.size(); i++ )
+            {
+                m_statistiques[sous_id[0]].m_kill += m_statistiques[sous_id[i]].m_kill;
+                m_statistiques[sous_id[0]].m_dead += m_statistiques[sous_id[i]].m_dead;
+                m_statistiques[sous_id[0]].m_suicide += m_statistiques[sous_id[i]].m_suicide;
+                m_statistiques[sous_id[0]].m_log_in += m_statistiques[sous_id[i]].m_log_in;
+                m_statistiques[sous_id[0]].m_fire += m_statistiques[sous_id[i]].m_fire;
+                m_statistiques[sous_id[0]].m_pickup_weapon += m_statistiques[sous_id[i]].m_pickup_weapon;
+                m_statistiques[sous_id[0]].m_pickup_ninja += m_statistiques[sous_id[i]].m_pickup_ninja;
+                m_statistiques[sous_id[0]].m_change_weapon += m_statistiques[sous_id[i]].m_change_weapon;
+                m_statistiques[sous_id[0]].m_time_play += m_statistiques[sous_id[i]].m_time_play;
+                m_statistiques[sous_id[0]].m_message += m_statistiques[sous_id[i]].m_message;
+                m_statistiques[sous_id[0]].m_killing_spree += m_statistiques[sous_id[i]].m_killing_spree;
+                m_statistiques[sous_id[0]].m_max_killing_spree += m_statistiques[sous_id[i]].m_max_killing_spree;
+                m_statistiques[sous_id[0]].m_flag_capture += m_statistiques[sous_id[i]].m_flag_capture;
+                m_statistiques[sous_id[0]].m_bonus_xp += m_statistiques[sous_id[i]].m_bonus_xp;
+                m_statistiques[sous_id[i]].m_to_remove = true;
+            }
+            UpdateStat(sous_id[0]);
+            UpdateUpgrade(sous_id[0]);
+            return sous_id[0];
         }
     }
     else
     {
-        occurences = 0;
         id.resize(0);
         first = m_statistiques.begin();
 
         for ( ; first != end; first++ )
         {
-            if ( first->m_name == Name )
+            if ( first->m_name == Name && first->m_to_remove == false )
             {
                 id.push_back(first->m_id);
-                occurences++;
             }
         }
 
-        if ( occurences == 1 && m_statistiques[id[0]].m_start_time == 0 )
+        if ( id.size() == 1 && m_statistiques[id[0]].m_start_time == 0 )
         {
             str_copy(m_statistiques[id[0]].m_ip, ip, MAX_IP_LENGTH);
             m_statistiques[id[0]].m_clan = Clan;
             m_statistiques[id[0]].m_country = country;
             return id[0];
         }
-        else if ( occurences > 1 )
+        else if ( id.size() > 1 )
         {
-            for ( unsigned long i = 0; i < occurences; i++ )
+            std::vector<unsigned long> sous_id;
+            for ( unsigned long i = 0; i < id.size(); i++ )
             {
                 if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_clan == Clan && m_statistiques[id[i]].m_country == country )
                 {
-                    str_copy(m_statistiques[id[i]].m_ip, ip, MAX_IP_LENGTH);
-                    return id[i];
+                    sous_id.push_back(id[i]);
                 }
             }
-
-            for ( unsigned long i = 0; i < occurences; i++ )
+            if (sous_id.size() == 1)
+            {
+                    str_copy(m_statistiques[sous_id[0]].m_ip, ip, MAX_IP_LENGTH);
+                    return sous_id[0];
+            }
+            else if (sous_id.size() > 1)
+            {
+                str_copy(m_statistiques[sous_id[0]].m_ip, ip, MAX_IP_LENGTH);
+                for ( unsigned long i = 1; i < sous_id.size(); i++ )
+                {
+                	m_statistiques[sous_id[0]].m_kill += m_statistiques[sous_id[i]].m_kill;
+                	m_statistiques[sous_id[0]].m_dead += m_statistiques[sous_id[i]].m_dead;
+                	m_statistiques[sous_id[0]].m_suicide += m_statistiques[sous_id[i]].m_suicide;
+                	m_statistiques[sous_id[0]].m_log_in += m_statistiques[sous_id[i]].m_log_in;
+                	m_statistiques[sous_id[0]].m_fire += m_statistiques[sous_id[i]].m_fire;
+                	m_statistiques[sous_id[0]].m_pickup_weapon += m_statistiques[sous_id[i]].m_pickup_weapon;
+                	m_statistiques[sous_id[0]].m_pickup_ninja += m_statistiques[sous_id[i]].m_pickup_ninja;
+                	m_statistiques[sous_id[0]].m_change_weapon += m_statistiques[sous_id[i]].m_change_weapon;
+                	m_statistiques[sous_id[0]].m_time_play += m_statistiques[sous_id[i]].m_time_play;
+                	m_statistiques[sous_id[0]].m_message += m_statistiques[sous_id[i]].m_message;
+                	m_statistiques[sous_id[0]].m_killing_spree += m_statistiques[sous_id[i]].m_killing_spree;
+                	m_statistiques[sous_id[0]].m_max_killing_spree += m_statistiques[sous_id[i]].m_max_killing_spree;
+                	m_statistiques[sous_id[0]].m_flag_capture += m_statistiques[sous_id[i]].m_flag_capture;
+                	m_statistiques[sous_id[0]].m_bonus_xp += m_statistiques[sous_id[i]].m_bonus_xp;
+                    m_statistiques[sous_id[i]].m_to_remove = true;
+                }
+                UpdateStat(sous_id[0]);
+                UpdateUpgrade(sous_id[0]);
+                return sous_id[0];
+            }
+            
+            for ( unsigned long i = 0; i < id.size(); i++ )
             {
                 if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_clan == Clan )
                 {
-                    str_copy(m_statistiques[id[i]].m_ip, ip, MAX_IP_LENGTH);
-                    m_statistiques[id[i]].m_country = country;
-                    return id[i];
+                    sous_id.push_back(id[i]);
                 }
             }
+            if (sous_id.size() == 1)
+            {
+                    str_copy(m_statistiques[sous_id[0]].m_ip, ip, MAX_IP_LENGTH);
+                    m_statistiques[sous_id[0]].m_country = country;
+                    return sous_id[0];
+            }
+            else if (sous_id.size() > 1)
+            {
+                str_copy(m_statistiques[sous_id[0]].m_ip, ip, MAX_IP_LENGTH);
+                m_statistiques[sous_id[0]].m_country = country;
+                for ( unsigned long i = 1; i < sous_id.size(); i++ )
+                {
+                	m_statistiques[sous_id[0]].m_kill += m_statistiques[sous_id[i]].m_kill;
+                	m_statistiques[sous_id[0]].m_dead += m_statistiques[sous_id[i]].m_dead;
+                	m_statistiques[sous_id[0]].m_suicide += m_statistiques[sous_id[i]].m_suicide;
+                	m_statistiques[sous_id[0]].m_log_in += m_statistiques[sous_id[i]].m_log_in;
+                	m_statistiques[sous_id[0]].m_fire += m_statistiques[sous_id[i]].m_fire;
+                	m_statistiques[sous_id[0]].m_pickup_weapon += m_statistiques[sous_id[i]].m_pickup_weapon;
+                	m_statistiques[sous_id[0]].m_pickup_ninja += m_statistiques[sous_id[i]].m_pickup_ninja;
+                	m_statistiques[sous_id[0]].m_change_weapon += m_statistiques[sous_id[i]].m_change_weapon;
+                	m_statistiques[sous_id[0]].m_time_play += m_statistiques[sous_id[i]].m_time_play;
+                	m_statistiques[sous_id[0]].m_message += m_statistiques[sous_id[i]].m_message;
+                	m_statistiques[sous_id[0]].m_killing_spree += m_statistiques[sous_id[i]].m_killing_spree;
+                	m_statistiques[sous_id[0]].m_max_killing_spree += m_statistiques[sous_id[i]].m_max_killing_spree;
+                	m_statistiques[sous_id[0]].m_flag_capture += m_statistiques[sous_id[i]].m_flag_capture;
+                	m_statistiques[sous_id[0]].m_bonus_xp += m_statistiques[sous_id[i]].m_bonus_xp;
+                    m_statistiques[sous_id[i]].m_to_remove = true;
+                }
+                UpdateStat(sous_id[0]);
+                UpdateUpgrade(sous_id[0]);
+                return sous_id[0];
+            }
 
-            for ( unsigned long i = 0; i < occurences; i++ )
+            for ( unsigned long i = 0; i < id.size(); i++ )
             {
                 if ( m_statistiques[id[i]].m_start_time == 0 && m_statistiques[id[i]].m_country == country )
                 {
-                    str_copy(m_statistiques[id[i]].m_ip, ip, MAX_IP_LENGTH);
-                    m_statistiques[id[i]].m_clan = Clan;
-                    return id[i];
+                    sous_id.push_back(id[i]);
                 }
             }
+            if (sous_id.size() == 1)
+            {
+                    str_copy(m_statistiques[sous_id[0]].m_ip, ip, MAX_IP_LENGTH);
+                    m_statistiques[sous_id[0]].m_clan = Clan;
+                    return sous_id[0];
+            }
+            else if (sous_id.size() > 1)
+            {
+                str_copy(m_statistiques[sous_id[0]].m_ip, ip, MAX_IP_LENGTH);
+                m_statistiques[sous_id[0]].m_clan = Clan;
+                for ( unsigned long i = 1; i < sous_id.size(); i++ )
+                {
+                	m_statistiques[sous_id[0]].m_kill += m_statistiques[sous_id[i]].m_kill;
+                	m_statistiques[sous_id[0]].m_dead += m_statistiques[sous_id[i]].m_dead;
+                	m_statistiques[sous_id[0]].m_suicide += m_statistiques[sous_id[i]].m_suicide;
+                	m_statistiques[sous_id[0]].m_log_in += m_statistiques[sous_id[i]].m_log_in;
+                	m_statistiques[sous_id[0]].m_fire += m_statistiques[sous_id[i]].m_fire;
+                	m_statistiques[sous_id[0]].m_pickup_weapon += m_statistiques[sous_id[i]].m_pickup_weapon;
+                	m_statistiques[sous_id[0]].m_pickup_ninja += m_statistiques[sous_id[i]].m_pickup_ninja;
+                	m_statistiques[sous_id[0]].m_change_weapon += m_statistiques[sous_id[i]].m_change_weapon;
+                	m_statistiques[sous_id[0]].m_time_play += m_statistiques[sous_id[i]].m_time_play;
+                	m_statistiques[sous_id[0]].m_message += m_statistiques[sous_id[i]].m_message;
+                	m_statistiques[sous_id[0]].m_killing_spree += m_statistiques[sous_id[i]].m_killing_spree;
+                	m_statistiques[sous_id[0]].m_max_killing_spree += m_statistiques[sous_id[i]].m_max_killing_spree;
+                	m_statistiques[sous_id[0]].m_flag_capture += m_statistiques[sous_id[i]].m_flag_capture;
+                	m_statistiques[sous_id[0]].m_bonus_xp += m_statistiques[sous_id[i]].m_bonus_xp;
+                    m_statistiques[sous_id[i]].m_to_remove = true;
+                }
+                UpdateStat(sous_id[0]);
+                UpdateUpgrade(sous_id[0]);
+                return sous_id[0];
+            }
 
-            for ( unsigned long i = 0; i < occurences; i++ )
+            for ( unsigned long i = 0; i < id.size(); i++ )
             {
                 if ( m_statistiques[id[i]].m_start_time == 0 )
                 {
-                    str_copy(m_statistiques[id[i]].m_ip, ip, MAX_IP_LENGTH);
-                    m_statistiques[id[i]].m_clan = Clan;
-                    m_statistiques[id[i]].m_country = country;
-                    return id[i];
+                    sous_id.push_back(id[i]);
                 }
+            }
+            if (sous_id.size() == 1)
+            {
+                    str_copy(m_statistiques[sous_id[0]].m_ip, ip, MAX_IP_LENGTH);
+                    m_statistiques[sous_id[0]].m_clan = Clan;
+                    m_statistiques[sous_id[0]].m_country = country;
+                    return sous_id[0];
+            }
+            else if (sous_id.size() > 1)
+            {
+                str_copy(m_statistiques[sous_id[0]].m_ip, ip, MAX_IP_LENGTH);
+                m_statistiques[sous_id[0]].m_clan = Clan;
+                m_statistiques[sous_id[0]].m_country = country;
+                for ( unsigned long i = 1; i < sous_id.size(); i++ )
+                {
+                	m_statistiques[sous_id[0]].m_kill += m_statistiques[sous_id[i]].m_kill;
+                	m_statistiques[sous_id[0]].m_dead += m_statistiques[sous_id[i]].m_dead;
+                	m_statistiques[sous_id[0]].m_suicide += m_statistiques[sous_id[i]].m_suicide;
+                	m_statistiques[sous_id[0]].m_log_in += m_statistiques[sous_id[i]].m_log_in;
+                	m_statistiques[sous_id[0]].m_fire += m_statistiques[sous_id[i]].m_fire;
+                	m_statistiques[sous_id[0]].m_pickup_weapon += m_statistiques[sous_id[i]].m_pickup_weapon;
+                	m_statistiques[sous_id[0]].m_pickup_ninja += m_statistiques[sous_id[i]].m_pickup_ninja;
+                	m_statistiques[sous_id[0]].m_change_weapon += m_statistiques[sous_id[i]].m_change_weapon;
+                	m_statistiques[sous_id[0]].m_time_play += m_statistiques[sous_id[i]].m_time_play;
+                	m_statistiques[sous_id[0]].m_message += m_statistiques[sous_id[i]].m_message;
+                	m_statistiques[sous_id[0]].m_killing_spree += m_statistiques[sous_id[i]].m_killing_spree;
+                	m_statistiques[sous_id[0]].m_max_killing_spree += m_statistiques[sous_id[i]].m_max_killing_spree;
+                	m_statistiques[sous_id[0]].m_flag_capture += m_statistiques[sous_id[i]].m_flag_capture;
+                	m_statistiques[sous_id[0]].m_bonus_xp += m_statistiques[sous_id[i]].m_bonus_xp;
+                    m_statistiques[sous_id[i]].m_to_remove = true;
+                }
+                UpdateStat(sous_id[0]);
+                UpdateUpgrade(sous_id[0]);
+                return sous_id[0];
             }
         }
     }
