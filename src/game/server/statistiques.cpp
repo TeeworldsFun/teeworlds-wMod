@@ -145,6 +145,34 @@ void CStatistiques::Tick()
         m_last_write = time_timestamp();
         WriteStat();
         UpdateRank();
+        Clear();
+    }
+}
+
+void CStatistiques::Clear()
+{
+    //Clear the bdd only if anybody is in the server
+    for ( int i = 0; i < MAX_CLIENTS; i++ )
+    {
+        if (GameServer()->m_apPlayers[i])
+            return;
+    }
+    
+    std::vector<unsigned long> id;
+    for (unsigned long i = m_statistiques.size(); i; i-- )
+    {
+        if (m_statistiques[i].m_to_remove || m_statistiques[i].m_level == 0)
+            id.push_back(i);
+    }
+    
+    for (unsigned long i = 0; i < id.size(); i++)
+    {
+        m_statistiques.erase(m_statistiques.begin() + id[i]);
+    }
+    
+    for (unsigned long i = 0; i < m_statistiques.size(); i++)
+    {
+        m_statistiques[i].m_id = i;
     }
 }
 
@@ -950,7 +978,7 @@ void CStatistiques::WriteStat()
         for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
         {
             UpdateStat(i);
-            if ( m_statistiques[i].m_level > 0 )
+            if ( m_statistiques[i].m_level > 0 && !m_statistiques[i].m_to_remove )
             {
                 fichier << m_statistiques[i].m_ip << " ";
                 fichier << m_statistiques[i].m_name << " ";

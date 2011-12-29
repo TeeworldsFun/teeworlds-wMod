@@ -87,7 +87,6 @@ void CGameContext::Clear()
     CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
     int NumVoteOptions = m_NumVoteOptions;
     CTuningParams Tuning = m_Tuning;
-
     CStatistiques *pStatistiques = m_pStatistiques;
 
     m_Resetting = true;
@@ -102,6 +101,8 @@ void CGameContext::Clear()
     m_Tuning = Tuning;
 
     m_pStatistiques = pStatistiques;
+    if (m_pStatistiques)
+        m_pStatistiques->Clear();
 }
 
 

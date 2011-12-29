@@ -199,6 +199,7 @@ public:
     ~CStatistiques();
 
     void Tick();
+    void Clear();
 
     void SetInfo(long id, const char name[], const char clan[], const int country);
 

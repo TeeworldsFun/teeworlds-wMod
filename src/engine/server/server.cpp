@@ -1723,7 +1723,7 @@ void OnShutdown(int sig)
 
 void OnUpdate(int sig)
 {
-    if (Server)
+    if (Server && Server->m_RunServer != -1)
         Server->m_RunServer = -1;
     else
         exit(0);
