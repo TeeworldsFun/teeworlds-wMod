@@ -124,13 +124,13 @@ void CProjectile::Tick()
         }
     }
 
-    if ( !distance(CurPos, PrevPos) && !TargetChr )
+    if ( !distance(CurPos, PrevPos) && !TargetChr)
     {
         CCharacter *apEnts[MAX_CLIENTS] = {0};
         int Num = GameServer()->m_World.FindEntities(CurPos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
         for(int i = 0; i < Num; i++)
         {
-            if ( OwnerChar != apEnts[i] && (!GameServer()->m_pController->IsTeamplay() || OwnerChar->GetPlayer()->GetTeam() != apEnts[i]->GetPlayer()->GetTeam()))
+            if ( OwnerChar != apEnts[i] && (!GameServer()->m_pController->IsTeamplay() || !OwnerChar || OwnerChar->GetPlayer()->GetTeam() != apEnts[i]->GetPlayer()->GetTeam()))
             {
                 TargetChr = apEnts[i];
                 break;
