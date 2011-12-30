@@ -87,7 +87,6 @@ void CGameContext::Clear()
     CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
     int NumVoteOptions = m_NumVoteOptions;
     CTuningParams Tuning = m_Tuning;
-
     CStatistiques *pStatistiques = m_pStatistiques;
 
     m_Resetting = true;
@@ -102,6 +101,8 @@ void CGameContext::Clear()
     m_Tuning = Tuning;
 
     m_pStatistiques = pStatistiques;
+    if (m_pStatistiques)
+        m_pStatistiques->Clear();
 }
 
 
@@ -453,17 +454,7 @@ void CGameContext::CheckPureTuning()
     if(!m_pController)
         return;
 
-    if(	str_comp(m_pController->m_pGameType, "DM")==0 ||
-            str_comp(m_pController->m_pGameType, "TDM")==0 ||
-            str_comp(m_pController->m_pGameType, "CTF")==0)
-    {
-        CTuningParams p;
-        if(mem_comp(&p, &m_Tuning, sizeof(p)) != 0)
-        {
-            Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "resetting tuning due to pure server");
-            m_Tuning = p;
-        }
-    }
+	g_Config.m_SvScorelimit = 0;
 }
 
 void CGameContext::SendTuningParams(int ClientID)

@@ -154,6 +154,8 @@ struct Stats
         m_rank.m_killing_spree = 0;
         m_rank.m_max_killing_spree = 0;
         m_rank.m_flag_capture = 0;
+        
+        m_to_remove = false;
     }
 
     long m_id;
@@ -187,6 +189,7 @@ struct Stats
 
     unsigned long m_start_time;
     unsigned long m_actual_kill;
+    bool m_to_remove;
 };
 
 class CStatistiques
@@ -196,6 +199,7 @@ public:
     ~CStatistiques();
 
     void Tick();
+    void Clear();
 
     void SetInfo(long id, const char name[], const char clan[], const int country);
 
