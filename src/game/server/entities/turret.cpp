@@ -30,6 +30,9 @@ void CTurret::Tick()
     m_LastTick = Server()->Tick();
 
     CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
+    if (!OwnerChar)
+    	return;
+
     CCharacter *TargetChr = 0;
     CCharacter *apEnts[MAX_CLIENTS] = {0};
 

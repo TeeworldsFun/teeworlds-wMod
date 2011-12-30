@@ -709,10 +709,10 @@ void CGameContext::OnClientEnter(int ClientID)
 
     m_VoteUpdate = true;
 
-    SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod ***");
+    SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod V.2***");
     SendChatTarget(ClientID, "** Wrote by PJK **");
     SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
-    SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /weapon , /race , /stats and /ranks **");
+    SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /upgr , /race , /stats and /ranks **");
     SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
 }
 
@@ -825,7 +825,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             }
             else if(str_comp_nocase(pMsg->m_pMessage, "/info") == 0)
             {
-                SendChatTarget(ClientID, "*** Extreme Weapon Mod ***");
+                SendChatTarget(ClientID, "*** Extreme Weapon Mod V.2 ***");
                 SendChatTarget(ClientID, "** Wrote by PJK **");
                 SendChatTarget(ClientID, "It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
                 SendChatTarget(ClientID, "You can choose a race, see your statistics and upgrade your gameplay !");
@@ -834,7 +834,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             }
             else if(str_comp_nocase(pMsg->m_pMessage, "/credits") == 0)
             {
-                SendChatTarget(ClientID, "*** Extreme Weapon Mod ***");
+                SendChat(ClientID, Team, pMsg->m_pMessage);
+                SendChatTarget(ClientID, "*** Extreme Weapon Mod V.2 ***");
                 SendChatTarget(ClientID, "** Wrote by PJK **");
             }
             else if(str_comp_nocase(pMsg->m_pMessage, "/ammo") == 0)

@@ -427,7 +427,7 @@ void CCharacter::FireWeapon()
     if((m_ActiveWeapon != WEAPON_HAMMER || (Race != ENGINEER && m_stat_weapon->m_auto_hammer)) &&
             (m_ActiveWeapon != WEAPON_GUN || m_stat_weapon->m_auto_gun) &&
             (m_ActiveWeapon != WEAPON_NINJA || m_stat_weapon->m_auto_ninja) &&
-            (Race != MINER || m_ActiveWeapon == WEAPON_SHOTGUN || m_ActiveWeapon == WEAPON_HAMMER))
+            (Race != MINER || m_ActiveWeapon == WEAPON_SHOTGUN || m_ActiveWeapon == WEAPON_HAMMER || m_ActiveWeapon == WEAPON_NINJA))
         FullAuto = true;
 
     // check if we gonna fire
@@ -473,7 +473,7 @@ void CCharacter::FireWeapon()
             GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
         }
         if (Race == MINER && m_ActiveWeapon == WEAPON_RIFLE && m_NumExplodeWall >= 3)
-            GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Can't build more laserwall for now ! Max : 3");
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), "Can't build more explodewall for now ! Max : 3");
 
         return;
     }
