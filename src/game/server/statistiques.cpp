@@ -5,6 +5,13 @@
 CStatistiques::CStatistiques(CGameContext *GameServer)
 {
     m_pGameServer = GameServer;
+    m_init = false;
+}
+
+void CStatistiques::OnInit()
+{
+	if (m_init)
+		return;
 
     m_pGameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistiques", "Init and reading the bdd ...");
     m_last_write = time_timestamp();
@@ -135,12 +142,13 @@ CStatistiques::CStatistiques(CGameContext *GameServer)
 
 CStatistiques::~CStatistiques()
 {
-
+	if(m_init)
+		WriteStat();
 }
 
 void CStatistiques::Tick()
 {
-    if ( difftime(time_timestamp(), m_last_write) >= 150 )
+    if (m_init && difftime(time_timestamp(), m_last_write) >= 150 )
     {
         m_last_write = time_timestamp();
         WriteStat();
@@ -151,6 +159,9 @@ void CStatistiques::Tick()
 
 void CStatistiques::Clear()
 {
+	if (!m_init)
+		return;
+
     //Clear the bdd only if anybody is in the server
     for ( int i = 0; i < MAX_CLIENTS; i++ )
     {

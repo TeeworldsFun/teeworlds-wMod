@@ -130,7 +130,7 @@ void CProjectile::Tick()
         int Num = GameServer()->m_World.FindEntities(CurPos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
         for(int i = 0; i < Num; i++)
         {
-            if ( OwnerChar != apEnts[i] && (!GameServer()->m_pController->IsTeamplay() || !OwnerChar || OwnerChar->GetPlayer()->GetTeam() != apEnts[i]->GetPlayer()->GetTeam()))
+            if ( OwnerChar != apEnts[i] && (!GameServer()->m_pController->IsTeamplay() || !GameServer()->m_apPlayers[m_Owner] || GameServer()->m_apPlayers[m_Owner]->GetTeam() != apEnts[i]->GetPlayer()->GetTeam()))
             {
                 TargetChr = apEnts[i];
                 break;

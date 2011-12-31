@@ -198,6 +198,7 @@ public:
     CStatistiques(CGameContext *GameServer);
     ~CStatistiques();
 
+    void OnInit();
     void Tick();
     void Clear();
 
@@ -510,6 +511,7 @@ private:
 
     std::vector<Stats> m_statistiques;
     std::vector<Stats*> m_tri[14];
+    bool m_init;
     bool m_write;
     unsigned m_last_write;
 

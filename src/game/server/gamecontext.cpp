@@ -43,7 +43,7 @@ void CGameContext::Construct(int Resetting)
 
     if(Resetting==NO_RESET)
     {
-        m_pStatistiques = 0;
+    	m_pStatistiques = new CStatistiques(this);
         m_pVoteOptionHeap = new CHeap();
     }
 }
@@ -72,11 +72,7 @@ CGameContext::~CGameContext()
     if(!m_Resetting)
     {
         delete m_pVoteOptionHeap;
-        if (m_pStatistiques)
-        {
-            m_pStatistiques->WriteStat();
-            delete m_pStatistiques;
-        }
+        delete m_pStatistiques;
     }
 }
 
@@ -2780,8 +2776,8 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
         }
     }
 
-    if (!m_pStatistiques)
-        m_pStatistiques = new CStatistiques(this);
+    if (m_pStatistiques)
+        m_pStatistiques->OnInit();
     //game.world.insert_entity(game.Controller);
 
 #ifdef CONF_DEBUG

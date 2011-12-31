@@ -14,7 +14,7 @@ CTurret::CTurret(CGameWorld *pGameWorld, vec2 Pos, int Owner)
     m_Owner = Owner;
     m_StartTick = Server()->Tick();
     m_LastTick = m_StartTick;
-    m_Health = 500;
+    m_Health = 350;
     m_DamageTaken = 0;
     m_DamageTakenTick = 0;
     m_Destroy = false;
@@ -24,14 +24,12 @@ CTurret::CTurret(CGameWorld *pGameWorld, vec2 Pos, int Owner)
 
 void CTurret::Tick()
 {
-    if ((Server()->Tick()-m_LastTick) < 150 * Server()->TickSpeed() / 1000.f)
+    if ((Server()->Tick()-m_LastTick) < 150 * Server()->TickSpeed() / 1000.f || !GameServer()->m_apPlayers[m_Owner])
         return;
 
     m_LastTick = Server()->Tick();
 
     CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
-    if (!OwnerChar)
-    	return;
 
     CCharacter *TargetChr = 0;
     CCharacter *apEnts[MAX_CLIENTS] = {0};
@@ -45,7 +43,7 @@ void CTurret::Tick()
     int Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
     for(int i = 0; i < Num; i++)
     {
-        if ( OwnerChar != apEnts[i] && (!GameServer()->m_pController->IsTeamplay() || OwnerChar->GetPlayer()->GetTeam() != apEnts[i]->GetPlayer()->GetTeam() || GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL)
+        if ( OwnerChar != apEnts[i] && (!GameServer()->m_pController->IsTeamplay() || GameServer()->m_apPlayers[m_Owner]->GetTeam() != apEnts[i]->GetPlayer()->GetTeam() || GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL)
             && !GameServer()->Collision()->IntersectLine(m_Pos, apEnts[i]->m_Pos, 0, 0) )
         {
             TargetChr = apEnts[i];
