@@ -138,6 +138,8 @@ void CStatistiques::OnInit()
     }
 
     UpdateRank();
+    
+    m_init = true;
 }
 
 CStatistiques::~CStatistiques()
