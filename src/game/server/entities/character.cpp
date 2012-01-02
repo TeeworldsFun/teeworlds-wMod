@@ -1758,7 +1758,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 
 void CCharacter::Snap(int SnappingClient)
 {
-    if(NetworkClipped(SnappingClient) || (m_pPlayer->GetCID() != SnappingClient && m_Invisibility))
+    if(NetworkClipped(SnappingClient) || (m_pPlayer->GetCID() != SnappingClient && m_Invisibility) ||  (GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) / 5) == 3)
         return;
 
     CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));

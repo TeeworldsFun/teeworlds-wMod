@@ -427,15 +427,13 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 
                 if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 1)
                     GameServer()->SendTuningParams(pKiller->GetCID());
-                else if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 2)
+                else if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 2 && pKiller->GetCharacter())
                 {
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_GUN, -2);
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, -2);
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_GRENADE, -2);
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_RIFLE, -2);
                 }
-                else if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 3)
-                    pKiller->GetCharacter()->m_Invisibility = true;
             }
         }
 
