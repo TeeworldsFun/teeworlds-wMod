@@ -56,7 +56,7 @@ void CTurret::Tick()
         Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apEntsTurret, MAX_CLIENTS * 5, CGameWorld::ENTTYPE_TURRET);
         for(int i = 0; i < Num; i++)
         {
-            if ( m_Owner != apEntsTurret[i]->GetOwner() && (!GameServer()->m_pController->IsTeamplay() || OwnerChar->GetPlayer()->GetTeam() != GameServer()->m_apPlayers[apEntsTurret[i]->GetOwner()]->GetTeam())
+            if ( m_Owner != apEntsTurret[i]->GetOwner() && (!GameServer()->m_pController->IsTeamplay() || GameServer()->m_apPlayers[m_Owner]->GetTeam() != GameServer()->m_apPlayers[apEntsTurret[i]->GetOwner()]->GetTeam())
                 && !GameServer()->Collision()->IntersectLine(m_Pos, apEntsTurret[i]->m_Pos, 0, 0) )
             {
                 TargetTurret = apEntsTurret[i];
