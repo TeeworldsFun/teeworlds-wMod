@@ -12,6 +12,7 @@ CExplodeWall::CExplodeWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner)
     m_Pos = m_From;
     m_Owner = Owner;
     m_Health = 2000;
+    m_ProximityRadius = 135.0f;
     m_StartTick = 0;
     m_Destroy = false;
     GameWorld()->InsertEntity(this);
@@ -83,6 +84,7 @@ bool CExplodeWall::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
     else
     {
         m_DamageTaken = 0;
+        GameServer()->CreateDamageInd(m_From, 0, Dmg);
         GameServer()->CreateDamageInd(m_Pos, 0, Dmg);
     }
 
@@ -97,6 +99,7 @@ bool CExplodeWall::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
             if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS && GameServer()->m_apPlayers[i]->m_SpectatorID == From)
                 Mask |= CmaskOne(i);
         }
+        GameServer()->CreateSound(m_From, SOUND_HIT, Mask);
         GameServer()->CreateSound(m_Pos, SOUND_HIT, Mask);
     }
 

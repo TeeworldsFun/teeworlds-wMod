@@ -25,77 +25,77 @@ CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEn
 bool CPlasma::HitCharacter(vec2 From, vec2 To)
 {
     vec2 At;
+    vec2 TempPos;
+    
+    float ClosestLen = -1;
+
     CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
-    CCharacter *pHit = GameServer()->m_World.IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
-    if(pHit)
+    CCharacter *pHit = GameServer()->m_World.IntersectCharacter(From, To, 0.0f, TempPos, pOwnerChar);
+    ClosestLen = distance(From, TempPos);
+    At = TempPos;
+
+    CTurret *pHitTurret = (CTurret*) GameServer()->m_World.IntersectEntity(From, To, 0.0f, TempPos, CGameWorld::ENTTYPE_TURRET);
+    if ( ClosestLen > distance(From, TempPos) )
     {
-        m_Pos = At;
-        if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
-            m_Energy = -1;
-        if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
-            pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
-        return true;
+        ClosestLen = distance(From, TempPos);
+        At = TempPos;
+        pHit = 0;
     }
-    else
+
+    CExplodeWall *pHitExplodeWall = 0;
+
     {
-        CTurret *pHitTurret = (CTurret *)GameServer()->m_World.IntersectEntity(m_Pos, To, 0.f, At, CGameWorld::ENTTYPE_TURRET);
-        if (pHitTurret && pHitTurret->GetOwner() != m_Owner)
+        CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
+        for(; p; p = (CExplodeWall *)p->TypeNext())
         {
-            m_Pos = At;
-            if ( !GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) )
-                m_Energy = -1;
-            if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
-                pHitTurret->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
-            return true;
-        }
-        else
-        {
-            CExplodeWall *pHitExplodeWall = 0;
+            // Store the values for fast access and easy
+            // equations-to-code conversion
+            float x1 = From.x, x2 = To.x, x3 = p->m_From.x, x4 = p->m_Pos.x;
+            float y1 = From.y, y2 = To.y, y3 = p->m_From.y, y4 = p->m_Pos.y;
 
+            float d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+            // If d is zero, there is no intersection
+            if (d == 0)
+                continue;
+
+            // Get the x and y
+            float pre = (x1*y2 - y1*x2), post = (x3*y4 - y3*x4);
+            float x = ( pre * (x3 - x4) - (x1 - x2) * post ) / d;
+            float y = ( pre * (y3 - y4) - (y1 - y2) * post ) / d;
+
+            // Check if the x and y coordinates are within both lines
+            if ( x < min(x1, x2) || x > max(x1, x2) || x < min(x3, x4) || x > max(x3, x4) )
+                continue;
+            if ( y < min(y1, y2) || y > max(y1, y2) || y < min(y3, y4) || y > max(y3, y4) )
+                continue;
+
+            if ( ClosestLen > distance(From, vec2(x, y)) )
             {
-                CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
-                for(; p; p = (CExplodeWall *)p->TypeNext())
-                {
-                    // Store the values for fast access and easy
-                    // equations-to-code conversion
-                    float x1 = From.x, x2 = To.x, x3 = p->m_From.x, x4 = p->m_Pos.x;
-                    float y1 = From.y, y2 = To.y, y3 = p->m_From.y, y4 = p->m_Pos.y;
-
-                    float d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-                    // If d is zero, there is no intersection
-                    if (d == 0)
-                        continue;
-
-                    // Get the x and y
-                    float pre = (x1*y2 - y1*x2), post = (x3*y4 - y3*x4);
-                    float x = ( pre * (x3 - x4) - (x1 - x2) * post ) / d;
-                    float y = ( pre * (y3 - y4) - (y1 - y2) * post ) / d;
-
-                    // Check if the x and y coordinates are within both lines
-                    if ( x < min(x1, x2) || x > max(x1, x2) || x < min(x3, x4) || x > max(x3, x4) )
-                        continue;
-                    if ( y < min(y1, y2) || y > max(y1, y2) || y < min(y3, y4) || y > max(y3, y4) )
-                        continue;
-
-                    At.x = x;
-                    At.y = y;
-                    pHitExplodeWall = p;
-                    break;
-                }
-           }
-
-            if (pHitExplodeWall)
-            {
-                m_Pos = At;
-                m_Energy = -1;
-                if ( !GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 )
-                    pHitExplodeWall->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
-                return true;
+                ClosestLen = distance(From, vec2(x, y));
+                At.x = x;
+                At.y = y;
+                pHit = 0;
+                pHitTurret = 0;
+                pHitExplodeWall = p;
+                break;
             }
         }
     }
 
-    return false;
+    if(!pHit && !pHitTurret && !pHitExplodeWall)
+        return false;
+
+    m_Pos = At;
+    m_Energy = -1;
+
+    if ( pHit && (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
+        pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+    else if ( pHitTurret && (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
+        pHitTurret->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+    else if ( pHitExplodeWall && (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
+        pHitExplodeWall->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+
+    return true;
 }
 
 void CPlasma::Reset()
