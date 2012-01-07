@@ -4,6 +4,7 @@
 #include "gameworld.h"
 #include "entity.h"
 #include "gamecontext.h"
+#include "entities/explodewall.h"
 
 //////////////////////////////////////////////////
 // game world
@@ -46,7 +47,8 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, 
     int Num = 0;
     for(CEntity *pEnt = m_apFirstEntityTypes[Type];	pEnt; pEnt = pEnt->m_pNextTypeEntity)
     {
-        if(distance(pEnt->m_Pos, Pos) < Radius+pEnt->m_ProximityRadius)
+        if((Type != ENTTYPE_EXPLODEWALL && distance(pEnt->m_Pos, Pos) < Radius+pEnt->m_ProximityRadius) ||
+           (Type == ENTTYPE_EXPLODEWALL && distance(closest_point_on_line(reinterpret_cast<CExplodeWall*>(pEnt)->m_From, pEnt->m_Pos, Pos), Pos) < Radius+pEnt->m_ProximityRadius))
         {
             if(ppEnts)
                 ppEnts[Num] = pEnt;

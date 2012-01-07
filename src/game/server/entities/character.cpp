@@ -526,6 +526,46 @@ void CCharacter::FireWeapon()
             Hits++;
         }
 
+        CTurret *apEntsTurret[MAX_CLIENTS*5];
+        Num = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius*0.5f, (CEntity**)apEntsTurret, MAX_CLIENTS*5, CGameWorld::ENTTYPE_TURRET);
+
+        for (int i = 0; i < Num; ++i)
+        {
+            CTurret *pTarget = apEntsTurret[i];
+
+            if (pTarget->GetOwner() == m_pPlayer->GetCID() || GameServer()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
+                continue;
+
+            // set his velocity to fast upward (for now)
+            if(length(pTarget->m_Pos-ProjStartPos) > 0.0f)
+                GameServer()->CreateHammerHit(pTarget->m_Pos-normalize(pTarget->m_Pos-ProjStartPos)*m_ProximityRadius*0.5f);
+            else
+                GameServer()->CreateHammerHit(ProjStartPos);
+
+            pTarget->TakeDamage(g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_pPlayer->GetCID(), m_ActiveWeapon, Race == ORC ? true : false);
+            Hits++;
+        }
+
+        CExplodeWall *apEntsExplode[MAX_CLIENTS*3];
+        Num = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius*0.5f, (CEntity**)apEntsExplode, MAX_CLIENTS*5, CGameWorld::ENTTYPE_EXPLODEWALL);
+
+        for (int i = 0; i < Num; ++i)
+        {
+            CExplodeWall *pTarget = apEntsExplode[i];
+            vec2 Pos = closest_point_on_line(pTarget->m_From, pTarget->m_Pos, ProjStartPos);
+            if (pTarget->GetOwner() == m_pPlayer->GetCID() || GameServer()->Collision()->IntersectLine(ProjStartPos, Pos, NULL, NULL))
+                continue;
+
+            // set his velocity to fast upward (for now)
+            if(length(Pos-ProjStartPos) > 0.0f)
+                GameServer()->CreateHammerHit(Pos-normalize(Pos-ProjStartPos)*m_ProximityRadius*0.5f);
+            else
+                GameServer()->CreateHammerHit(ProjStartPos);
+
+            pTarget->TakeDamage(g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_pPlayer->GetCID(), m_ActiveWeapon, Race == ORC ? true : false);
+            Hits++;
+        }
+
         // if we Hit anything, we have to wait for the reload
         if(Hits)
             m_ReloadTimer = Server()->TickSpeed()/3;
