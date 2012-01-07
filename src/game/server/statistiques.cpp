@@ -159,10 +159,13 @@ void CStatistiques::Tick()
     }
 }
 
+bool IsToRemove(const Stats &a) { return a.m_to_remove || a.m_level == 0; };
+
 void CStatistiques::Clear()
 {
 	if (!m_init)
 		return;
+
 
     //Clear the bdd only if anybody is in the server
     for ( int i = 0; i < MAX_CLIENTS; i++ )
@@ -171,17 +174,7 @@ void CStatistiques::Clear()
             return;
     }
     
-    std::vector<unsigned long> id;
-    for (unsigned long i = m_statistiques.size(); i; i-- )
-    {
-        if (m_statistiques[i].m_to_remove || m_statistiques[i].m_level == 0)
-            id.push_back(i);
-    }
-    
-    for (unsigned long i = 0; i < id.size(); i++)
-    {
-        m_statistiques.erase(m_statistiques.begin() + id[i]);
-    }
+    m_statistiques.erase(std::remove_if(m_statistiques.begin(), m_statistiques.end(), IsToRemove), m_statistiques.end());
     
     for (unsigned long i = 0; i < m_statistiques.size(); i++)
     {

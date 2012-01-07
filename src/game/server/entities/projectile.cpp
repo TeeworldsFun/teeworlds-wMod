@@ -178,6 +178,9 @@ void CProjectile::Tick()
 
     if(TargetChr || TargetTurret || TargetExplodeWall || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
     {
+        if(GameLayerClipped(CurPos))
+            m_LifeSpan = -1;
+
         if(Collide && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
             GameServer()->CreateSound(CurPos, m_SoundImpact);
 
