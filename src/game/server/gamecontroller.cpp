@@ -221,10 +221,7 @@ const char *IGameController::GetTeamName(int Team)
     return "spectators";
 }
 
-static bool IsSeparator(char c)
-{
-    return c == ';' || c == ' ' || c == ',' || c == '\t';
-}
+static bool IsSeparator(char c) { return c == ';' || c == ' ' || c == ',' || c == '\t'; }
 
 void IGameController::StartRound()
 {
@@ -272,7 +269,11 @@ void IGameController::CycleMap()
         return;
 
     if(m_RoundCount < g_Config.m_SvRoundsPerMap-1)
+	{
+		if(g_Config.m_SvRoundSwap)
+			GameServer()->SwapTeams();
         return;
+	}
 
     if (!IsNormalEnd())
         return;
@@ -746,7 +747,7 @@ void IGameController::Tick()
                     case 0:
                     {
                         // move player to spectator
-                        GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS, true);
+							GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
                     }
                     break;
                     case 1:
@@ -759,7 +760,7 @@ void IGameController::Tick()
                         if(Spectators >= g_Config.m_SvSpectatorSlots)
                             Server()->Kick(i, "Kicked for inactivity");
                         else
-                            GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS, true);
+								GameServer()->m_apPlayers[i]->SetTeam(TEAM_SPECTATORS);
                     }
                     break;
                     case 2:

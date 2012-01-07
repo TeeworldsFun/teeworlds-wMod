@@ -1,8 +1,8 @@
-This is a mod (wDM/wTDM/wCTF) and it's for the game Teeworlds and it's being maintained by PJK (PJK136).
+This is a mod (wDM/wTDM/wCTF) and it's for the game Teeworlds and it's being maintained by [FR] PJK (PJK136).
 If You want compile this mod and host this mod, please update this regularly because it's a beta version and have many bugs !
 
 Teeworlds README is as follows:
-Copyright (c) 2011 Magnus Auvinen
+Copyright (c) 2012 Magnus Auvinen
 
 
 This software is provided 'as-is', without any express or implied

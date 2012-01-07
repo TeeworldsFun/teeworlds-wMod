@@ -113,39 +113,39 @@ static int Run()
     int64 NextHeartBeat = 0;
     NETADDR BindAddr = {NETTYPE_IPV4, {0},0};
 
-    if(!pNet->Open(BindAddr, 0, 0, 0))
-        return 0;
+	if(!pNet->Open(BindAddr, 0, 0, 0, 0))
+		return 0;
 
-    while(1)
-    {
-        CNetChunk p;
-        pNet->Update();
-        while(pNet->Recv(&p))
-        {
-            if(p.m_ClientID == -1)
-            {
-                if(p.m_DataSize == sizeof(SERVERBROWSE_GETINFO) &&
-                        mem_comp(p.m_pData, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO)) == 0)
-                {
-                    SendServerInfo(&p.m_Address);
-                }
-                else if(p.m_DataSize == sizeof(SERVERBROWSE_FWCHECK) &&
-                        mem_comp(p.m_pData, SERVERBROWSE_FWCHECK, sizeof(SERVERBROWSE_FWCHECK)) == 0)
-                {
-                    SendFWCheckResponse(&p.m_Address);
-                }
-            }
-        }
+	while(1)
+	{
+		CNetChunk p;
+		pNet->Update();
+		while(pNet->Recv(&p))
+		{
+			if(p.m_ClientID == -1)
+			{
+				if(p.m_DataSize == sizeof(SERVERBROWSE_GETINFO) &&
+					mem_comp(p.m_pData, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO)) == 0)
+				{
+					SendServerInfo(&p.m_Address);
+				}
+				else if(p.m_DataSize == sizeof(SERVERBROWSE_FWCHECK) &&
+					mem_comp(p.m_pData, SERVERBROWSE_FWCHECK, sizeof(SERVERBROWSE_FWCHECK)) == 0)
+				{
+					SendFWCheckResponse(&p.m_Address);
+				}
+			}
+		}
 
-        /* send heartbeats if needed */
-        if(NextHeartBeat < time_get())
-        {
-            NextHeartBeat = time_get()+time_freq()*(15+(rand()%15));
-            SendHeartBeats();
-        }
+		/* send heartbeats if needed */
+		if(NextHeartBeat < time_get())
+		{
+			NextHeartBeat = time_get()+time_freq()*(15+(rand()%15));
+			SendHeartBeats();
+		}
 
-        thread_sleep(100);
-    }
+		thread_sleep(100);
+	}
 }
 
 int main(int argc, char **argv)
@@ -165,52 +165,43 @@ int main(int argc, char **argv)
         }
         else */if(str_comp(*argv, "-p") == 0)
         {
-            argc--;
-            argv++;
+			argc--; argv++;
             PlayerNames[NumPlayers++] = *argv;
-            argc--;
-            argv++;
+			argc--; argv++;
             PlayerScores[NumPlayers] = str_toint(*argv);
         }
         else if(str_comp(*argv, "-a") == 0)
         {
-            argc--;
-            argv++;
+			argc--; argv++;
             pMap = *argv;
         }
         else if(str_comp(*argv, "-x") == 0)
         {
-            argc--;
-            argv++;
+			argc--; argv++;
             MaxPlayers = str_toint(*argv);
         }
         else if(str_comp(*argv, "-t") == 0)
         {
-            argc--;
-            argv++;
+			argc--; argv++;
             GameType = str_toint(*argv);
         }
         else if(str_comp(*argv, "-g") == 0)
         {
-            argc--;
-            argv++;
+			argc--; argv++;
             Progression = str_toint(*argv);
         }
         else if(str_comp(*argv, "-f") == 0)
         {
-            argc--;
-            argv++;
+			argc--; argv++;
             Flags = str_toint(*argv);
         }
         else if(str_comp(*argv, "-n") == 0)
         {
-            argc--;
-            argv++;
+			argc--; argv++;
             pServerName = *argv;
         }
 
-        argc--;
-        argv++;
+		argc--; argv++;
     }
 
     BuildInfoMsg();

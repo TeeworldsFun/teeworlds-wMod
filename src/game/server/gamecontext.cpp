@@ -265,9 +265,17 @@ void CGameContext::CreateSoundGlobal(int Sound, int Target)
     if (Sound < 0)
         return;
 
-    CNetMsg_Sv_SoundGlobal Msg;
-    Msg.m_SoundID = Sound;
-    Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, Target);
+	CNetMsg_Sv_SoundGlobal Msg;
+	Msg.m_SoundID = Sound;
+	if(Target == -2)
+		Server()->SendPackMsg(&Msg, MSGFLAG_NOSEND, -1);
+	else
+	{
+		int Flag = MSGFLAG_VITAL;
+		if(Target != -1)
+			Flag |= MSGFLAG_NORECORD;
+		Server()->SendPackMsg(&Msg, Flag, Target);
+	}
 }
 
 
@@ -543,6 +551,22 @@ void CGameContext::SendTuningParams(int ClientID)
     }
 }
 
+void CGameContext::SwapTeams()
+{
+	if(!m_pController->IsTeamplay())
+		return;
+	
+	SendChat(-1, CGameContext::CHAT_ALL, "Teams were swapped");
+
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+			m_apPlayers[i]->SetTeam(m_apPlayers[i]->GetTeam()^1, false);
+	}
+
+	(void)m_pController->CheckTeamBalance();
+}
+
 void CGameContext::OnTick()
 {
     // check tuning
@@ -623,26 +647,28 @@ void CGameContext::OnTick()
             }
 
             if(m_VoteEnforce == VOTE_ENFORCE_YES || (time_get() > m_VoteCloseTime && Yes >= Total/2) || (time_get() > m_VoteCloseTime && No == 0))
-            {
-                Console()->ExecuteLine(m_aVoteCommand);
-                EndVote();
-                SendChat(-1, CGameContext::CHAT_ALL, "Vote passed");
+			{
+				Server()->SetRconCID(IServer::RCON_CID_VOTE);
+				Console()->ExecuteLine(m_aVoteCommand);
+				Server()->SetRconCID(IServer::RCON_CID_SERV);
+				EndVote();
+				SendChat(-1, CGameContext::CHAT_ALL, "Vote passed");
 
-                if(m_apPlayers[m_VoteCreator])
-                    m_apPlayers[m_VoteCreator]->m_LastVoteCall = 0;
-            }
-            else if(m_VoteEnforce == VOTE_ENFORCE_NO || time_get() > m_VoteCloseTime)
-            {
-                EndVote();
-                SendChat(-1, CGameContext::CHAT_ALL, "Vote failed");
-            }
-            else if(m_VoteUpdate)
-            {
-                m_VoteUpdate = false;
-                SendVoteStatus(-1, Total, Yes, No);
-            }
-        }
-    }
+				if(m_apPlayers[m_VoteCreator])
+					m_apPlayers[m_VoteCreator]->m_LastVoteCall = 0;
+			}
+			else if(m_VoteEnforce == VOTE_ENFORCE_NO || time_get() > m_VoteCloseTime)
+			{
+				EndVote();
+				SendChat(-1, CGameContext::CHAT_ALL, "Vote failed");
+			}
+			else if(m_VoteUpdate)
+			{
+				m_VoteUpdate = false;
+				SendVoteStatus(-1, Total, Yes, No);
+			}
+		}
+	}
 
 
 #ifdef CONF_DEBUG
@@ -1525,7 +1551,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
                 Server()->GetClientAddr(KickID, aAddrStr, sizeof(aAddrStr));
                 str_format(aCmd, sizeof(aCmd), "ban %s %d Banned by vote", aAddrStr, g_Config.m_SvVoteKickBantime);
-                Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aCmd);
             }
         }
         else if(str_comp_nocase(pMsg->m_Type, "spectate") == 0)
@@ -1637,7 +1662,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 pPlayer->m_LastSetTeam = Server()->Tick();
                 if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
                     m_VoteUpdate = true;
-                pPlayer->SetTeam(pMsg->m_Team, true);
+				pPlayer->SetTeam(pMsg->m_Team);
                 (void)m_pController->CheckTeamBalance();
                 pPlayer->m_TeamChangeTick = Server()->Tick();
             }
@@ -1713,48 +1738,20 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
         {
             switch(NumOptions++)
             {
-            case 0:
-                OptionMsg.m_pDescription0 = pCurrent->m_aDescription;
-                break;
-            case 1:
-                OptionMsg.m_pDescription1 = pCurrent->m_aDescription;
-                break;
-            case 2:
-                OptionMsg.m_pDescription2 = pCurrent->m_aDescription;
-                break;
-            case 3:
-                OptionMsg.m_pDescription3 = pCurrent->m_aDescription;
-                break;
-            case 4:
-                OptionMsg.m_pDescription4 = pCurrent->m_aDescription;
-                break;
-            case 5:
-                OptionMsg.m_pDescription5 = pCurrent->m_aDescription;
-                break;
-            case 6:
-                OptionMsg.m_pDescription6 = pCurrent->m_aDescription;
-                break;
-            case 7:
-                OptionMsg.m_pDescription7 = pCurrent->m_aDescription;
-                break;
-            case 8:
-                OptionMsg.m_pDescription8 = pCurrent->m_aDescription;
-                break;
-            case 9:
-                OptionMsg.m_pDescription9 = pCurrent->m_aDescription;
-                break;
-            case 10:
-                OptionMsg.m_pDescription10 = pCurrent->m_aDescription;
-                break;
-            case 11:
-                OptionMsg.m_pDescription11 = pCurrent->m_aDescription;
-                break;
-            case 12:
-                OptionMsg.m_pDescription12 = pCurrent->m_aDescription;
-                break;
-            case 13:
-                OptionMsg.m_pDescription13 = pCurrent->m_aDescription;
-                break;
+			case 0: OptionMsg.m_pDescription0 = pCurrent->m_aDescription; break;
+			case 1: OptionMsg.m_pDescription1 = pCurrent->m_aDescription; break;
+			case 2: OptionMsg.m_pDescription2 = pCurrent->m_aDescription; break;
+			case 3: OptionMsg.m_pDescription3 = pCurrent->m_aDescription; break;
+			case 4: OptionMsg.m_pDescription4 = pCurrent->m_aDescription; break;
+			case 5: OptionMsg.m_pDescription5 = pCurrent->m_aDescription; break;
+			case 6: OptionMsg.m_pDescription6 = pCurrent->m_aDescription; break;
+			case 7: OptionMsg.m_pDescription7 = pCurrent->m_aDescription; break;
+			case 8: OptionMsg.m_pDescription8 = pCurrent->m_aDescription; break;
+			case 9: OptionMsg.m_pDescription9 = pCurrent->m_aDescription; break;
+			case 10: OptionMsg.m_pDescription10 = pCurrent->m_aDescription; break;
+			case 11: OptionMsg.m_pDescription11 = pCurrent->m_aDescription; break;
+			case 12: OptionMsg.m_pDescription12 = pCurrent->m_aDescription; break;
+			case 13: OptionMsg.m_pDescription13 = pCurrent->m_aDescription; break;
             case 14:
             {
                 OptionMsg.m_pDescription14 = pCurrent->m_aDescription;
@@ -1921,19 +1918,17 @@ void CGameContext::ConSetTeam(IConsole::IResult *pResult, void *pUserData)
     CGameContext *pSelf = (CGameContext *)pUserData;
     int ClientID = clamp(pResult->GetInteger(0), 0, (int)MAX_CLIENTS-1);
     int Team = clamp(pResult->GetInteger(1), -1, 1);
-    int Delay = 0;
-    if(pResult->NumArguments() > 2)
-        Delay = pResult->GetInteger(2);
+	int Delay = pResult->NumArguments()>2 ? pResult->GetInteger(2) : 0;
+	if(!pSelf->m_apPlayers[ClientID])
+		return;
 
     char aBuf[256];
     str_format(aBuf, sizeof(aBuf), "moved client %d to team %d", ClientID, Team);
     pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
-    if(!pSelf->m_apPlayers[ClientID])
-        return;
 
     pSelf->m_apPlayers[ClientID]->m_TeamChangeTick = pSelf->Server()->Tick()+pSelf->Server()->TickSpeed()*Delay*60;
-    pSelf->m_apPlayers[ClientID]->SetTeam(Team, true);
+	pSelf->m_apPlayers[ClientID]->SetTeam(Team);
     (void)pSelf->m_pController->CheckTeamBalance();
 }
 
@@ -1943,12 +1938,61 @@ void CGameContext::ConSetTeamAll(IConsole::IResult *pResult, void *pUserData)
     int Team = clamp(pResult->GetInteger(0), -1, 1);
 
     char aBuf[256];
-    str_format(aBuf, sizeof(aBuf), "moved all clients to team %d", Team);
-    pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+	str_format(aBuf, sizeof(aBuf), "All players were moved to the %s", pSelf->m_pController->GetTeamName(Team));
+	pSelf->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
     for(int i = 0; i < MAX_CLIENTS; ++i)
         if(pSelf->m_apPlayers[i])
-            pSelf->m_apPlayers[i]->SetTeam(Team, true);
+            pSelf->m_apPlayers[i]->SetTeam(Team, false);
+
+	(void)pSelf->m_pController->CheckTeamBalance();
+}
+
+void CGameContext::ConSwapTeams(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->SwapTeams();
+}
+
+void CGameContext::ConShuffleTeams(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!pSelf->m_pController->IsTeamplay())
+		return;
+
+	int CounterRed = 0;
+	int CounterBlue = 0;
+	int PlayerTeam = 0;
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+		if(pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+			++PlayerTeam;
+	PlayerTeam = (PlayerTeam+1)/2;
+	
+	pSelf->SendChat(-1, CGameContext::CHAT_ALL, "Teams were shuffled");
+
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+		{
+			if(CounterRed == PlayerTeam)
+				pSelf->m_apPlayers[i]->SetTeam(TEAM_BLUE, false);
+			else if(CounterBlue == PlayerTeam)
+				pSelf->m_apPlayers[i]->SetTeam(TEAM_RED, false);
+			else
+			{	
+				if(rand() % 2)
+				{
+					pSelf->m_apPlayers[i]->SetTeam(TEAM_BLUE, false);
+					++CounterBlue;
+				}
+				else
+				{
+					pSelf->m_apPlayers[i]->SetTeam(TEAM_RED, false);
+					++CounterRed;
+				}
+			}
+		}
+	}
 
     (void)pSelf->m_pController->CheckTeamBalance();
 }
@@ -2681,6 +2725,8 @@ void CGameContext::OnConsoleInit()
     Console()->Register("say", "r", CFGFLAG_SERVER, ConSay, this, "Say in chat");
     Console()->Register("set_team", "ii?i", CFGFLAG_SERVER, ConSetTeam, this, "Set team of player to team");
     Console()->Register("set_team_all", "i", CFGFLAG_SERVER, ConSetTeamAll, this, "Set team of all players to team");
+	Console()->Register("swap_teams", "", CFGFLAG_SERVER, ConSwapTeams, this, "Swap the current teams");
+	Console()->Register("shuffle_teams", "", CFGFLAG_SERVER, ConShuffleTeams, this, "Shuffle the current teams");
 
     Console()->Register("add_vote", "sr", CFGFLAG_SERVER, ConAddVote, this, "Add a voting option");
     Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "Remove a voting option");
@@ -2823,23 +2869,11 @@ bool CGameContext::IsClientReady(int ClientID)
 
 bool CGameContext::IsClientPlayer(int ClientID)
 {
-    return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() != TEAM_SPECTATORS ? true : false;
+	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
 }
 
-const char *CGameContext::GameType()
-{
-    return m_pController && m_pController->m_pGameType ? m_pController->m_pGameType : "";
-}
-const char *CGameContext::Version()
-{
-    return GAME_VERSION;
-}
-const char *CGameContext::NetVersion()
-{
-    return GAME_NETVERSION;
-}
+const char *CGameContext::GameType() { return m_pController && m_pController->m_pGameType ? m_pController->m_pGameType : ""; }
+const char *CGameContext::Version() { return GAME_VERSION; }
+const char *CGameContext::NetVersion() { return GAME_NETVERSION; }
 
-IGameServer *CreateGameServer()
-{
-    return new CGameContext;
-}
+IGameServer *CreateGameServer() { return new CGameContext; }

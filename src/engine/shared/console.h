@@ -19,10 +19,7 @@ class CConsole : public IConsole
 
         virtual const CCommandInfo *NextCommandInfo(int AccessLevel, int FlagMask) const;
 
-        void SetAccessLevel(int AccessLevel)
-        {
-            m_AccessLevel = clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_MOD));
-        }
+		void SetAccessLevel(int AccessLevel) { m_AccessLevel = clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_MOD)); }
     };
 
 
@@ -157,32 +154,30 @@ class CConsole : public IConsole
     CCommand *FindCommand(const char *pName, int FlagMask);
 
 public:
-    CConsole(int FlagMask);
+	CConsole(int FlagMask);
 
-    virtual const CCommandInfo *FirstCommandInfo(int AccessLevel, int Flagmask) const;
-    virtual const CCommandInfo *GetCommandInfo(const char *pName, int FlagMask, bool Temp);
-    virtual void PossibleCommands(const char *pStr, int FlagMask, bool Temp, FPossibleCallback pfnCallback, void *pUser);
+	virtual const CCommandInfo *FirstCommandInfo(int AccessLevel, int FlagMask) const;
+	virtual const CCommandInfo *GetCommandInfo(const char *pName, int FlagMask, bool Temp);
+	virtual void PossibleCommands(const char *pStr, int FlagMask, bool Temp, FPossibleCallback pfnCallback, void *pUser);
 
-    virtual void ParseArguments(int NumArgs, const char **ppArguments);
-    virtual void Register(const char *pName, const char *pParams, int Flags, FCommandCallback pfnFunc, void *pUser, const char *pHelp);
-    virtual void RegisterTemp(const char *pName, const char *pParams, int Flags, const char *pHelp);
-    virtual void DeregisterTemp(const char *pName);
-    virtual void DeregisterTempAll();
-    virtual void Chain(const char *pName, FChainCommandCallback pfnChainFunc, void *pUser);
-    virtual void StoreCommands(bool Store);
+	virtual void ParseArguments(int NumArgs, const char **ppArguments);
+	virtual void Register(const char *pName, const char *pParams, int Flags, FCommandCallback pfnFunc, void *pUser, const char *pHelp);
+	virtual void RegisterTemp(const char *pName, const char *pParams, int Flags, const char *pHelp);
+	virtual void DeregisterTemp(const char *pName);
+	virtual void DeregisterTempAll();
+	virtual void Chain(const char *pName, FChainCommandCallback pfnChainFunc, void *pUser);
+	virtual void StoreCommands(bool Store);
 
-    virtual bool LineIsValid(const char *pStr);
-    virtual void ExecuteLine(const char *pStr);
-    virtual void ExecuteFile(const char *pFilename);
+	virtual bool LineIsValid(const char *pStr);
+	virtual void ExecuteLine(const char *pStr);
+	virtual void ExecuteLineFlag(const char *pStr, int FlagMask);
+	virtual void ExecuteFile(const char *pFilename);
 
-    virtual int RegisterPrintCallback(int OutputLevel, FPrintCallback pfnPrintCallback, void *pUserData);
-    virtual void SetPrintOutputLevel(int Index, int OutputLevel);
-    virtual void Print(int Level, const char *pFrom, const char *pStr);
+	virtual int RegisterPrintCallback(int OutputLevel, FPrintCallback pfnPrintCallback, void *pUserData);
+	virtual void SetPrintOutputLevel(int Index, int OutputLevel);
+	virtual void Print(int Level, const char *pFrom, const char *pStr);
 
-    void SetAccessLevel(int AccessLevel)
-    {
-        m_AccessLevel = clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_MOD));
-    }
+	void SetAccessLevel(int AccessLevel) { m_AccessLevel = clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_MOD)); }
 };
 
 #endif

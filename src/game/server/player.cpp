@@ -9,10 +9,7 @@
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
-IServer *CPlayer::Server() const
-{
-    return m_pGameServer->Server();
-}
+IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
 
 CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 {
@@ -260,7 +257,7 @@ void CPlayer::Respawn()
         m_Spawning = true;
 }
 
-void CPlayer::SetTeam(int Team, bool verbose)
+void CPlayer::SetTeam(int Team, bool DoChatMsg)
 {
     // clamp the team
     Team = GameServer()->m_pController->ClampTeam(Team);
@@ -269,7 +266,7 @@ void CPlayer::SetTeam(int Team, bool verbose)
 
     char aBuf[512];
 
-    if ( verbose )
+    if (DoChatMsg)
     {
         if ( GameServer()->m_pEventsGame->GetActualEventTeam() == ANONYMOUS )
         {

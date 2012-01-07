@@ -38,27 +38,29 @@
 */
 class CGameContext : public IGameServer
 {
-    IServer *m_pServer;
-    class IConsole *m_pConsole;
-    CLayers m_Layers;
-    CCollision m_Collision;
-    CNetObjHandler m_NetObjHandler;
-    CTuningParams m_Tuning;
+	IServer *m_pServer;
+	class IConsole *m_pConsole;
+	CLayers m_Layers;
+	CCollision m_Collision;
+	CNetObjHandler m_NetObjHandler;
+	CTuningParams m_Tuning;
 
-    static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
-    static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);
-    static void ConTuneDump(IConsole::IResult *pResult, void *pUserData);
-    static void ConChangeMap(IConsole::IResult *pResult, void *pUserData);
-    static void ConRestart(IConsole::IResult *pResult, void *pUserData);
-    static void ConBroadcast(IConsole::IResult *pResult, void *pUserData);
-    static void ConSay(IConsole::IResult *pResult, void *pUserData);
-    static void ConSetTeam(IConsole::IResult *pResult, void *pUserData);
-    static void ConSetTeamAll(IConsole::IResult *pResult, void *pUserData);
-    static void ConAddVote(IConsole::IResult *pResult, void *pUserData);
-    static void ConRemoveVote(IConsole::IResult *pResult, void *pUserData);
-    static void ConForceVote(IConsole::IResult *pResult, void *pUserData);
-    static void ConClearVotes(IConsole::IResult *pResult, void *pUserData);
-    static void ConVote(IConsole::IResult *pResult, void *pUserData);
+	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
+	static void ConTuneReset(IConsole::IResult *pResult, void *pUserData);
+	static void ConTuneDump(IConsole::IResult *pResult, void *pUserData);
+	static void ConChangeMap(IConsole::IResult *pResult, void *pUserData);
+	static void ConRestart(IConsole::IResult *pResult, void *pUserData);
+	static void ConBroadcast(IConsole::IResult *pResult, void *pUserData);
+	static void ConSay(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetTeamAll(IConsole::IResult *pResult, void *pUserData);
+	static void ConSwapTeams(IConsole::IResult *pResult, void *pUserData);
+	static void ConShuffleTeams(IConsole::IResult *pResult, void *pUserData);
+	static void ConAddVote(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveVote(IConsole::IResult *pResult, void *pUserData);
+	static void ConForceVote(IConsole::IResult *pResult, void *pUserData);
+	static void ConClearVotes(IConsole::IResult *pResult, void *pUserData);
+	static void ConVote(IConsole::IResult *pResult, void *pUserData);
     static void ConNextEvent(IConsole::IResult *pResult, void *pUserData);
     static void ConNextRandomEvent(IConsole::IResult *pResult, void *pUserData);
     static void ConSetEvent(IConsole::IResult *pResult, void *pUserData);
@@ -80,91 +82,77 @@ class CGameContext : public IGameServer
     static void ConRemoveKatana(IConsole::IResult *pResult, void *pUserData);
     static void ConRemoveProtect(IConsole::IResult *pResult, void *pUserData);
     static void ConRemoveInvisibility(IConsole::IResult *pResult, void *pUserData);
+	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
-    static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	CGameContext(int Resetting);
+	void Construct(int Resetting);
 
-    CGameContext(int Resetting);
-    void Construct(int Resetting);
-
-    bool m_Resetting;
+	bool m_Resetting;
 public:
-    IServer *Server() const
-    {
-        return m_pServer;
-    }
-    class IConsole *Console()
-    {
-        return m_pConsole;
-    }
-    CCollision *Collision()
-    {
-        return &m_Collision;
-    }
-    CTuningParams *Tuning()
-    {
-        return &m_Tuning;
-    }
+	IServer *Server() const { return m_pServer; }
+	class IConsole *Console() { return m_pConsole; }
+	CCollision *Collision() { return &m_Collision; }
+	CTuningParams *Tuning() { return &m_Tuning; }
 
-    CGameContext();
-    ~CGameContext();
+	CGameContext();
+	~CGameContext();
 
-    void Clear();
-
+	void Clear();
     class CStatistiques *m_pStatistiques;
     class CEvent *m_pEventsGame;
 
-    CEventHandler m_Events;
-    CPlayer *m_apPlayers[MAX_CLIENTS];
+	CEventHandler m_Events;
+	CPlayer *m_apPlayers[MAX_CLIENTS];
 
-    IGameController *m_pController;
-    CGameWorld m_World;
+	IGameController *m_pController;
+	CGameWorld m_World;
 
-    // helper functions
-    class CCharacter *GetPlayerChar(int ClientID);
+	// helper functions
+	class CCharacter *GetPlayerChar(int ClientID);
 
-    // voting
-    void StartVote(const char *pDesc, const char *pCommand, const char *pReason);
-    void EndVote();
-    void SendVoteSet(int ClientID);
-    void SendVoteStatus(int ClientID, int Total, int Yes, int No);
-    void AbortVoteKickOnDisconnect(int ClientID);
+	// voting
+	void StartVote(const char *pDesc, const char *pCommand, const char *pReason);
+	void EndVote();
+	void SendVoteSet(int ClientID);
+	void SendVoteStatus(int ClientID, int Total, int Yes, int No);
+	void AbortVoteKickOnDisconnect(int ClientID);
 
-    int m_VoteCreator;
-    int64 m_VoteCloseTime;
-    bool m_VoteUpdate;
-    int m_VotePos;
-    char m_aVoteDescription[VOTE_DESC_LENGTH];
-    char m_aVoteCommand[VOTE_CMD_LENGTH];
-    char m_aVoteReason[VOTE_REASON_LENGTH];
-    int m_NumVoteOptions;
-    int m_VoteEnforce;
-    enum
-    {
-        VOTE_ENFORCE_UNKNOWN=0,
-        VOTE_ENFORCE_NO,
-        VOTE_ENFORCE_YES,
-    };
-    CHeap *m_pVoteOptionHeap;
-    CVoteOptionServer *m_pVoteOptionFirst;
-    CVoteOptionServer *m_pVoteOptionLast;
+	int m_VoteCreator;
+	int64 m_VoteCloseTime;
+	bool m_VoteUpdate;
+	int m_VotePos;
+	char m_aVoteDescription[VOTE_DESC_LENGTH];
+	char m_aVoteCommand[VOTE_CMD_LENGTH];
+	char m_aVoteReason[VOTE_REASON_LENGTH];
+	int m_NumVoteOptions;
+	int m_VoteEnforce;
+	enum
+	{
+		VOTE_ENFORCE_UNKNOWN=0,
+		VOTE_ENFORCE_NO,
+		VOTE_ENFORCE_YES,
+	};
+	CHeap *m_pVoteOptionHeap;
+	CVoteOptionServer *m_pVoteOptionFirst;
+	CVoteOptionServer *m_pVoteOptionLast;
 
-    // helper functions
-    void CreateDamageInd(vec2 Pos, float AngleMod, int Amount);
+	// helper functions
+	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount);
     void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke);
-    void CreateHammerHit(vec2 Pos);
-    void CreatePlayerSpawn(vec2 Pos);
-    void CreateDeath(vec2 Pos, int Who);
-    void CreateSound(vec2 Pos, int Sound, int Mask=-1);
-    void CreateSoundGlobal(int Sound, int Target=-1);
+	void CreateHammerHit(vec2 Pos);
+	void CreatePlayerSpawn(vec2 Pos);
+	void CreateDeath(vec2 Pos, int Who);
+	void CreateSound(vec2 Pos, int Sound, int Mask=-1);
+	void CreateSoundGlobal(int Sound, int Target=-1);
 
 
-    enum
-    {
-        CHAT_ALL=-2,
-        CHAT_SPEC=-1,
-        CHAT_RED=0,
-        CHAT_BLUE=1
-    };
+	enum
+	{
+		CHAT_ALL=-2,
+		CHAT_SPEC=-1,
+		CHAT_RED=0,
+		CHAT_BLUE=1
+	};
 
     enum
     {
@@ -177,58 +165,49 @@ public:
         CHAT_INFO_AMMO,
         CHAT_INFO_VOTER
     };
-    // network
+	// network
     void SendChatTarget(int To, const char *pText, int Type = CHAT_INFO);
-    void SendChat(int ClientID, int Team, const char *pText);
-    void SendEmoticon(int ClientID, int Emoticon);
-    void SendWeaponPickup(int ClientID, int Weapon);
-    void SendBroadcast(const char *pText, int ClientID);
+	void SendChat(int ClientID, int Team, const char *pText);
+	void SendEmoticon(int ClientID, int Emoticon);
+	void SendWeaponPickup(int ClientID, int Weapon);
+	void SendBroadcast(const char *pText, int ClientID);
 
 
-    //
-    void CheckPureTuning();
-    void SendTuningParams(int ClientID);
+	//
+	void CheckPureTuning();
+	void SendTuningParams(int ClientID);
 
-    // engine events
-    virtual void OnInit();
-    virtual void OnConsoleInit();
-    virtual void OnShutdown();
+	//
+	void SwapTeams();
 
-    virtual void OnTick();
-    virtual void OnPreSnap();
-    virtual void OnSnap(int ClientID);
-    virtual void OnPostSnap();
+	// engine events
+	virtual void OnInit();
+	virtual void OnConsoleInit();
+	virtual void OnShutdown();
 
-    virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID);
+	virtual void OnTick();
+	virtual void OnPreSnap();
+	virtual void OnSnap(int ClientID);
+	virtual void OnPostSnap();
 
-    virtual void OnClientConnected(int ClientID);
-    virtual void OnClientEnter(int ClientID);
-    virtual void OnClientDrop(int ClientID, const char *pReason);
-    virtual void OnClientDirectInput(int ClientID, void *pInput);
-    virtual void OnClientPredictedInput(int ClientID, void *pInput);
+	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID);
 
-    virtual bool IsClientReady(int ClientID);
-    virtual bool IsClientPlayer(int ClientID);
+	virtual void OnClientConnected(int ClientID);
+	virtual void OnClientEnter(int ClientID);
+	virtual void OnClientDrop(int ClientID, const char *pReason);
+	virtual void OnClientDirectInput(int ClientID, void *pInput);
+	virtual void OnClientPredictedInput(int ClientID, void *pInput);
 
-    virtual const char *GameType();
-    virtual const char *Version();
-    virtual const char *NetVersion();
+	virtual bool IsClientReady(int ClientID);
+	virtual bool IsClientPlayer(int ClientID);
+
+	virtual const char *GameType();
+	virtual const char *Version();
+	virtual const char *NetVersion();
 };
 
-inline int CmaskAll()
-{
-    return -1;
-}
-inline int CmaskOne(int ClientID)
-{
-    return 1<<ClientID;
-}
-inline int CmaskAllExceptOne(int ClientID)
-{
-    return 0x7fffffff^CmaskOne(ClientID);
-}
-inline bool CmaskIsSet(int Mask, int ClientID)
-{
-    return (Mask&CmaskOne(ClientID)) != 0;
-}
+inline int CmaskAll() { return -1; }
+inline int CmaskOne(int ClientID) { return 1<<ClientID; }
+inline int CmaskAllExceptOne(int ClientID) { return 0x7fffffff^CmaskOne(ClientID); }
+inline bool CmaskIsSet(int Mask, int ClientID) { return (Mask&CmaskOne(ClientID)) != 0; }
 #endif
