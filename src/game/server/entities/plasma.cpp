@@ -35,7 +35,7 @@ bool CPlasma::HitCharacter(vec2 From, vec2 To)
     At = TempPos;
 
     CTurret *pHitTurret = (CTurret*) GameServer()->m_World.IntersectEntity(From, To, 0.0f, TempPos, CGameWorld::ENTTYPE_TURRET);
-    if ( ClosestLen > distance(From, TempPos) )
+    if ( pHitTurret && pHitTurret->GetOwner() != m_Owner && ClosestLen > distance(From, TempPos) )
     {
         ClosestLen = distance(From, TempPos);
         At = TempPos;

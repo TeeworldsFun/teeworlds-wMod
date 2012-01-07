@@ -444,7 +444,7 @@ void CCharacter::FireWeapon()
     bool Limit = false;
 
     if(m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_NINJA && (
-       GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) ||
+       GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && (Race != MINER || m_ActiveWeapon != WEAPON_GUN || m_ActiveWeapon != WEAPON_GRENADE) ||
       (Race == MINER && m_ActiveWeapon == WEAPON_SHOTGUN)))
         Limit = true;
 
