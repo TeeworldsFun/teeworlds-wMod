@@ -19,6 +19,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
     m_ScoreStartTick = Server()->Tick();
     m_pCharacter = 0;
     m_ClientID = ClientID;
+    m_StatID = -1;
     m_Team = GameServer()->m_pController->ClampTeam(Team);
     if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && Team != TEAM_SPECTATORS )
         Team = TEAM_RED;

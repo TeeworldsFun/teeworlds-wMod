@@ -716,6 +716,7 @@ void CGameContext::OnClientEnter(int ClientID)
     }
     m_apPlayers[ClientID]->SetSID(m_pStatistiques->GetId(ip, Server()->ClientName(ClientID), Server()->ClientClan(ClientID), Server()->ClientCountry(ClientID)));
     m_pStatistiques->SetStartPlay(m_apPlayers[ClientID]->GetSID(), ClientID);
+    SendTuningParams(ClientID);
 
     //world.insert_entity(&players[client_id]);
     m_apPlayers[ClientID]->Respawn();

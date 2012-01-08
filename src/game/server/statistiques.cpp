@@ -184,6 +184,9 @@ void CStatistiques::Clear()
 
 void CStatistiques::SetInfo(long id, const char name[], const char clan[], const int country)
 {
+        if(!Check(id))
+            return;
+
     m_statistiques[id].m_name = str_quickhash(name);
     m_statistiques[id].m_clan = str_quickhash(clan);
     m_statistiques[id].m_country = country;
@@ -567,6 +570,9 @@ long CStatistiques::GetId(const char ip[MAX_IP_LENGTH], const char a[], const ch
 
 void CStatistiques::UpdateStat(long id)
 {
+    if(!Check(id))
+        return;
+
     if ( m_statistiques[id].m_dead != 0 )
         m_statistiques[id].m_rapport = (float)m_statistiques[id].m_kill / (float)m_statistiques[id].m_dead;
     else
@@ -589,6 +595,9 @@ void CStatistiques::UpdateStat(long id)
 
 void CStatistiques::UpdateUpgrade(long id)
 {
+    if(!Check(id))
+        return;
+
     m_statistiques[id].m_upgrade.m_money = m_statistiques[id].m_level - (m_statistiques[id].m_upgrade.m_weapon + m_statistiques[id].m_upgrade.m_life + m_statistiques[id].m_upgrade.m_move + m_statistiques[id].m_upgrade.m_hook);
 
     if ( m_statistiques[id].m_upgrade.m_weapon > 40 )
@@ -837,6 +846,12 @@ void CStatistiques::UpdateRank()
 
 void CStatistiques::DisplayStat(long id, const char* Name)
 {
+    if(!Check(id))
+    {
+        GameServer()->SendChatTarget(-1, "Invalid account");
+        return;
+    }
+
     UpdateStat(id);
 
     char a[256] = "";
@@ -887,6 +902,12 @@ const char* Suffix(unsigned long number)
 
 void CStatistiques::DisplayRank(long id, const char* Name)
 {
+    if(!Check(id))
+    {
+        GameServer()->SendChatTarget(-1, "Invalid account");
+        return;
+    }
+
     char a[256] = "";
     char ranks[15][50];
 
@@ -954,9 +975,15 @@ void CStatistiques::DisplayBestOf()
 
 void CStatistiques::DisplayPlayer(long id, int ClientID)
 {
-    UpdateUpgrade(id);
-    char upgr[7][50];
+    if(!Check(id))
+    {
+        GameServer()->SendChatTarget(ClientID, "Invalid account");
+        return;
+    }
 
+    UpdateUpgrade(id);
+
+    char upgr[7][50];
     str_format(upgr[0], 50, "Name : %s | Level : %ld | Score : %ld", Server()->ClientName(ClientID), m_statistiques[id].m_level, m_statistiques[id].m_score);
     str_format(upgr[1], 50, "Upgrade :");
     str_format(upgr[2], 50, "Money : %ld", m_statistiques[id].m_upgrade.m_money);
@@ -1040,6 +1067,9 @@ void CStatistiques::WriteStat()
 
 void CStatistiques::ResetPartialStat(long id)
 {
+    if(!Check(id))
+        return;
+
     m_statistiques[id].m_kill = 0;
     m_statistiques[id].m_dead = 0;
     m_statistiques[id].m_suicide = 0;
@@ -1059,6 +1089,9 @@ void CStatistiques::ResetPartialStat(long id)
 
 void CStatistiques::ResetAllStat(long id)
 {
+    if(!Check(id))
+        return;
+
     m_statistiques[id].m_kill = 0;
     m_statistiques[id].m_dead = 0;
     m_statistiques[id].m_suicide = 0;
@@ -1084,6 +1117,9 @@ void CStatistiques::ResetAllStat(long id)
 
 void CStatistiques::ResetUpgr(long id)
 {
+    if(!Check(id))
+        return;
+
     m_statistiques[id].m_upgrade.m_weapon = 0;
     m_statistiques[id].m_upgrade.m_life = 0;
     m_statistiques[id].m_upgrade.m_move = 0;

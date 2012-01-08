@@ -418,7 +418,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
             }
             if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) < 4)
             {
-                char bonus_note[3][32] = {"handle x1.5 and fly unlimited", "all weapons except katana", "invisibility"};
+                char bonus_note[3][32] = {"handle x1.5 and fly unlimited", "all weapons", "invisibility"};
                 char Text[256] = "";
                 str_format(Text, 256, "%s gets %s !", Server()->ClientName(pKiller->GetCID()), bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
                 GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
@@ -434,6 +434,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, -2);
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_GRENADE, -2);
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_RIFLE, -2);
+                    pKiller->GetCharacter()->GiveNinja();
                 }
             }
         }

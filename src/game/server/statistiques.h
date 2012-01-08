@@ -11,6 +11,18 @@ enum { MAX_IP_LENGTH = 45 };
 
 struct StatWeapon
 {
+    StatWeapon()
+    {
+        m_auto_gun = false;
+        m_auto_hammer = false;
+        m_auto_ninja = false;
+        m_speed = 1.0f;
+        m_regeneration = 0;
+        m_stockage = 10;
+        m_all_weapon = false;
+        m_bounce = 0;
+    }
+
     bool m_auto_gun;
     bool m_auto_hammer;
     bool m_auto_ninja;
@@ -23,6 +35,14 @@ struct StatWeapon
 
 struct StatLife
 {
+    StatLife()
+    {
+        m_protection = 1.0f;
+        m_start_armor = 0;
+        m_regeneration = 0;
+        m_stockage[0] = 10;
+        m_stockage[1] = 10;
+    }
     float m_protection;
     int m_start_armor;
     int m_regeneration;
@@ -31,6 +51,13 @@ struct StatLife
 
 struct StatMove
 {
+    StatMove()
+    {
+        m_rate_speed = 1.0f;
+        m_rate_accel = 1.0f;
+        m_rate_high_jump = 1.0f;
+        m_num_jump = 1;
+    }
     float m_rate_speed;
     float m_rate_accel;
     float m_rate_high_jump;
@@ -39,6 +66,13 @@ struct StatMove
 
 struct StatHook
 {
+    StatHook()
+    {
+        m_rate_length = 1.0f;
+        m_rate_time = 1.0f;
+        m_rate_speed = 1.0f;
+        m_hook_damage = false;
+    }
     float m_rate_length;
     float m_rate_time;
     float m_rate_speed;
@@ -78,6 +112,19 @@ struct Rank
 
 struct Conf
 {
+    Conf()
+    {
+        m_InfoHealKiller = true;
+        m_InfoXP = true;
+        m_InfoLevelUp = true;
+        m_InfoKillingSpree = true;
+        m_InfoRace = true;
+        m_InfoAmmo = true;
+        m_ShowVoter = true;
+        m_AmmoAbsolute = true;
+        m_LifeAbsolute = true;
+        m_Lock = false;
+    }
     bool m_InfoHealKiller;
     bool m_InfoXP;
     bool m_InfoLevelUp;
@@ -202,46 +249,79 @@ public:
     void Tick();
     void Clear();
 
+    long GetId(const char ip[MAX_IP_LENGTH], const char name[], const char clan[], const int country);
     void SetInfo(long id, const char name[], const char clan[], const int country);
 
-    long GetId(const char ip[MAX_IP_LENGTH], const char name[], const char clan[], const int country);
+    inline bool Check(long id, bool checklock = false)
+    {
+        if(!m_init || id < 0 || static_cast<unsigned long>(id) >= m_statistiques.size() || (checklock && m_statistiques[id].m_conf.m_Lock))
+            return false;
+        return true;
+    }
     inline unsigned long GetLevel(long id)
     {
+        if(!Check(id))
+            return 0;
+
         UpdateStat(id);
         return m_statistiques[id].m_level;
     }
     inline unsigned long GetXp(long id)
     {
+        if(!Check(id))
+            return 0;
+
         UpdateStat(id);
         return m_statistiques[id].m_xp;
     }
     inline unsigned long GetScore(long id)
     {
+        if(!Check(id))
+            return 0;
+
         UpdateStat(id);
         return m_statistiques[id].m_score;
     }
     inline unsigned long GetActualKill(long id)
     {
+        if(!Check(id))
+            return 0;
+
         return m_statistiques[id].m_actual_kill;
     }
     inline StatWeapon GetStatWeapon(long id)
     {
+        if(!Check(id))
+            return StatWeapon();
+
         return m_statistiques[id].m_upgrade.m_stat_weapon;
     }
     inline StatLife GetStatLife(long id)
     {
+        if(!Check(id))
+            return StatLife();
+
         return m_statistiques[id].m_upgrade.m_stat_life;
     }
     inline StatMove GetStatMove(long id)
     {
+        if(!Check(id))
+            return StatMove();
+
         return m_statistiques[id].m_upgrade.m_stat_move;
     }
     inline StatHook GetStatHook(long id)
     {
+        if(!Check(id))
+            return StatHook();
+
         return m_statistiques[id].m_upgrade.m_stat_hook;
     }
     inline Conf GetConf(long id)
     {
+        if(!Check(id))
+            return Conf();
+
         return m_statistiques[id].m_conf;
     }
 
@@ -262,6 +342,9 @@ public:
 
     inline void AddKill(long id, long id_victim)
     {
+        if(!Check(id))
+            return;
+
         m_statistiques[id].m_actual_kill++;
         if ( m_statistiques[id].m_conf.m_Lock )
             return;
@@ -269,11 +352,17 @@ public:
         m_statistiques[id].m_kill++;
         if (!m_statistiques[id].m_level)
             m_statistiques[id].m_level = 1;
+        if(!Check(id_victim))
+            return;
+
         if (static_cast<long long>(m_statistiques[id_victim].m_level/m_statistiques[id].m_level) - 1 > 0)
             m_statistiques[id].m_bonus_xp += (m_statistiques[id_victim].m_level/m_statistiques[id].m_level) - 1;
     }
     inline void AddDead(long id)
     {
+        if(!Check(id))
+            return;
+
         if ( m_statistiques[id].m_conf.m_Lock )
         {
             m_statistiques[id].m_actual_kill = 0;
@@ -285,59 +374,54 @@ public:
     }
     inline void AddSuicide(long id)
     {
-        if ( m_statistiques[id].m_conf.m_Lock )
-        {
+        if(!Check(id, true))
             return;
-        }
         m_statistiques[id].m_suicide++;
     }
     inline void AddFire(long id)
     {
-        if ( m_statistiques[id].m_conf.m_Lock )
-        {
+        if(!Check(id, true))
             return;
-        }
         m_statistiques[id].m_fire++;
     }
     inline void AddPickUpWeapon(long id)
     {
-        if ( m_statistiques[id].m_conf.m_Lock )
-        {
+        if(!Check(id, true))
             return;
-        }
         m_statistiques[id].m_pickup_weapon++;
     }
     inline void AddPickUpNinja(long id)
     {
-        if ( m_statistiques[id].m_conf.m_Lock )
-        {
+        if(!Check(id, true))
             return;
-        }
         m_statistiques[id].m_pickup_ninja++;
     }
     inline void AddChangeWeapon(long id)
     {
-        if ( m_statistiques[id].m_conf.m_Lock )
-        {
+        if(!Check(id, true))
             return;
-        }
         m_statistiques[id].m_change_weapon++;
     }
     inline void SetStartPlay(long id, int ClientID)
     {
+        if(!Check(id))
+            return;
+
         for (int i = 0; i < NUM_WEAPONS; i++)
         {
             GameServer()->m_apPlayers[ClientID]->m_WeaponType[i] = m_statistiques[id].m_conf.m_Weapon[i];
         }
         m_statistiques[id].m_start_time = time(NULL);
         if ( m_statistiques[id].m_conf.m_Lock )
-        {
             return;
-        }
+
         m_statistiques[id].m_log_in++;
     }
     inline void SetStopPlay(long id, int ClientID)
     {
+        if(!Check(id))
+            return;
+
         for (int i = 0; i < NUM_WEAPONS; i++)
         {
             m_statistiques[id].m_conf.m_Weapon[i] = GameServer()->m_apPlayers[ClientID]->m_WeaponType[i];
@@ -354,59 +438,75 @@ public:
     }
     inline void AddMessage(long id)
     {
-        if ( m_statistiques[id].m_conf.m_Lock )
-        {
+        if(!Check(id, true))
             return;
-        }
         m_statistiques[id].m_message++;
     }
     inline void AddFlagCapture(long id)
     {
-        if ( m_statistiques[id].m_conf.m_Lock )
-        {
+        if(!Check(id, true))
             return;
-        }
         m_statistiques[id].m_flag_capture++;
     }
 
     inline bool InfoHealKiller(long id)
     {
+        if(!Check(id))
+            return true;
         return m_statistiques[id].m_conf.m_InfoHealKiller = m_statistiques[id].m_conf.m_InfoHealKiller ? false : true;
     }
     inline bool InfoXP(long id)
     {
+        if(!Check(id))
+            return true;
         return m_statistiques[id].m_conf.m_InfoXP = m_statistiques[id].m_conf.m_InfoXP ? false : true;
     }
     inline bool InfoLevelUp(long id)
     {
+        if(!Check(id))
+            return true;
         return m_statistiques[id].m_conf.m_InfoLevelUp = m_statistiques[id].m_conf.m_InfoLevelUp ? false : true;
     }
     inline bool InfoKillingSpree(long id)
     {
+        if(!Check(id))
+            return true;
         return m_statistiques[id].m_conf.m_InfoKillingSpree = m_statistiques[id].m_conf.m_InfoKillingSpree ? false : true;
     }
     inline bool InfoRace(long id)
     {
+        if(!Check(id))
+            return true;
         return m_statistiques[id].m_conf.m_InfoRace = m_statistiques[id].m_conf.m_InfoRace ? false : true;
     }
     inline bool InfoAmmo(long id)
     {
+        if(!Check(id))
+            return true;
         return m_statistiques[id].m_conf.m_InfoAmmo = m_statistiques[id].m_conf.m_InfoAmmo ? false : true;
     }
     inline bool ShowVoter(long id)
     {
+        if(!Check(id))
+            return true;
         return m_statistiques[id].m_conf.m_ShowVoter = m_statistiques[id].m_conf.m_ShowVoter ? false : true;
     }
     inline bool AmmoAbsolute(long id)
     {
+        if(!Check(id))
+            return true;
         return m_statistiques[id].m_conf.m_AmmoAbsolute = m_statistiques[id].m_conf.m_AmmoAbsolute ? false : true;
     }
     inline bool LifeAbsolute(long id)
     {
+        if(!Check(id))
+            return true;
         return m_statistiques[id].m_conf.m_LifeAbsolute = m_statistiques[id].m_conf.m_LifeAbsolute ? false : true;
     }
     inline void EnableAllInfo(long id)
     {
+        if(!Check(id))
+            return;
         m_statistiques[id].m_conf.m_InfoHealKiller = true;
         m_statistiques[id].m_conf.m_InfoXP = true;
         m_statistiques[id].m_conf.m_InfoLevelUp = true;
@@ -417,6 +517,8 @@ public:
     }
     inline void DisableAllInfo(long id)
     {
+        if(!Check(id))
+            return;
         m_statistiques[id].m_conf.m_InfoHealKiller = false;
         m_statistiques[id].m_conf.m_InfoXP = false;
         m_statistiques[id].m_conf.m_InfoLevelUp = false;
@@ -427,11 +529,16 @@ public:
     }
     inline bool Lock(long id)
     {
+        if(!Check(id))
+            return false;
         return m_statistiques[id].m_conf.m_Lock = m_statistiques[id].m_conf.m_Lock ? false : true;
     }
 
     inline int UpgradeWeapon(long id)
     {
+        if(!Check(id))
+            return 4;
+
         UpdateUpgrade(id);
         if (!m_statistiques[id].m_upgrade.m_money)
             return 1;
@@ -445,6 +552,9 @@ public:
     };
     inline int UpgradeLife(long id)
     {
+        if(!Check(id))
+            return 4;
+
         UpdateUpgrade(id);
         if (!m_statistiques[id].m_upgrade.m_money)
             return 1;
@@ -458,6 +568,9 @@ public:
     };
     inline int UpgradeMove(long id)
     {
+        if(!Check(id))
+            return 4;
+
         UpdateUpgrade(id);
         if (!m_statistiques[id].m_upgrade.m_money)
             return 1;
@@ -471,6 +584,9 @@ public:
     };
     inline int UpgradeHook(long id)
     {
+        if(!Check(id))
+            return 4;
+
         UpdateUpgrade(id);
         if (!m_statistiques[id].m_upgrade.m_money)
             return 1;
