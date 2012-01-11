@@ -180,6 +180,9 @@ public:
 	//
 	void SwapTeams();
 
+    void ParseArguments(const char *Message, int nb_result, char Result[][256]);
+    void CommandOnChat(const char *Message, const int ClientID, const int Team);
+
 	// engine events
 	virtual void OnInit();
 	virtual void OnConsoleInit();

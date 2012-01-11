@@ -796,6 +796,389 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
     }
 }
 
+void CGameContext::ParseArguments(const char *Message, int nb_result, char Result[][256])
+{
+    for (int i = 0; i < nb_result; i++)
+        Result[i][0] = 0;
+
+    int Actual = 0;
+    int Pos = 0;
+
+    for (int i = 0; i < str_length(Message); i++)
+    {
+        if (Message[i] == ' ')
+        {
+            Result[Actual][Pos] = 0;
+            Pos = 0;
+            Actual++;
+            if (Actual >= nb_result)
+                break;
+        }
+        else if (Pos < 255)
+        {
+            Result[Actual][Pos] = Message[i];
+            Pos++;
+        }
+    }
+    
+    Result[Actual][Pos] = 0;
+}
+
+void CGameContext::CommandOnChat(const char *Message, const int ClientID, const int Team)
+{
+    char Arguments[3][256];
+    ParseArguments(Message, 3, Arguments);
+    if (str_comp_nocase(Arguments[0], "/cmdlist") == 0 || str_comp_nocase(Arguments[0], "/help") == 0 )
+    {
+        SendChatTarget(ClientID, "*** Commands available are : ***");
+        SendChatTarget(ClientID, "/cmdlist or /help : To get commands available.");
+        SendChatTarget(ClientID, "/info or /credits : To get informations of this mod.");
+        SendChatTarget(ClientID, "/ammo : To get ammo of your actual weapon.");
+        SendChatTarget(ClientID, "/race : To choose a race");
+        SendChatTarget(ClientID, "/stats or /ranks : To get your statistics or your rank.");
+        SendChatTarget(ClientID, "/player or /upgr : To get or to add your upgrades.");
+        SendChatTarget(ClientID, "/conf : To change yours settings.");
+        SendChatTarget(ClientID, "/reset_stats or /reset_all_stats or /reset_upgr: To reset partially or all your statistics.");
+    }
+    else if(str_comp_nocase(Arguments[0], "/info") == 0)
+    {
+        SendChatTarget(ClientID, "*** Extreme Weapon Mod v2.1 ***");
+        SendChatTarget(ClientID, "** Wrote by PJK **");
+        SendChatTarget(ClientID, "It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
+        SendChatTarget(ClientID, "You can choose a race, see your statistics and upgrade your gameplay !");
+        SendChatTarget(ClientID, "Say /cmdlist to get all commands available !");
+        SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
+    }
+    else if(str_comp_nocase(Arguments[0], "/credits") == 0)
+    {
+        SendChat(ClientID, Team, Arguments[0]);
+        SendChatTarget(-1, "*** Extreme Weapon Mod v2.1 ***");
+        SendChatTarget(-1, "** Wrote by PJK **");
+    }
+    else if(str_comp_nocase(Arguments[0], "/ammo") == 0)
+    {
+        CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
+        if ( pChr )
+        {
+            char aBuf[256] = "";
+            str_format(aBuf, 256, "Ammo of the actual weapon is : %d/%d.", pChr->GetAmmoActiveWeapon(), g_pData->m_Weapons.m_aId[pChr->GetActiveWeapon()].m_Maxammo);
+            SendChatTarget(ClientID, aBuf);
+        }
+        else
+            SendChatTarget(ClientID, "You are dead or you are only a spectator");
+    }
+    else if(str_comp_nocase(Arguments[0], "/race") == 0)
+    {
+            if(str_comp_nocase(Arguments[1], "warrior") == 0)
+            {
+                if(m_apPlayers[ClientID]->m_Race == WARRIOR)
+                    return;
+                char aBuf[256] = "";
+                str_format(aBuf, 256, "%s is now a warrior !", Server()->ClientName(ClientID));
+                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+                m_apPlayers[ClientID]->KillCharacter();
+                m_apPlayers[ClientID]->m_Race = WARRIOR;
+                for (int i = 0; i < NUM_WEAPONS; i++)
+                    m_apPlayers[ClientID]->m_WeaponType[i] = WARRIOR;
+            }
+            else if(str_comp_nocase(Arguments[1], "engineer") == 0)
+            {
+                if(m_apPlayers[ClientID]->m_Race == ENGINEER)
+                    return;
+                char aBuf[256] = "";
+                str_format(aBuf, 256, "%s is now an engineer !", Server()->ClientName(ClientID));
+                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+                m_apPlayers[ClientID]->KillCharacter();
+                m_apPlayers[ClientID]->m_Race = ENGINEER;
+                for (int i = 0; i < NUM_WEAPONS; i++)
+                    m_apPlayers[ClientID]->m_WeaponType[i] = ENGINEER;
+            }
+            else if(str_comp_nocase(Arguments[1], "orc") == 0)
+            {
+                if(m_apPlayers[ClientID]->m_Race == ORC)
+                    return;
+                char aBuf[256] = "";
+                str_format(aBuf, 256, "%s is now an orc !", Server()->ClientName(ClientID));
+                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+                m_apPlayers[ClientID]->KillCharacter();
+                m_apPlayers[ClientID]->m_Race = ORC;
+                for (int i = 0; i < NUM_WEAPONS; i++)
+                    m_apPlayers[ClientID]->m_WeaponType[i] = ORC;
+            }
+            else if(str_comp_nocase(Arguments[1], "miner") == 0)
+            {
+                if(m_apPlayers[ClientID]->m_Race == MINER)
+                    return;
+                char aBuf[256] = "";
+                str_format(aBuf, 256, "%s is now a miner !", Server()->ClientName(ClientID));
+                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+                m_apPlayers[ClientID]->KillCharacter();
+                m_apPlayers[ClientID]->m_Race = MINER;
+                for (int i = 0; i < NUM_WEAPONS; i++)
+                    m_apPlayers[ClientID]->m_WeaponType[i] = MINER;
+            }
+            else if(str_comp_nocase(Arguments[1], "custom") == 0)
+            {
+                if(m_apPlayers[ClientID]->m_Race != CUSTOM)
+                {
+                    char aBuf[256] = "";
+                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+                    m_apPlayers[ClientID]->KillCharacter();
+                }
+
+                SendChatTarget(ClientID, "Use /hammer | /gun | /shotgun | /grenade | /rifle to customize !");            
+                m_apPlayers[ClientID]->m_Race = CUSTOM;
+            }
+            else if(Arguments[1][0] == 0 || Arguments[1][0] == ' ')
+            {
+                SendChatTarget(ClientID, "Usage : /race <race>");
+                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner or Custom");
+            }
+            else
+            {
+                SendChatTarget(ClientID, "This race doesn't exist !");
+            }
+    }
+    else if (str_comp_nocase(Arguments[0], "/hammer") == 0 ||
+             str_comp_nocase(Arguments[0], "/gun") == 0 ||
+             str_comp_nocase(Arguments[0], "/shotgun") == 0 ||
+             str_comp_nocase(Arguments[0], "/grenade") == 0 ||
+             str_comp_nocase(Arguments[0], "/rifle") == 0)
+    {
+            if (str_comp_nocase(Arguments[1], "warrior") == 0 ||
+                     str_comp_nocase(Arguments[1], "engineer") == 0 ||
+                     str_comp_nocase(Arguments[1], "orc") == 0 ||
+                     str_comp_nocase(Arguments[1], "miner") == 0)
+            {
+                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
+                {
+                    char aBuf[256] = "";
+                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
+                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+                    m_apPlayers[ClientID]->m_Race = CUSTOM;
+                }
+                
+                m_apPlayers[ClientID]->KillCharacter();
+            }
+            else if (Arguments[1][0] == 0 || Arguments[1][0] == ' ')
+            {
+                char aBuf[256] = "";
+                str_format(aBuf, 256, "Usage : %s <race>", Arguments[0]);
+                SendChatTarget(ClientID, aBuf);
+                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner");
+            }
+            else
+            {
+                SendChatTarget(ClientID, "This race doesn't exist !");
+            }
+
+            int Weapon = 0;
+            int Race = 0;
+
+            if (str_comp_nocase(Arguments[0], "/hammer") == 0)
+                Weapon = WEAPON_HAMMER;
+            else if (str_comp_nocase(Arguments[0], "/gun") == 0)
+                Weapon = WEAPON_GUN;
+            else if (str_comp_nocase(Arguments[0], "/shotgun") == 0)
+                Weapon = WEAPON_SHOTGUN;
+            else if (str_comp_nocase(Arguments[0], "/grenade") == 0)
+                Weapon = WEAPON_GRENADE;
+            else if (str_comp_nocase(Arguments[0], "/rifle") == 0)
+                Weapon = WEAPON_RIFLE;
+
+            if (str_comp_nocase(Arguments[1], "warrior") == 0)
+                Race = WARRIOR;
+            else if (str_comp_nocase(Arguments[1], "engineer") == 0)
+                Race = ENGINEER;
+            else if (str_comp_nocase(Arguments[1], "orc") == 0)
+                Race = ORC;
+            else if (str_comp_nocase(Arguments[1], "miner") == 0)
+                Race = MINER;
+
+            m_apPlayers[ClientID]->m_WeaponType[Weapon] = Race;
+            
+            char aBuf[256] = "";
+            str_format(aBuf, 256, "The type of your %s is %s now !", Arguments[0], Arguments[1]);
+            SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+    }
+    else if(str_comp_nocase(Arguments[0], "/stats") == 0)
+    {
+        SendChat(ClientID, Team, Arguments[0]);
+        m_pStatistiques->DisplayStat(m_apPlayers[ClientID]->GetSID(), Server()->ClientName(ClientID));
+    }
+    else if(str_comp_nocase(Arguments[0], "/ranks") == 0)
+    {
+        SendChat(ClientID, Team, Arguments[0]);
+        m_pStatistiques->DisplayRank(m_apPlayers[ClientID]->GetSID(), Server()->ClientName(ClientID));
+    }
+    else if(str_comp_nocase(Arguments[0], "/bestof") == 0)
+    {
+        SendChat(ClientID, Team, Arguments[0]);
+        m_pStatistiques->DisplayBestOf();
+    }
+    else if(str_comp_nocase(Arguments[0], "/player") == 0)
+        m_pStatistiques->DisplayPlayer(m_apPlayers[ClientID]->GetSID(), ClientID);
+    else if(str_comp_nocase(Arguments[0], "/upgr") == 0)
+    {
+        
+        int Code = 4;
+        if (Arguments[1][0] == 0 || Arguments[1][0] == ' ')
+        {
+                SendChatTarget(ClientID, "Usage : /upgr <type>");
+                SendChatTarget(ClientID, "Type : Weapon or Life or Move or Hook");
+        }
+        else if (str_comp_nocase(Arguments[1], "weapon") != 0 &&
+                 str_comp_nocase(Arguments[1], "life") != 0 &&
+                 str_comp_nocase(Arguments[1], "move") != 0 &&
+                 str_comp_nocase(Arguments[1], "hook") != 0)
+        {
+                SendChatTarget(ClientID, "This upgrade doesn't exist !");
+        }
+
+        if (str_comp_nocase(Arguments[1], "weapon") == 0)
+            Code = m_pStatistiques->UpgradeWeapon(m_apPlayers[ClientID]->GetSID());
+        else if (str_comp_nocase(Arguments[1], "life") == 0)
+            Code = m_pStatistiques->UpgradeLife(m_apPlayers[ClientID]->GetSID());
+        else if (str_comp_nocase(Arguments[1], "move") == 0)
+            Code = m_pStatistiques->UpgradeMove(m_apPlayers[ClientID]->GetSID());
+        else if (str_comp_nocase(Arguments[1], "hook") == 0)
+            Code = m_pStatistiques->UpgradeHook(m_apPlayers[ClientID]->GetSID());
+
+        switch (Code)
+        {
+                case 0:
+                    SendChatTarget(ClientID, "Your account has been upgraded !");
+                    break;
+
+                case 1:
+                    SendChatTarget(ClientID, "You haven't got enough money");
+                    break;
+
+                case 2:
+                    SendChatTarget(ClientID, "You have locked your account !");
+                    break;
+
+                case 3:
+                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
+                    break;
+                default:
+                    SendChatTarget(ClientID, "An unknown error is occurred !");
+                    break;
+        }
+    }
+    else if(str_comp_nocase(Arguments[0], "/conf") == 0)
+    {
+        if(str_comp_nocase(Arguments[1], "InfoHealKiller") == 0)
+        {
+            bool statut = m_pStatistiques->InfoHealKiller(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Information of Heal of Killer is now : %s. ", statut ? "Enabled" : "Disabled");
+            SendChatTarget(ClientID, a);
+        }
+        else if(str_comp_nocase(Arguments[1], "InfoXP") == 0)
+        {
+            bool statut = m_pStatistiques->InfoXP(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Information of XP is now : %s. ", statut ? "Enabled" : "Disabled");
+            SendChatTarget(ClientID, a);
+        }
+        else if(str_comp_nocase(Arguments[1], "InfoLevelUp") == 0)
+        {
+            bool statut = m_pStatistiques->InfoLevelUp(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Information of Level Up is now : %s. ", statut ? "Enabled" : "Disabled");
+            SendChatTarget(ClientID, a);
+        }
+        else if(str_comp_nocase(Arguments[1], "InfoKillingSpree") == 0)
+        {
+            bool statut = m_pStatistiques->InfoKillingSpree(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Information of Killing Spree is now : %s. ", statut ? "Enabled" : "Disabled");
+            SendChatTarget(ClientID, a);
+        }
+        else if(str_comp_nocase(Arguments[1], "InfoRace") == 0)
+        {
+            bool statut = m_pStatistiques->InfoRace(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Information of Race is now : %s. ", statut ? "Enabled" : "Disabled");
+            SendChatTarget(ClientID, a);
+        }
+        else if(str_comp_nocase(Arguments[1], "InfoAmmo") == 0)
+        {
+            bool statut = m_pStatistiques->InfoAmmo(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Enabled" : "Disabled");
+            SendChatTarget(ClientID, a);
+        }
+        else if(str_comp_nocase(Arguments[1], "InfoVoter") == 0)
+        {
+            bool statut = m_pStatistiques->ShowVoter(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Information of Voter is now : %s. ", statut ? "Enabled" : "Disabled");
+            SendChatTarget(ClientID, a);
+        }
+        else if(str_comp_nocase(Arguments[1], "EnableAllInfo") == 0)
+        {
+            m_pStatistiques->EnableAllInfo(m_apPlayers[ClientID]->GetSID());
+            SendChatTarget(ClientID, "All information are enabled");
+        }
+        else if(str_comp_nocase(Arguments[1], "DisableAllInfo") == 0)
+        {
+            m_pStatistiques->DisableAllInfo(m_apPlayers[ClientID]->GetSID());
+            SendChatTarget(ClientID, "All information are disabled");
+        }
+        else if(str_comp_nocase(Arguments[1], "AmmoAbsolute") == 0)
+        {
+            bool statut = m_pStatistiques->AmmoAbsolute(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Absolute" : "Relative");
+            SendChatTarget(ClientID, a);
+        }
+        else if(str_comp_nocase(Arguments[1], "LifeAbsolute") == 0)
+        {
+            bool statut = m_pStatistiques->LifeAbsolute(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Information of Life is now : %s. ", statut ? "Absolute" : "Relative");
+            SendChatTarget(ClientID, a);
+        }
+        else if(str_comp_nocase(Arguments[1], "Lock") == 0)
+        {
+            bool lock = m_pStatistiques->Lock(m_apPlayers[ClientID]->GetSID());
+            char a[256] = "";
+            str_format(a, 256, "Your statistics are now : %s. ", lock ? "Locked" : "Unlocked");
+            SendChatTarget(ClientID, a);
+        }
+        else
+        {
+            SendChatTarget(ClientID, "Usage : /conf <type>");
+            SendChatTarget(ClientID, "Type : InfoHealKiller or InfoXP or InfoLevelUp or InfoKillingSpree or InfoRace or InfoAmmo or InfoVoter or EnableAllInfo or DisableAllInfo or AmmoAbsolute or LifeAbsolute or Lock");
+            SendChatTarget(ClientID, "Description : Enable or disable functionnality.");
+        }
+    }
+    else if(str_comp_nocase(Arguments[0], "/reset_stats") == 0)
+    {
+        m_pStatistiques->ResetPartialStat(m_apPlayers[ClientID]->GetSID());
+        SendChatTarget(ClientID, "Your statistics have been partially resetted !");
+    }
+    else if(str_comp_nocase(Arguments[0], "/reset_all_stats") == 0)
+    {
+        m_pStatistiques->ResetAllStat(m_apPlayers[ClientID]->GetSID());
+        SendChatTarget(ClientID, "Your statistics have been resetted !");
+    }
+    else if(str_comp_nocase(Arguments[0], "/reset_upgr") == 0)
+    {
+        m_pStatistiques->ResetUpgr(m_apPlayers[ClientID]->GetSID());
+        SendChatTarget(ClientID, "Your upgrades have been resetted !");
+    }
+    else
+    {
+        char error[256] = "";
+        str_format(error, 256, "Unrecognized option : %s. To get commands available, say /cmdlist", Arguments[0]);
+        SendChatTarget(ClientID, error);
+    }
+}
+
 void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 {
     void *pRawMsg = m_NetObjHandler.SecureUnpackMsg(MsgID, pUnpacker);
@@ -834,601 +1217,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
         if(pMsg->m_pMessage[0]=='/')
         {
-            if (str_comp_nocase(pMsg->m_pMessage, "/cmdlist") == 0 || str_comp_nocase(pMsg->m_pMessage, "/help") == 0 )
-            {
-                SendChatTarget(ClientID, "*** Commands available are : ***");
-                SendChatTarget(ClientID, "/cmdlist or /help : To get commands available.");
-                SendChatTarget(ClientID, "/info or /credits : To get informations of this mod.");
-                SendChatTarget(ClientID, "/ammo : To get ammo of your actual weapon.");
-                SendChatTarget(ClientID, "/race : To choose a race");
-                SendChatTarget(ClientID, "/stats or /ranks : To get your statistics or your rank.");
-                SendChatTarget(ClientID, "/player or /upgr : To get or to add your upgrades.");
-                SendChatTarget(ClientID, "/conf : To change yours settings.");
-                SendChatTarget(ClientID, "/reset_stats or /reset_all_stats or /reset_upgr: To reset partially or all your statistics.");
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/info") == 0)
-            {
-                SendChatTarget(ClientID, "*** Extreme Weapon Mod V.2 ***");
-                SendChatTarget(ClientID, "** Wrote by PJK **");
-                SendChatTarget(ClientID, "It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
-                SendChatTarget(ClientID, "You can choose a race, see your statistics and upgrade your gameplay !");
-                SendChatTarget(ClientID, "Say /cmdlist to get all commands available !");
-                SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/credits") == 0)
-            {
-                SendChat(ClientID, Team, pMsg->m_pMessage);
-                SendChatTarget(ClientID, "*** Extreme Weapon Mod V.2 ***");
-                SendChatTarget(ClientID, "** Wrote by PJK **");
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/ammo") == 0)
-            {
-                CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
-                if ( pChr )
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "Ammo of the actual weapon is : %d/%d.", pChr->GetAmmoActiveWeapon(), g_pData->m_Weapons.m_aId[pChr->GetActiveWeapon()].m_Maxammo);
-                    SendChatTarget(ClientID, aBuf);
-                }
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/race warrior") == 0)
-            {
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "%s is now a warrior !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                m_apPlayers[ClientID]->KillCharacter();
-                m_apPlayers[ClientID]->m_Race = WARRIOR;
-                for (int i = 0; i < NUM_WEAPONS; i++)
-                    m_apPlayers[ClientID]->m_WeaponType[i] = WARRIOR;
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/race engineer") == 0)
-            {
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "%s is now an engineer !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                m_apPlayers[ClientID]->KillCharacter();
-                m_apPlayers[ClientID]->m_Race = ENGINEER;
-                for (int i = 0; i < NUM_WEAPONS; i++)
-                    m_apPlayers[ClientID]->m_WeaponType[i] = ENGINEER;
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/race orc") == 0)
-            {
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "%s is now an orc !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                m_apPlayers[ClientID]->KillCharacter();
-                m_apPlayers[ClientID]->m_Race = ORC;
-                for (int i = 0; i < NUM_WEAPONS; i++)
-                    m_apPlayers[ClientID]->m_WeaponType[i] = ORC;
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/race miner") == 0)
-            {
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "%s is now a miner !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                m_apPlayers[ClientID]->KillCharacter();
-                m_apPlayers[ClientID]->m_Race = MINER;
-                for (int i = 0; i < NUM_WEAPONS; i++)
-                    m_apPlayers[ClientID]->m_WeaponType[i] = MINER;
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/race custom") == 0)
-            {
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                SendChatTarget(ClientID, "Use /hammer | /gun | /shotgun | /grenade | /rifle to customize !");
-                m_apPlayers[ClientID]->KillCharacter();
-                m_apPlayers[ClientID]->m_Race = CUSTOM;
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/race") == 0)
-            {
-                SendChatTarget(ClientID, "Usage : /race <race>");
-                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner or Custom");
-            }
-            /*CUSTOMIZE WEAPON : HAMMER*/
-            else if (str_comp_nocase(pMsg->m_pMessage, "/hammer warrior") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_HAMMER] = WARRIOR;
-                SendChatTarget(ClientID, "The type of your hammer is warrior now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/hammer engineer") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_HAMMER] = ENGINEER;
-                SendChatTarget(ClientID, "The type of your hammer is engineer now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/hammer orc") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_HAMMER] = ORC;
-                SendChatTarget(ClientID, "The type of your hammer is orc now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/hammer miner") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_HAMMER] = MINER;
-                SendChatTarget(ClientID, "The type of your hammer is miner now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/hammer") == 0)
-            {
-                SendChatTarget(ClientID, "Usage : /hammer <race>");
-                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner");
-            }
-            /*CUSTOMIZE WEAPON : GUN*/
-            else if (str_comp_nocase(pMsg->m_pMessage, "/gun warrior") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_GUN] = WARRIOR;
-                SendChatTarget(ClientID, "The type of your gun is warrior now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/gun engineer") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_GUN] = ENGINEER;
-                SendChatTarget(ClientID, "The type of your gun is engineer now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/gun orc") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_GUN] = ORC;
-                SendChatTarget(ClientID, "The type of your gun is orc now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/gun miner") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_GUN] = MINER;
-                SendChatTarget(ClientID, "The type of your gun is miner now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/gun") == 0)
-            {
-                SendChatTarget(ClientID, "Usage : /gun <race>");
-                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner");
-            }
-            /*CUSTOMIZE WEAPON : SHOTGUN*/
-            else if (str_comp_nocase(pMsg->m_pMessage, "/shotgun warrior") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_SHOTGUN] = WARRIOR;
-                SendChatTarget(ClientID, "The type of your shotgun is warrior now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/shotgun engineer") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_SHOTGUN] = ENGINEER;
-                SendChatTarget(ClientID, "The type of your shotgun is engineer now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/shotgun orc") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_SHOTGUN] = ORC;
-                SendChatTarget(ClientID, "The type of your shotgun is orc now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/shotgun miner") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_SHOTGUN] = MINER;
-                SendChatTarget(ClientID, "The type of your shotgun is miner now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/shotgun") == 0)
-            {
-                SendChatTarget(ClientID, "Usage : /shotgun <race>");
-                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner");
-            }
-            /*CUSTOMIZE WEAPON : GRENADE*/
-            else if (str_comp_nocase(pMsg->m_pMessage, "/grenade warrior") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_GRENADE] = WARRIOR;
-                SendChatTarget(ClientID, "The type of your grenade is warrior now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/grenade engineer") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_GRENADE] = ENGINEER;
-                SendChatTarget(ClientID, "The type of your grenade is engineer now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/grenade orc") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_GRENADE] = ORC;
-                SendChatTarget(ClientID, "The type of your grenade is orc now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/grenade miner") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_GRENADE] = MINER;
-                SendChatTarget(ClientID, "The type of your grenade is miner now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/grenade") == 0)
-            {
-                SendChatTarget(ClientID, "Usage : /grenade <race>");
-                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner");
-            }
-            /*CUSTOMIZE WEAPON : RIFLE*/
-            else if (str_comp_nocase(pMsg->m_pMessage, "/rifle warrior") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_RIFLE] = WARRIOR;
-                SendChatTarget(ClientID, "The type of your rifle is warrior now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/rifle engineer") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_RIFLE] = ENGINEER;
-                SendChatTarget(ClientID, "The type of your rifle is engineer now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/rifle orc") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_RIFLE] = ORC;
-                SendChatTarget(ClientID, "The type of your rifle is orc now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/rifle miner") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                m_apPlayers[ClientID]->m_WeaponType[WEAPON_RIFLE] = MINER;
-                SendChatTarget(ClientID, "The type of your rifle is miner now !");
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (str_comp_nocase(pMsg->m_pMessage, "/rifle") == 0)
-            {
-                SendChatTarget(ClientID, "Usage : /rifle <race>");
-                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner");
-            }
-
-            else if(str_comp_nocase(pMsg->m_pMessage, "/stats") == 0)
-            {
-                SendChat(ClientID, Team, pMsg->m_pMessage);
-                m_pStatistiques->DisplayStat(m_apPlayers[ClientID]->GetSID(), Server()->ClientName(ClientID));
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/ranks") == 0)
-            {
-                SendChat(ClientID, Team, pMsg->m_pMessage);
-                m_pStatistiques->DisplayRank(m_apPlayers[ClientID]->GetSID(), Server()->ClientName(ClientID));
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/bestof") == 0)
-            {
-                SendChat(ClientID, Team, pMsg->m_pMessage);
-                m_pStatistiques->DisplayBestOf();
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/player") == 0)
-                m_pStatistiques->DisplayPlayer(m_apPlayers[ClientID]->GetSID(), ClientID);
-            else if(str_comp_nocase(pMsg->m_pMessage, "/upgr weapon") == 0)
-            {
-                switch (m_pStatistiques->UpgradeWeapon(m_apPlayers[ClientID]->GetSID()))
-                {
-                case 0:
-                    SendChatTarget(ClientID, "Your account has been upgraded !");
-                    break;
-
-                case 1:
-                    SendChatTarget(ClientID, "You haven't got enough money");
-                    break;
-
-                case 2:
-                    SendChatTarget(ClientID, "You have locked your account !");
-                    break;
-
-                case 3:
-                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
-                    break;
-                }
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/upgr life") == 0)
-            {
-                switch (m_pStatistiques->UpgradeLife(m_apPlayers[ClientID]->GetSID()))
-                {
-                case 0:
-                    SendChatTarget(ClientID, "Your account has been upgraded !");
-                    break;
-
-                case 1:
-                    SendChatTarget(ClientID, "You haven't got enough money");
-                    break;
-
-                case 2:
-                    SendChatTarget(ClientID, "You have locked your account !");
-                    break;
-
-                case 3:
-                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
-                    break;
-                }
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/upgr move") == 0)
-            {
-                switch (m_pStatistiques->UpgradeMove(m_apPlayers[ClientID]->GetSID()))
-                {
-                case 0:
-                    SendChatTarget(ClientID, "Your account has been upgraded !");
-                    break;
-
-                case 1:
-                    SendChatTarget(ClientID, "You haven't got enough money");
-                    break;
-
-                case 2:
-                    SendChatTarget(ClientID, "You have locked your account !");
-                    break;
-
-                case 3:
-                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
-                    break;
-                }
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/upgr hook") == 0)
-            {
-                switch (m_pStatistiques->UpgradeHook(m_apPlayers[ClientID]->GetSID()))
-                {
-                case 0:
-                    SendChatTarget(ClientID, "Your account has been upgraded !");
-                    break;
-
-                case 1:
-                    SendChatTarget(ClientID, "You haven't got enough money");
-                    break;
-
-                case 2:
-                    SendChatTarget(ClientID, "You have locked your account !");
-                    break;
-
-                case 3:
-                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
-                    break;
-                }
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/upgr") == 0)
-            {
-                SendChatTarget(ClientID, "Usage : /upgr <type>");
-                SendChatTarget(ClientID, "Type : Weapon or Life or Move or Hook");
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoHealKiller") == 0)
-            {
-                bool statut = m_pStatistiques->InfoHealKiller(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Information of Heal of Killer is now : %s. ", statut ? "Enabled" : "Disabled");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoXP") == 0)
-            {
-                bool statut = m_pStatistiques->InfoXP(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Information of XP is now : %s. ", statut ? "Enabled" : "Disabled");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoLevelUp") == 0)
-            {
-                bool statut = m_pStatistiques->InfoLevelUp(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Information of Level Up is now : %s. ", statut ? "Enabled" : "Disabled");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoKillingSpree") == 0)
-            {
-                bool statut = m_pStatistiques->InfoKillingSpree(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Information of Killing Spree is now : %s. ", statut ? "Enabled" : "Disabled");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoRace") == 0)
-            {
-                bool statut = m_pStatistiques->InfoRace(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Information of Race is now : %s. ", statut ? "Enabled" : "Disabled");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoAmmo") == 0)
-            {
-                bool statut = m_pStatistiques->InfoAmmo(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Enabled" : "Disabled");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf InfoVoter") == 0)
-            {
-                bool statut = m_pStatistiques->ShowVoter(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Information of Voter is now : %s. ", statut ? "Enabled" : "Disabled");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf EnableAllInfo") == 0)
-            {
-                m_pStatistiques->EnableAllInfo(m_apPlayers[ClientID]->GetSID());
-                SendChatTarget(ClientID, "All information are enabled");
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf DisableAllInfo") == 0)
-            {
-                m_pStatistiques->DisableAllInfo(m_apPlayers[ClientID]->GetSID());
-                SendChatTarget(ClientID, "All information are disabled");
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf AmmoAbsolute") == 0)
-            {
-                bool statut = m_pStatistiques->AmmoAbsolute(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Absolute" : "Relative");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf LifeAbsolute") == 0)
-            {
-                bool statut = m_pStatistiques->LifeAbsolute(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Information of Life is now : %s. ", statut ? "Absolute" : "Relative");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf Lock") == 0)
-            {
-                bool lock = m_pStatistiques->Lock(m_apPlayers[ClientID]->GetSID());
-                char a[256] = "";
-                str_format(a, 256, "Your statistics are now : %s. ", lock ? "Locked" : "Unlocked");
-                SendChatTarget(ClientID, a);
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/conf") == 0)
-            {
-                SendChatTarget(ClientID, "Usage : /conf <type>");
-                SendChatTarget(ClientID, "Type : InfoHealKiller or InfoXP or InfoLevelUp or InfoKillingSpree or InfoRace or InfoAmmo or InfoVoter or EnableAllInfo or DisableAllInfo or AmmoAbsolute or LifeAbsolute or Lock");
-                SendChatTarget(ClientID, "Description : Enable or disable functionnality.");
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/reset_stats") == 0)
-            {
-                m_pStatistiques->ResetPartialStat(m_apPlayers[ClientID]->GetSID());
-                SendChatTarget(ClientID, "Your statistics have been partially resetted !");
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/reset_all_stats") == 0)
-            {
-                m_pStatistiques->ResetAllStat(m_apPlayers[ClientID]->GetSID());
-                SendChatTarget(ClientID, "Your statistics have been resetted !");
-            }
-            else if(str_comp_nocase(pMsg->m_pMessage, "/reset_upgr") == 0)
-            {
-                m_pStatistiques->ResetUpgr(m_apPlayers[ClientID]->GetSID());
-                SendChatTarget(ClientID, "Your upgrades have been resetted !");
-            }
-            else
-            {
-                char error[256] = "";
-                str_format(error, 256, "Unrecognized option : %s. To get commands available, say /cmdlist", pMsg->m_pMessage);
-                SendChatTarget(ClientID, error);
-            }
+            CommandOnChat(pMsg->m_pMessage, ClientID, Team);
         }
         else
         {
