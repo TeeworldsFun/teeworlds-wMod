@@ -971,6 +971,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
             else
             {
                 SendChatTarget(ClientID, "This race doesn't exist !");
+                return;
             }
 
             int Weapon = 0;
@@ -1000,7 +1001,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
             
             char aBuf[256] = "";
             str_format(aBuf, 256, "The type of your %s is %s now !", Arguments[0], Arguments[1]);
-            SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+            SendChatTarget(ClientID, aBuf, CHAT_INFO_RACE);
     }
     else if(str_comp_nocase(Arguments[0], "/stats") == 0)
     {
@@ -1027,6 +1028,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
         {
                 SendChatTarget(ClientID, "Usage : /upgr <type>");
                 SendChatTarget(ClientID, "Type : Weapon or Life or Move or Hook");
+                return;
         }
         else if (str_comp_nocase(Arguments[1], "weapon") != 0 &&
                  str_comp_nocase(Arguments[1], "life") != 0 &&
@@ -1034,6 +1036,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
                  str_comp_nocase(Arguments[1], "hook") != 0)
         {
                 SendChatTarget(ClientID, "This upgrade doesn't exist !");
+                return;
         }
 
         if (str_comp_nocase(Arguments[1], "weapon") == 0)
@@ -2659,7 +2662,7 @@ bool CGameContext::IsClientReady(int ClientID)
 
 bool CGameContext::IsClientPlayer(int ClientID)
 {
-	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
+	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() != TEAM_SPECTATORS ? true : false;
 }
 
 const char *CGameContext::GameType() { return m_pController && m_pController->m_pGameType ? m_pController->m_pGameType : ""; }

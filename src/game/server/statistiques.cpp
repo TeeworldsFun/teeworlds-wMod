@@ -159,7 +159,16 @@ void CStatistiques::Tick()
     }
 }
 
-bool IsToRemove(const Stats &a) { return a.m_to_remove || a.m_level == 0; };
+bool IsToRemove(const Stats a)
+{
+    if (a.m_to_remove)
+        return true;
+
+/*    if (a.m_level == 0)
+        return true;*/
+
+    return false;
+}
 
 void CStatistiques::Clear()
 {
@@ -184,8 +193,8 @@ void CStatistiques::Clear()
 
 void CStatistiques::SetInfo(long id, const char name[], const char clan[], const int country)
 {
-        if(!Check(id))
-            return;
+    if(!Check(id))
+        return;
 
     m_statistiques[id].m_name = str_quickhash(name);
     m_statistiques[id].m_clan = str_quickhash(clan);

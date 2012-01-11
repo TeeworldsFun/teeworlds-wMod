@@ -31,16 +31,21 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 
     CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
     CCharacter *pHit = GameServer()->m_World.IntersectCharacter(From, To, 0.0f, TempPos, pOwnerChar);
-    ClosestLen = distance(From, TempPos);
-    At = TempPos;
+    if (pHit)
+    {
+        ClosestLen = distance(From, TempPos);
+        At = TempPos;
+    }
 
     CTurret *pHitTurret = (CTurret*) GameServer()->m_World.IntersectEntity(From, To, 0.0f, TempPos, CGameWorld::ENTTYPE_TURRET);
-    if ( ClosestLen > distance(From, TempPos) )
+    if ( pHitTurret && ClosestLen > distance(From, TempPos) && (ClosestLen > distance(From, TempPos) || ClosestLen == -1) )
     {
         ClosestLen = distance(From, TempPos);
         At = TempPos;
         pHit = 0;
     }
+    else if ( pHitTurret )
+        pHitTurret = 0;
 
     CExplodeWall *pHitExplodeWall = 0;
 
@@ -69,7 +74,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
             if ( y < min(y1, y2) || y > max(y1, y2) || y < min(y3, y4) || y > max(y3, y4) )
                 continue;
 
-            if ( ClosestLen > distance(From, vec2(x, y)) )
+            if ( ClosestLen > distance(From, vec2(x, y)) || ClosestLen == -1 )
             {
                 ClosestLen = distance(From, vec2(x, y));
                 At.x = x;
