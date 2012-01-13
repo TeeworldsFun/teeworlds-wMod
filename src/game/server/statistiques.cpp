@@ -1050,16 +1050,16 @@ void CStatistiques::WriteStat()
                 fichier << m_statistiques[i].m_conf.m_InfoKillingSpree << " ";
                 fichier << m_statistiques[i].m_conf.m_InfoRace << " ";
                 fichier << m_statistiques[i].m_conf.m_InfoAmmo << " ";
+                fichier << m_statistiques[i].m_conf.m_ShowVoter << " ";
                 fichier << m_statistiques[i].m_conf.m_AmmoAbsolute << " ";
                 fichier << m_statistiques[i].m_conf.m_LifeAbsolute << " ";
-                fichier << m_statistiques[i].m_conf.m_ShowVoter << " ";
                 fichier << m_statistiques[i].m_conf.m_Lock << " ";
                 for (int j = 0; j < 4; j++)
                     fichier << m_statistiques[i].m_conf.m_Weapon[j] << " ";
                 fichier << m_statistiques[i].m_upgrade.m_weapon << " ";
                 fichier << m_statistiques[i].m_upgrade.m_life << " ";
                 fichier << m_statistiques[i].m_upgrade.m_move << " ";
-                fichier << m_statistiques[i].m_upgrade.m_hook << " ";
+                fichier << m_statistiques[i].m_upgrade.m_hook << std::endl;
             }
         }
 

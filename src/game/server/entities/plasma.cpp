@@ -154,12 +154,19 @@ void CPlasma::Tick()
             GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
         }
     }
+    else if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE) && GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
+    {
+        if(!HitCharacter(m_Pos, To))
+        {
+            m_Pos = To;
+            GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
+            GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
+        }
+    }
     else
     {
         if(!HitCharacter(m_Pos, To))
         {
-            if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE))
-                GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To);
             m_Pos = To;
         }
     }
