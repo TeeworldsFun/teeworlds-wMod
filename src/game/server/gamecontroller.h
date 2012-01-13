@@ -13,151 +13,146 @@
 */
 class IGameController
 {
-    vec2 m_aaSpawnPoints[3][64];
-    int m_aNumSpawnPoints[3];
+	vec2 m_aaSpawnPoints[3][64];
+	int m_aNumSpawnPoints[3];
 
     bool m_ForceDoBalance;
 
     bool m_GameWeapon[NUM_WEAPONS];
 
-    class CGameContext *m_pGameServer;
-    class IServer *m_pServer;
+	class CGameContext *m_pGameServer;
+	class IServer *m_pServer;
 
 protected:
-    CGameContext *GameServer() const
-    {
-        return m_pGameServer;
-    }
-    IServer *Server() const
-    {
-        return m_pServer;
-    }
+	CGameContext *GameServer() const { return m_pGameServer; }
+	IServer *Server() const { return m_pServer; }
 
-    struct CSpawnEval
-    {
-        CSpawnEval()
-        {
-            m_Got = false;
-            m_FriendlyTeam = -1;
-            m_Pos = vec2(100,100);
-        }
+	struct CSpawnEval
+	{
+		CSpawnEval()
+		{
+			m_Got = false;
+			m_FriendlyTeam = -1;
+			m_Pos = vec2(100,100);
+		}
 
-        vec2 m_Pos;
-        bool m_Got;
-        int m_FriendlyTeam;
-        float m_Score;
-    };
+		vec2 m_Pos;
+		bool m_Got;
+		int m_FriendlyTeam;
+		float m_Score;
+	};
 
-    float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos);
-    void EvaluateSpawnType(CSpawnEval *pEval, int Type);
-    bool EvaluateSpawn(class CPlayer *pP, vec2 *pPos);
+	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos);
+	void EvaluateSpawnType(CSpawnEval *pEval, int Type);
+	bool EvaluateSpawn(class CPlayer *pP, vec2 *pPos);
 
-    void CycleMap();
-    void ResetGame();
+	void CycleMap();
+	void ResetGame();
 
-    char m_aMapWish[128];
+	char m_aMapWish[128];
 
 
-    int m_RoundStartTick;
-    int m_GameOverTick;
-    int m_SuddenDeath;
+	int m_RoundStartTick;
+	int m_GameOverTick;
+	int m_SuddenDeath;
 
-    int m_aTeamscore[2];
+	int m_aTeamscore[2];
 
-    int m_Warmup;
-    int m_RoundCount;
+	int m_Warmup;
+	int m_RoundCount;
 
-    int m_GameFlags;
-    int m_UnbalancedTick;
-    bool m_ForceBalanced;
+	int m_GameFlags;
+	int m_UnbalancedTick;
+	bool m_ForceBalanced;
 
 public:
-    const char *m_pGameType;
+	const char *m_pGameType;
 
-    bool IsTeamplay() const;
+	bool IsTeamplay() const;
+	bool IsGameOver() const { return m_GameOverTick != -1; }
 
-    IGameController(class CGameContext *pGameServer);
-    virtual ~IGameController();
+	IGameController(class CGameContext *pGameServer);
+	virtual ~IGameController();
 
-    virtual void DoWincheck();
+	virtual void DoWincheck();
 
-    void DoWarmup(int Seconds);
+	void DoWarmup(int Seconds);
 
-    void StartRound();
-    void EndRound();
-    void ChangeMap(const char *pToMap);
+	void StartRound();
+	void EndRound();
+	void ChangeMap(const char *pToMap);
 
     bool IsFriendlyFire(int ClientID1, int ClientID2, int Weapon);
 
-    bool IsForceBalanced();
+	bool IsForceBalanced();
 
     bool IsNormalEnd();
 
-    /*
+	/*
 
-    */
-    virtual bool CanBeMovedOnBalance(int ClientID);
+	*/
+	virtual bool CanBeMovedOnBalance(int ClientID);
 
-    virtual void Tick();
+	virtual void Tick();
 
-    virtual void Snap(int SnappingClient);
+	virtual void Snap(int SnappingClient);
 
-    /*
-    	Function: on_entity
-    		Called when the map is loaded to process an entity
-    		in the map.
+	/*
+		Function: on_entity
+			Called when the map is loaded to process an entity
+			in the map.
 
-    	Arguments:
-    		index - Entity index.
-    		pos - Where the entity is located in the world.
+		Arguments:
+			index - Entity index.
+			pos - Where the entity is located in the world.
 
-    	Returns:
-    		bool?
-    */
-    virtual bool OnEntity(int Index, vec2 Pos);
+		Returns:
+			bool?
+	*/
+	virtual bool OnEntity(int Index, vec2 Pos);
     bool IsWeaponEntity(int Weapon)
     {
         return m_GameWeapon[Weapon];
     };
 
-    /*
-    	Function: on_CCharacter_spawn
-    		Called when a CCharacter spawns into the game world.
+	/*
+		Function: on_CCharacter_spawn
+			Called when a CCharacter spawns into the game world.
 
-    	Arguments:
-    		chr - The CCharacter that was spawned.
-    */
-    virtual void OnCharacterSpawn(class CCharacter *pChr);
+		Arguments:
+			chr - The CCharacter that was spawned.
+	*/
+	virtual void OnCharacterSpawn(class CCharacter *pChr);
 
-    /*
-    	Function: on_CCharacter_death
-    		Called when a CCharacter in the world dies.
+	/*
+		Function: on_CCharacter_death
+			Called when a CCharacter in the world dies.
 
-    	Arguments:
-    		victim - The CCharacter that died.
-    		killer - The player that killed it.
-    		weapon - What weapon that killed it. Can be -1 for undefined
-    			weapon when switching team or player suicides.
-    */
-    virtual int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
+		Arguments:
+			victim - The CCharacter that died.
+			killer - The player that killed it.
+			weapon - What weapon that killed it. Can be -1 for undefined
+				weapon when switching team or player suicides.
+	*/
+	virtual int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
 
 
-    virtual void OnPlayerInfoChange(class CPlayer *pP);
+	virtual void OnPlayerInfoChange(class CPlayer *pP);
 
-    //
-    virtual bool CanSpawn(int Team, vec2 *pPos);
+	//
+	virtual bool CanSpawn(int Team, vec2 *pPos);
 
-    /*
+	/*
 
-    */
-    virtual const char *GetTeamName(int Team);
-    virtual int GetAutoTeam(int NotThisID);
-    virtual bool CanJoinTeam(int Team, int NotThisID);
-    bool CheckTeamBalance();
-    bool CanChangeTeam(CPlayer *pPplayer, int JoinTeam);
-    int ClampTeam(int Team);
+	*/
+	virtual const char *GetTeamName(int Team);
+	virtual int GetAutoTeam(int NotThisID);
+	virtual bool CanJoinTeam(int Team, int NotThisID);
+	bool CheckTeamBalance();
+	bool CanChangeTeam(CPlayer *pPplayer, int JoinTeam);
+	int ClampTeam(int Team);
 
-    virtual void PostReset();
+	virtual void PostReset();
 
     int GetNumPlayer(int Team);
     int GetTeamScore(int Team)

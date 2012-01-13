@@ -8,20 +8,21 @@
 class CFlag : public CEntity
 {
 public:
-    static const int ms_PhysSize = 14;
-    CCharacter *m_pCarryingCharacter;
-    vec2 m_Vel;
-    vec2 m_StandPos;
+	static const int ms_PhysSize = 14;
+	CCharacter *m_pCarryingCharacter;
+	vec2 m_Vel;
+	vec2 m_StandPos;
 
-    int m_Team;
-    int m_AtStand;
-    int m_DropTick;
-    int m_GrabTick;
+	int m_Team;
+	int m_AtStand;
+	int m_DropTick;
+	int m_GrabTick;
 
-    CFlag(CGameWorld *pGameWorld, int Team);
+	CFlag(CGameWorld *pGameWorld, int Team);
 
-    virtual void Reset();
-    virtual void Snap(int SnappingClient);
+	virtual void Reset();
+	virtual void TickPaused();
+	virtual void Snap(int SnappingClient);
 };
 
 #endif
