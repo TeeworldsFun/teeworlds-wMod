@@ -33,9 +33,11 @@ void CStatistiques::OnInit()
         return;
     }
 
+    m_init = true;
+
     int Version = 0;
     fichier >> Version;
-    
+
     if (Version != DB_VERSION)
     {
         fichier.seekg (0, std::ios::beg);
@@ -138,8 +140,6 @@ void CStatistiques::OnInit()
     }
 
     UpdateRank();
-    
-    m_init = true;
 }
 
 CStatistiques::~CStatistiques()
@@ -203,6 +203,9 @@ void CStatistiques::SetInfo(long id, const char name[], const char clan[], const
 
 long CStatistiques::GetId(const char ip[MAX_IP_LENGTH], const char a[], const char b[], const int country)
 {
+    if(!m_init)
+        return -1;
+
     unsigned long Name = str_quickhash(a);
     unsigned long Clan = str_quickhash(b);
 
