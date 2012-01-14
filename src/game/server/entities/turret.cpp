@@ -18,7 +18,7 @@ CTurret::CTurret(CGameWorld *pGameWorld, vec2 Pos, int Owner)
     m_DamageTaken = 0;
     m_DamageTakenTick = 0;
     m_Destroy = false;
-    m_ProximityRadius = 30.0f;
+    m_ProximityRadius = 15.0f;
     GameWorld()->InsertEntity(this);
 }
 

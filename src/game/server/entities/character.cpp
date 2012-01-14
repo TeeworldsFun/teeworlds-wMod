@@ -1043,8 +1043,9 @@ void CCharacter::FireWeapon()
                     }
                 }
             }
-            GameServer()->CreateSound(m_Pos, SOUND_RIFLE_FIRE);
         }
+        if (sound)
+            GameServer()->CreateSound(m_Pos, SOUND_RIFLE_FIRE);
     }
     break;
 
@@ -1653,7 +1654,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
     else if ( GameServer()->m_apPlayers[From] )
         FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
 
-    if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || (FromRace == ORC && Weapon == WEAPON_RIFLE))
+    if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB))
         Instagib = true;
 
     if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) || From == m_pPlayer->GetCID() )
@@ -1669,26 +1670,24 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
              GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL)
       )
     {
-        int heal = 3;
+        if (m_Health < m_stat_life->m_stockage[0] || m_Armor < m_stat_life->m_stockage[1])
+            return false;
+
         if(m_Health < m_stat_life->m_stockage[0])
         {
-            m_Health += heal;
-            if ( m_Health - m_stat_life->m_stockage[0] > 0 )
-                heal = m_Health - m_stat_life->m_stockage[0];
-            else
-                heal = 0;
+            m_Health++;
         }
-
-        if(heal && m_Armor < m_stat_life->m_stockage[1] )
+        else if(m_Armor < m_stat_life->m_stockage[1] )
         {
-            m_Armor += heal;
-            if ( m_Armor > m_stat_life->m_stockage[0] )
-                m_Armor = m_stat_life->m_stockage[0];
+            m_Armor ++;
         }
 
         char Text[256] = "";
         str_format(Text, 256, "Healing %s : %d%% health and %d%% armor.", Server()->ClientName(m_pPlayer->GetCID()), GetPercentHealth(), GetPercentArmor());
         GameServer()->SendChatTarget(From, Text);
+        
+        str_format(Text, 256, "%s heal you ! +1 health or armor !", Server()->ClientName(From));
+        GameServer()->SendChatTarget(m_pPlayer->GetCID(), Text);
         return false;
     }
     else if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_pPlayer->GetTeam() == TEAM_RED)

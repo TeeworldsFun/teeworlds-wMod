@@ -82,7 +82,6 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
                 pHit = 0;
                 pHitTurret = 0;
                 pHitExplodeWall = p;
-                break;
             }
         }
     }

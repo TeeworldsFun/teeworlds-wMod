@@ -34,9 +34,10 @@ void CExplodeWall::Tick()
     vec2 Direction = normalize(m_Pos - m_From);
     int Num = floor(distance(m_From, m_Pos) / 67.5f) + 1;
 
+    bool NoDamage = GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) ? true : false;
     for (int i = 0; i < Num; i++)
     {
-        GameServer()->CreateExplosion(m_From + (Direction * 67.5f * i), m_Owner, WEAPON_RIFLE, false, false);
+        GameServer()->CreateExplosion(m_From + (Direction * 67.5f * i), m_Owner, WEAPON_RIFLE, NoDamage, false);
     }
 }
 

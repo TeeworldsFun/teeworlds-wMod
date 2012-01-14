@@ -1747,7 +1747,7 @@ int main(int argc, const char **argv) // ignore_convention
     signal(SIGQUIT, OnShutdown);
     signal(SIGHUP, OnShutdown);
     signal(SIGINT, OnShutdown);
-    signal(SIGFPE, OnUpdate);
+    //signal(SIGFPE, OnUpdate);
 	// run the server
 	dbg_msg("server", "starting...");
 	pServer->Run();
