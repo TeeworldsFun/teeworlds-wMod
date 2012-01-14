@@ -732,7 +732,7 @@ void CGameContext::OnClientEnter(int ClientID)
 
 	m_VoteUpdate = true;
 
-    SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod V.2***");
+    SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod v2.1***");
     SendChatTarget(ClientID, "** Wrote by PJK **");
     SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
     SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /upgr , /race , /stats and /ranks **");

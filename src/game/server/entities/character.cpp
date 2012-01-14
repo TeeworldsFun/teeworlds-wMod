@@ -582,17 +582,17 @@ void CCharacter::FireWeapon()
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    if ( m_LaserWall[i] == 0 )
-                    {
-                        m_LaserWall[i] = new CLaserWall(GameWorld(), m_Pos, m_pPlayer->GetCID(), false);
-                        break;
-                    }
-                    else if (m_LaserWall[i]->m_StartTick == 0)
+                    if (m_LaserWall[i] && m_LaserWall[i]->m_StartTick == 0)
                     {
                         m_LaserWall[i]->m_Pos = m_Pos;
                         m_LaserWall[i]->m_StartTick = Server()->Tick();
                         m_LaserWall[i]->CreateDouble();
                         m_NumLaserWall++;
+                        break;
+                    }
+                    else if ( m_LaserWall[i] == 0 )
+                    {
+                        m_LaserWall[i] = new CLaserWall(GameWorld(), m_Pos, m_pPlayer->GetCID(), false);
                         break;
                     }
                 }
@@ -1029,16 +1029,16 @@ void CCharacter::FireWeapon()
             {
                 for (int i = 0; i < 3; i++)
                 {
-                    if ( m_ExplodeWall[i] == 0 )
-                    {
-                        m_ExplodeWall[i] = new CExplodeWall(GameWorld(), m_Pos, m_pPlayer->GetCID());
-                        break;
-                    }
-                    else if (m_ExplodeWall[i]->m_StartTick == 0)
+                    if (m_ExplodeWall[i] && m_ExplodeWall[i]->m_StartTick == 0)
                     {
                         m_ExplodeWall[i]->m_Pos = m_Pos;
                         m_ExplodeWall[i]->m_StartTick = Server()->Tick();
                         m_NumExplodeWall++;
+                        break;
+                    }
+                    else if (m_ExplodeWall[i] == 0)
+                    {
+                        m_ExplodeWall[i] = new CExplodeWall(GameWorld(), m_Pos, m_pPlayer->GetCID());
                         break;
                     }
                 }

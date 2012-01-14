@@ -34,7 +34,7 @@ void CLaserWall::Tick()
     if ( m_Double )
         return;
 
-    if( m_Killed >= 5 || (distance(m_From, m_Pos) && GameServer()->Collision()->IntersectLine(m_From, m_Pos, 0, 0)) || GameServer()->Collision()->CheckPoint(m_Pos) || (m_StartTick && Server()->Tick() >= m_StartTick+Server()->TickSpeed()*30) || !GameServer()->m_apPlayers[m_Owner] || !GameServer()->m_apPlayers[m_Owner]->GetCharacter() )
+    if( m_Killed >= 5 || (distance(m_From, m_Pos) && GameServer()->Collision()->IntersectLine(m_From, m_Pos, 0, 0)) || (m_StartTick && Server()->Tick() >= m_StartTick+Server()->TickSpeed()*30))
     {
         m_Destroy = true;
         return;

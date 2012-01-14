@@ -1432,10 +1432,19 @@ int CServer::Run()
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
         {
-            if ( m_RunServer != -1 )
-			m_NetServer.Drop(i, "Server shutdown");
-            else
+            if (m_RunServer == 0)
+    			m_NetServer.Drop(i, "Server shutdown");
+            else if (m_RunServer == -1)
                 m_NetServer.Drop(i, "Server is updating ... And restart quickly ;)");
+            else if (m_RunServer == -2)
+            {
+				if(m_aClients[i].m_State <= CClient::STATE_AUTH)
+					continue;
+
+				SendMap(i);
+				m_aClients[i].Reset();
+				m_aClients[i].m_State = CClient::STATE_CONNECTING;
+            }
         }
 
 		m_Econ.Shutdown();
@@ -1675,6 +1684,14 @@ void OnUpdate(int sig)
         exit(0);
 }
 
+void OnReload(int sig)
+{
+    if (Server && Server->m_RunServer != -2)
+        Server->m_RunServer = -2;
+    else
+        exit(0);
+}
+
 int main(int argc, const char **argv) // ignore_convention
 {
 #if defined(CONF_FAMILY_WINDOWS)
@@ -1747,7 +1764,9 @@ int main(int argc, const char **argv) // ignore_convention
     signal(SIGQUIT, OnShutdown);
     signal(SIGHUP, OnShutdown);
     signal(SIGINT, OnShutdown);
-    //signal(SIGFPE, OnUpdate);
+    signal(SIGUSR1, OnUpdate);
+    signal(SIGUSR2, OnReload);
+
 	// run the server
 	dbg_msg("server", "starting...");
 	pServer->Run();
