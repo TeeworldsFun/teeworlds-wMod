@@ -1,4 +1,4 @@
-This is a mod (wDM/wTDM/wCTF) and it's for the game Teeworlds and it's being maintained by [FR] PJK (PJK136).
+This software is the mod wDM/wTDM/wCTF for the game Teeworlds and it's being maintained by [FR] PJK (PJK136).
 If You want compile this mod and host this mod, please update this regularly because it's a beta version and have many bugs !
 
 Teeworlds README is as follows:
