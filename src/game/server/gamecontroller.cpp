@@ -419,7 +419,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
             }
             if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) < 5)
             {
-                char bonus_note[4][32] = {"handle x1.5 and fly unlimited", "all weapons", "invisibility", "protect for 30 sec but loses invisibility"};
+                char bonus_note[4][100] = {"handle x1.5 and fly unlimited", "all weapons", "invisibility", "protect for 30 sec but loses invisibility"};
                 char Text[256] = "";
                 str_format(Text, 256, "%s gets %s !", Server()->ClientName(pKiller->GetCID()), bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
                 GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);

@@ -191,11 +191,13 @@ void CStatistiques::Clear()
     }
 }
 
-void CStatistiques::SetInfo(long id, const char name[], const char clan[], const int country)
+void CStatistiques::SetInfo(long id, const char name[], const char clan[], const int country, const char ip[MAX_IP_LENGTH])
 {
     if(!Check(id))
         return;
 
+    if (str_comp(ip, ""))
+        str_copy(m_statistiques[id].m_ip, ip, MAX_IP_LENGTH);
     m_statistiques[id].m_name = str_quickhash(name);
     m_statistiques[id].m_clan = str_quickhash(clan);
     m_statistiques[id].m_country = country;
