@@ -17,8 +17,11 @@ CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEn
     m_Dir = Direction;
     m_Bounces = 0;
     m_Vel = 1;
+    m_Limit = GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW);
     GameWorld()->InsertEntity(this);
     Tick();
+    if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
+        GameServer()->m_apPlayers[Owner]->m_Mine++;
 }
 
 
@@ -104,6 +107,8 @@ bool CPlasma::HitCharacter(vec2 From, vec2 To)
 
 void CPlasma::Reset()
 {
+    if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
+        GameServer()->m_apPlayers[m_Owner]->m_Mine -= GameServer()->m_apPlayers[m_Owner]->m_Mine > 0 ? 1 : 0;
     GameServer()->m_World.DestroyEntity(this);
 }
 
@@ -111,6 +116,8 @@ void CPlasma::Tick()
 {
     if(m_Energy < 0 || GameLayerClipped(m_Pos))
     {
+        if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
+            GameServer()->m_apPlayers[m_Owner]->m_Mine -= GameServer()->m_apPlayers[m_Owner]->m_Mine > 0 ? 1 : 0;
         GameServer()->m_World.DestroyEntity(this);
         return;
     }

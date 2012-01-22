@@ -160,7 +160,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
     *m_stat_move = GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID());
     *m_stat_hook = GameServer()->m_pStatistiques->GetStatHook(m_pPlayer->GetSID());
 
-    m_Protect = Server()->Tick();
+    m_Protect = Server()->Tick() + Server()->TickSpeed() * m_stat_life->m_protection;
     m_AuraProtect[0] = 0;
     m_AuraCaptain[0] = 0;
 
@@ -444,7 +444,7 @@ void CCharacter::FireWeapon()
     bool Limit = false;
 
     if(m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_NINJA &&
-      ((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && (Race != MINER || m_ActiveWeapon != WEAPON_GUN || m_ActiveWeapon != WEAPON_GRENADE)) ||
+      ((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && (Race != MINER || m_ActiveWeapon == WEAPON_SHOTGUN)) ||
       (Race == MINER && m_ActiveWeapon == WEAPON_SHOTGUN)))
         Limit = true;
 
@@ -1392,13 +1392,12 @@ void CCharacter::Tick()
         }
     }
 
-    if (!m_AuraProtect[0] && (m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed() * m_stat_life->m_protection)))
+    if (!m_AuraProtect[0] && (m_Protect == -1 || Server()->Tick() < m_Protect))
     {
         for ( int i = 0; i < 12; i++ )
             m_AuraProtect[i] = new CAura(&(GameServer()->m_World), m_pPlayer->GetCID(), i * 30, 60, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
     }
-
-    else if ( m_AuraProtect[0] && !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed() * m_stat_life->m_protection)) )
+    else if (m_AuraProtect[0] && (m_Protect > 0 && Server()->Tick() >= m_Protect))
     {
         for ( int i = 0; i < 12; i++ )
             delete m_AuraProtect[i];
@@ -1657,7 +1656,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
     if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB))
         Instagib = true;
 
-    if ( !(m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed())) || From == m_pPlayer->GetCID() )
+    if ( m_Protect == 0 || From == m_pPlayer->GetCID() )
         m_Core.m_Vel += Force;
 
     if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) &&
@@ -1696,7 +1695,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
     if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) && !g_Config.m_SvTeamdamage)
         return false;
 
-    if ( m_Protect == -1 || (m_Protect != 0 && (Server()->Tick() - m_Protect) < Server()->TickSpeed()))
+    if ( m_Protect != 0 )
         return false;
 
     if(From == m_pPlayer->GetCID())
@@ -1811,7 +1810,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 
 void CCharacter::Snap(int SnappingClient)
 {
-    if(NetworkClipped(SnappingClient) || (m_pPlayer->GetCID() != SnappingClient && (m_Invisibility ||  (GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) / 5) >= 3)))
+    if(NetworkClipped(SnappingClient) || (m_pPlayer->GetCID() != SnappingClient && (m_Invisibility ||  (GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) / 5) == 3)))
         return;
 
     CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));

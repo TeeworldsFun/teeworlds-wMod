@@ -417,9 +417,9 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
                 str_format(Text, 256, "WARNING : %s must be stopped !!! %ld kills !!! ;)", Server()->ClientName(pKiller->GetCID()), m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()));
                 GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
             }
-            if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) < 4)
+            if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) < 5)
             {
-                char bonus_note[3][32] = {"handle x1.5 and fly unlimited", "all weapons", "invisibility"};
+                char bonus_note[4][32] = {"handle x1.5 and fly unlimited", "all weapons", "invisibility", "protect for 30 sec but loses invisibility"};
                 char Text[256] = "";
                 str_format(Text, 256, "%s gets %s !", Server()->ClientName(pKiller->GetCID()), bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
                 GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
@@ -436,6 +436,10 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_GRENADE, -2);
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_RIFLE, -2);
                     pKiller->GetCharacter()->GiveNinja();
+                }
+                else if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 4 && pKiller->GetCharacter())
+                {
+                    pKiller->GetCharacter()->m_Protect = Server()->Tick() + Server()->TickSpeed() * 30;
                 }
             }
         }

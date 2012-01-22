@@ -497,13 +497,14 @@ void CGameContext::SendTuningParams(int ClientID)
         User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
         User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
         User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
+        User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
 
-	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
+	    CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
         int *pParams = (int *)&User;
         for(unsigned i = 0; i < sizeof(User)/sizeof(int); i++)
 		Msg.AddInt(pParams[i]);
-	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
+    	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
+    }
     else
     {
         for (int i = 0; i < MAX_CLIENTS; i++)

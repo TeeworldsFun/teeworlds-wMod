@@ -23,6 +23,7 @@ private:
     int m_Bounces;
     int m_Owner;
     float m_Vel;
+    bool m_Limit;
 };
 
 #endif
