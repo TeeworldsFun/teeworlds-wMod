@@ -250,7 +250,7 @@ public:
     void Clear();
 
     long GetId(const char ip[MAX_IP_LENGTH], const char name[], const char clan[], const int country);
-    void SetInfo(long id, const char name[], const char clan[], const int country);
+    void SetInfo(long id, const char name[], const char clan[], const int country, const char ip[MAX_IP_LENGTH] = "");
 
     inline bool Check(long id, bool checklock = false)
     {
@@ -599,6 +599,7 @@ public:
         return 0;
     };
 
+    unsigned long GetNumStats() { return m_statistiques.size(); };
 private:
     CGameContext *GameServer() const
     {

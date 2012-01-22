@@ -84,6 +84,7 @@ class CGameContext : public IGameServer
     static void ConRemoveKatana(IConsole::IResult *pResult, void *pUserData);
     static void ConRemoveProtect(IConsole::IResult *pResult, void *pUserData);
     static void ConRemoveInvisibility(IConsole::IResult *pResult, void *pUserData);
+    static void ConSetSid(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	CGameContext(int Resetting);

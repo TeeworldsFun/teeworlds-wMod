@@ -2062,7 +2062,7 @@ void CGameContext::ConNextRandomEvent(IConsole::IResult *pResult, void *pUserDat
 void CGameContext::ConSetEvent(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (!pResult->NumArguments() || !pSelf->m_pEventsGame->SetEvent(pResult->GetInteger(0)))
+    if (!pSelf->m_pEventsGame->SetEvent(pResult->GetInteger(0)))
         pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid event id to set");
 }
 
@@ -2110,7 +2110,7 @@ void CGameContext::ConSetEventTeam(IConsole::IResult *pResult, void *pUserData)
     CGameContext *pSelf = (CGameContext *)pUserData;
     if ( pSelf->m_pController->IsTeamplay() )
     {
-        if (!pResult->NumArguments() || !pSelf->m_pEventsGame->SetEventTeam(pResult->GetInteger(0)))
+        if (!pSelf->m_pEventsGame->SetEventTeam(pResult->GetInteger(0)))
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid event id to set");
     }
     else
@@ -2159,8 +2159,6 @@ void CGameContext::ConListPlayer(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::ConGiveShotgun(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2180,17 +2178,11 @@ void CGameContext::ConGiveShotgun(IConsole::IResult *pResult, void *pUserData)
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConGiveGrenade(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2210,17 +2202,11 @@ void CGameContext::ConGiveGrenade(IConsole::IResult *pResult, void *pUserData)
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConGiveRifle(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2240,17 +2226,11 @@ void CGameContext::ConGiveRifle(IConsole::IResult *pResult, void *pUserData)
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConGiveKatana(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2270,17 +2250,11 @@ void CGameContext::ConGiveKatana(IConsole::IResult *pResult, void *pUserData)
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConGiveProtect(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2300,17 +2274,11 @@ void CGameContext::ConGiveProtect(IConsole::IResult *pResult, void *pUserData)
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConGiveInvisibility(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2330,17 +2298,11 @@ void CGameContext::ConGiveInvisibility(IConsole::IResult *pResult, void *pUserDa
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConRemoveShotgun(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2361,17 +2323,11 @@ void CGameContext::ConRemoveShotgun(IConsole::IResult *pResult, void *pUserData)
 
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConRemoveGrenade(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2391,17 +2347,11 @@ void CGameContext::ConRemoveGrenade(IConsole::IResult *pResult, void *pUserData)
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConRemoveRifle(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2421,17 +2371,11 @@ void CGameContext::ConRemoveRifle(IConsole::IResult *pResult, void *pUserData)
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConRemoveKatana(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2451,17 +2395,11 @@ void CGameContext::ConRemoveKatana(IConsole::IResult *pResult, void *pUserData)
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
 }
 
 void CGameContext::ConRemoveProtect(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2481,16 +2419,11 @@ void CGameContext::ConRemoveProtect(IConsole::IResult *pResult, void *pUserData)
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
 }
 
 void CGameContext::ConRemoveInvisibility(IConsole::IResult *pResult, void *pUserData)
 {
     CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
         int id = pResult->GetInteger(0);
         if ( id == -1 )
         {
@@ -2510,10 +2443,43 @@ void CGameContext::ConRemoveInvisibility(IConsole::IResult *pResult, void *pUser
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+}
+
+void CGameContext::ConSetSid(IConsole::IResult *pResult, void *pUserData)
+{
+    CGameContext *pSelf = (CGameContext *)pUserData;
+    int ClientID = pResult->GetInteger(1);
+    unsigned int StatID = pResult->GetInteger(0);
+    if ( ClientID >= 0 && ClientID < MAX_CLIENTS && pSelf->m_apPlayers[ClientID] )
+    {
+        if (StatID >= 0 && StatID < pSelf->m_pStatistiques->GetNumStats())
+        {
+            pSelf->m_apPlayers[ClientID]->KillCharacter();
+            char ip[MAX_IP_LENGTH] = "";
+            pSelf->Server()->GetClientAddr(ClientID, ip, MAX_IP_LENGTH);
+            bool cut = true;
+            for ( int i = 0; i < MAX_IP_LENGTH; i++ )
+            {
+                if ( ip[i] == '[' )
+                    cut = false;
+                else if ( ip[i] == ':' && cut == true )
+                {
+                    ip[i] = '\0';
+                    break;
+                }
+                else if ( ip[i] == ']' )
+                    cut = true;
+            }
+            pSelf->m_pStatistiques->SetStopPlay(pSelf->m_apPlayers[ClientID]->GetSID(), ClientID);
+            pSelf->m_apPlayers[ClientID]->SetSID(StatID);
+            pSelf->m_pStatistiques->SetStartPlay(StatID, ClientID);
+            pSelf->m_pStatistiques->SetInfo(StatID, pSelf->Server()->ClientName(ClientID), pSelf->Server()->ClientClan(ClientID), pSelf->Server()->ClientCountry(ClientID), ip);
+        }
+        else
+            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Stat ID");
     }
     else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "You must give a client ID");
-
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Client ID");
 }
 
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -2579,6 +2545,8 @@ void CGameContext::OnConsoleInit()
     Console()->Register("unkatana", "i", CFGFLAG_SERVER, ConRemoveKatana, this, "Remove katana from the player with this client id.");
     Console()->Register("unprotect", "i", CFGFLAG_SERVER, ConRemoveProtect, this, "Remove protection from the player with this client id.");
     Console()->Register("uninvisibility", "i", CFGFLAG_SERVER, ConRemoveInvisibility, this, "Remove invisibility from the player with this client id.");
+
+    Console()->Register("set_sid", "ii", CFGFLAG_SERVER, ConSetSid, this, "Set the stats_id to the ClientID.");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 }
