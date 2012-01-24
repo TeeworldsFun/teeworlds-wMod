@@ -76,6 +76,8 @@ void CProjectile::Tick()
 
     CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
     CCharacter *TargetChr = 0;
+    CTurret *TargetTurret = 0;
+    CExplodeWall *TargetExplodeWall = 0;
     int Collide = false;
 
     if (distance(CurPos, PrevPos))
@@ -95,8 +97,7 @@ void CProjectile::Tick()
 
         Collide = GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0);
         TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
-        CTurret *TargetTurret = (CTurret *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 6.0f, CurPos, CGameWorld::ENTTYPE_TURRET);
-        CExplodeWall *TargetExplodeWall = 0;
+        TargetTurret = (CTurret *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 6.0f, CurPos, CGameWorld::ENTTYPE_TURRET);
 
         {
             CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
