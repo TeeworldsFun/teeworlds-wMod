@@ -113,10 +113,10 @@ public:
     inline unsigned int GetXp() { UpdateStat(); return m_xp; };
     inline unsigned int GetScore() { UpdateStat(); return m_score; };
     inline unsigned int GetActualKill() { return m_actual_kill; };
-    inline StatWeapon GetStatWeapon() { return m_stat_weapon };
-    inline StatLife GetStatLife() { return m_stat_life };
-    inline StatMove GetStatMove() { return m_stat_move };
-    inline StatHook GetStatHook() { return m_stat_hook };
+    inline StatWeapon GetStatWeapon() { return m_upgr.m_stat_weapon; };
+    inline StatLife GetStatLife() { return m_upgr.m_stat_life; };
+    inline StatMove GetStatMove() { return m_upgr.m_stat_move; };
+    inline StatHook GetStatHook() { return m_upgr.m_stat_hook; };
     inline Conf GetConf() { return m_conf; };
 
     void UpdateStat();
@@ -140,7 +140,7 @@ public:
     }
     inline void AddDead()
     {
-        if ( m_Lock )
+        if ( m_conf.m_Lock )
         {
             m_actual_kill = 0;
             return;
@@ -149,16 +149,16 @@ public:
         AddKillingSpree();
         m_actual_kill = 0;
     }
-    inline void AddSuicide() { m_suicide += m_Lock ? 0 : 1; };
-    inline void AddFire() { m_fire += m_Lock ? 0 : 1; };
-    inline void AddPickUpWeapon() { m_pickup_weapon += m_Lock ? 0 : 1; };
-    inline void AddPickUpNinja() { m_pickup_ninja += m_Lock ? 0 : 1; };
-    inline void AddChangeWeapon() { m_change_weapon += m_Lock ? 0 : 1; };
+    inline void AddSuicide() { m_suicide += m_conf.m_Lock ? 0 : 1; };
+    inline void AddFire() { m_fire += m_conf.m_Lock ? 0 : 1; };
+    inline void AddPickUpWeapon() { m_pickup_weapon += m_conf.m_Lock ? 0 : 1; };
+    inline void AddPickUpNinja() { m_pickup_ninja += m_conf.m_Lock ? 0 : 1; };
+    inline void AddChangeWeapon() { m_change_weapon += m_conf.m_Lock ? 0 : 1; };
     inline void SetStartPlay()
     {
         for (int i = 0; i < NUM_WEAPONS; i++)
             m_pPlayer->m_WeaponType[i] = m_conf.m_Weapon[i];
-        if ( m_Lock )
+        if ( m_conf.m_Lock )
             return;
         m_start_time = time_timestamp();
         m_log_in++;
@@ -167,15 +167,15 @@ public:
     {
         for (int i = 0; i < NUM_WEAPONS; i++)
             m_conf.m_Weapon[i] = m_pPlayer->m_WeaponType[i];
-        m_last_connect = time_timestamp();
+        m_player.m_last_connect = time_timestamp();
         if ( m_conf.m_Lock )
             return;
         AddKillingSpree();
-        UpdateStat(id);
+        UpdateStat();
         m_start_time = 0;
     }
-    inline void AddMessage() { m_message += m_Lock ? 0 : 1; };
-    inline void AddFlagCapture() { m_flag_capture += m_Lock ? 0 : 1; };
+    inline void AddMessage() { m_message += m_conf.m_Lock ? 0 : 1; };
+    inline void AddFlagCapture() { m_flag_capture += m_conf.m_Lock ? 0 : 1; };
     inline bool InfoHealKiller() { return m_conf.m_InfoHealKiller = m_conf.m_InfoHealKiller ? false : true; };
     inline bool InfoXP() { return m_conf.m_InfoXP = m_conf.m_InfoXP ? false : true; };
     inline bool InfoLevelUp() { return m_conf.m_InfoLevelUp = m_conf.m_InfoLevelUp ? false : true; };
@@ -187,76 +187,76 @@ public:
     inline bool LifeAbsolute() { return m_conf.m_LifeAbsolute = m_conf.m_LifeAbsolute ? false : true; };
     inline void EnableAllInfo()
     {
-        m_InfoHealKiller = true;
-        m_InfoXP = true;
-        m_InfoLevelUp = true;
-        m_InfoKillingSpree = true;
-        m_InfoRace = true;
-        m_InfoAmmo = true;
-        m_ShowVoter = true;
+        m_conf.m_InfoHealKiller = true;
+        m_conf.m_InfoXP = true;
+        m_conf.m_InfoLevelUp = true;
+        m_conf.m_InfoKillingSpree = true;
+        m_conf.m_InfoRace = true;
+        m_conf.m_InfoAmmo = true;
+        m_conf.m_ShowVoter = true;
     }
     inline void DisableAllInfo()
     {
         m_conf.m_InfoHealKiller = false;
         m_conf.m_InfoXP = false;
-        m_InfoLevelUp = false;
-        m_InfoKillingSpree = false;
-        m_InfoRace = false;
-        m_InfoAmmo = false;
-        m_ShowVoter = false;
+        m_conf.m_InfoLevelUp = false;
+        m_conf.m_InfoKillingSpree = false;
+        m_conf.m_InfoRace = false;
+        m_conf.m_InfoAmmo = false;
+        m_conf.m_ShowVoter = false;
     }
     inline bool Lock() { return m_conf.m_Lock = m_conf.m_Lock ? false : true; };
 
     inline int UpgradeWeapon()
     {
-        UpdateUpgrade(id);
-        if (m_upgrade.m_money)
+        UpdateUpgrade();
+        if (m_upgr.m_money)
             return 1;
         if (m_conf.m_Lock)
             return 2;
-        if (m_upgrade.m_weapon >= 40)
+        if (m_upgr.m_weapon >= 40)
             return 3;
-        m_upgrade.m_weapon++;
-        UpdateUpgrade(id);
+        m_upgr.m_weapon++;
+        UpdateUpgrade();
         return 0;
     };
     inline int UpgradeLife(long id)
     {
-        UpdateUpgrade(id);
-        if (m_upgrade.m_money)
+        UpdateUpgrade();
+        if (m_upgr.m_money)
             return 1;
         if (m_conf.m_Lock)
             return 2;
-        if (m_upgrade.m_life >= 40)
+        if (m_upgr.m_life >= 40)
             return 3;
-        m_upgrade.m_life++;
-        UpdateUpgrade(id);
+        m_upgr.m_life++;
+        UpdateUpgrade();
         return 0;
     };
     inline int UpgradeMove(long id)
     {
-        UpdateUpgrade(id);
-        if (m_upgrade.m_money)
+        UpdateUpgrade();
+        if (m_upgr.m_money)
             return 1;
         if (m_conf.m_Lock)
             return 2;
-        if (m_upgrade.m_move >= 40)
+        if (m_upgr.m_move >= 40)
             return 3;
-        m_upgrade.m_move++;
-        UpdateUpgrade(id);
+        m_upgr.m_move++;
+        UpdateUpgrade();
         return 0;
     };
     inline int UpgradeHook(long id)
     {
-        UpdateUpgrade(id);
-        if (m_upgrade.m_money)
+        UpdateUpgrade();
+        if (m_upgr.m_money)
             return 1;
         if (m_conf.m_Lock)
             return 2;
-        if (m_upgrade.m_hook >= 40)
+        if (m_upgr.m_hook >= 40)
             return 3;
-        m_upgrade.m_hook++;
-        UpdateUpgrade(id);
+        m_upgr.m_hook++;
+        UpdateUpgrade();
         return 0;
     };
 private:
@@ -291,7 +291,7 @@ private:
     unsigned int m_flag_capture;
     unsigned int m_bonus_xp;
     unsigned int m_start_time;
-    short int m_actual_kill;
+    unsigned short int m_actual_kill;
 
     struct Upgrade
     {
@@ -316,13 +316,13 @@ private:
     {
         if ( m_actual_kill > 5 )
         {
-            m_statistiques[id].m_killing_spree += m_statistiques[id].m_actual_kill;
-            if ( m_statistiques[id].m_actual_kill > m_statistiques[id].m_max_killing_spree )
-                m_statistiques[id].m_max_killing_spree = m_statistiques[id].m_actual_kill;
+            m_killing_spree += m_actual_kill;
+            if ( m_actual_kill > m_max_killing_spree )
+                m_max_killing_spree = m_actual_kill;
         }
     }
     
     CGameContext *m_pGameServer;
-}
+};
 
 #endif
