@@ -3,158 +3,114 @@
 
 CStats::CStats(CPlayer* pPlayer)
 {
-    m_player.m_id = 0;
-    str_copy(m_player.m_ip, "");
-    str_copy(m_player.m_name, "");
-    str_copy(m_player.m_clan, "");
-    m_player.m_country = -1;
-    m_player.m_last_connect = 0;
-
-    m_level = 0;
-    m_xp = 0;
-    m_score = 0;
-    m_kill = 0;
-    m_dead = 0;
-    m_rapport = 0.0;
-    m_suicide = 0;
-    m_log_in = 0;
-    m_fire = 0;
-    m_pickup_weapon = 0;
-    m_pickup_ninja = 0;
-    m_change_weapon = 0;
-    m_time_play = 0;
-    m_message = 0;
-    m_killing_spree = 0;
-    m_max_killing_spree = 0;
-    m_flag_capture = 0;
-    m_bonus_xp = 0;
-    m_start_time = 0;
-    m_actual_kill = 0;
-
-    m_conf.m_InfoHealKiller = true;
-    m_conf.m_InfoXP = true;
-    m_conf.m_InfoLevelUp = true;
-    m_conf.m_InfoKillingSpree = true;
-    m_conf.m_InfoRace = true;
-    m_conf.m_InfoAmmo = true;
-    m_conf.m_ShowVoter = true;
-    m_conf.m_AmmoAbsolute = true;
-    m_conf.m_LifeAbsolute = true;
-    m_conf.m_Lock = false;
-    for ( int i = 0; i < NUM_WEAPONS; i++ )
-        m_conf.m_Weapon[i] = WARRIOR;
-
-    m_upgrade.m_money = 0;
-    m_upgrade.m_weapon = 0;
-    m_upgrade.m_life = 0;
-    m_upgrade.m_move = 0;
-    m_upgrade.m_hook = 0;
+    m_pPlayer = pPlayer;
+    m_pGameServer = pPlayer->GameServer();
 }
 
 void CStats::SetInfo(const char Name[], const char Clan[], const int Country, const char Ip[MAX_IP_LENGTH])
 {
-    if (str_comp(ip, "") != 0)
-        str_copy(m_ip, ip, MAX_IP_LENGTH);
+    if (str_comp(Ip, "") != 0)
+        str_copy(m_player.m_ip, Ip, MAX_IP_LENGTH);
 
-    str_copy(m_name, Name, MAX_NAME_LENGTH);
-    str_copy(m_name, Clan, MAX_CLAN_LENGTH);
-    m_country = country;
+    str_copy(m_player.m_pseudo, Name, MAX_NAME_LENGTH);
+    str_copy(m_player.m_clan, Clan, MAX_CLAN_LENGTH);
+    m_player.m_country = country;
 }
 
 
 void CStats::UpdateStat()
 {
-    if ( m_dead != 0 )
-        m_rapport = (double)m_kill / (double)m_dead;
+    if ( m_stats.m_dead != 0 )
+        m_stats.m_rapport = (double)m_stats.m_kill / (double)m_stats.m_dead;
     else
-        m_rapport = 1;
+        m_stats.m_rapport = 1;
 
-    if ((m_kill * m_rapport) > m_suicide)
-        m_score = ((m_kill * m_rapport) - m_suicide) + m_killing_spree + (m_flag_capture * 5);
+    if ((m_stats.m_kill * m_stats.m_rapport) > m_stats.m_suicide)
+        m_stats.m_score = ((m_stats.m_kill * m_stats.m_rapport) - m_stats.m_suicide) + m_stats.m_killing_spree + (m_stats.m_flag_capture * 5);
     else
-        m_score = 0;
+        m_stats.m_score = 0;
 
-    m_level = floor(((-1)+sqrt(1+(8*(m_kill + m_killing_spree + (m_flag_capture * 5) + m_bonus_xp))))/2);
-    m_xp = (m_kill + m_killing_spree + (m_flag_capture * 5) + m_bonus_xp) - ((m_level * (m_level + 1))/2);
+    m_stats.m_level = floor(((-1)+sqrt(1+(8*(m_stats.m_kill + m_stats.m_killing_spree + (m_stats.m_flag_capture * 5) + m_stats.m_bonus_xp))))/2);
+    m_stats.m_xp = (m_stats.m_kill + m_stats.m_killing_spree + (m_stats.m_flag_capture * 5) + m_stats.m_bonus_xp) - ((m_stats.m_level * (m_stats.m_level + 1))/2);
 
-    if (m_start_time != 0 && !m_conf.m_Lock)
+    if (m_stats.m_start_time != 0 && !m_conf.m_Lock)
     {
-        m_time_play += difftime(time_timestamp(), m_start_time);
-        m_start_time = time_timestamp();
+        m_stats.m_time_play += difftime(time_timestamp(), m_stats.m_start_time);
+        m_stats.m_start_time = time_timestamp();
     }
 }
 
 void CStats::UpdateUpgrade()
 {
-    m_upgrade.m_money = m_level - (m_upgrade.m_weapon + m_upgrade.m_life + m_upgrade.m_move + m_upgrade.m_hook);
+    m_upgr.m_money = m_level - (m_upgr.m_weapon + m_upgr.m_life + m_upgr.m_move + m_upgr.m_hook);
 
-    if ( m_upgrade.m_weapon > 40 )
-        m_upgrade.m_weapon = 40;
-    if ( m_upgrade.m_life > 40 )
-        m_upgrade.m_life = 40;
-    if ( m_upgrade.m_move > 40 )
-        m_upgrade.m_move = 40;
-    if ( m_upgrade.m_hook > 40 )
-        m_upgrade.m_hook = 40;
+    if ( m_upgr.m_weapon > 40 )
+        m_upgr.m_weapon = 40;
+    if ( m_upgr.m_life > 40 )
+        m_upgr.m_life = 40;
+    if ( m_upgr.m_move > 40 )
+        m_upgr.m_move = 40;
+    if ( m_upgr.m_hook > 40 )
+        m_upgr.m_hook = 40;
 
-    m_upgrade.m_stat_weapon.m_auto_gun = m_upgrade.m_weapon >= 1 ? true : false;
-    m_upgrade.m_stat_weapon.m_auto_hammer = m_upgrade.m_weapon >= 2 ? true : false;
-    m_upgrade.m_stat_weapon.m_auto_ninja = m_upgrade.m_weapon >= 3 ? true : false;
-    if ( m_upgrade.m_weapon <= 0 )
+    m_upgr.m_stat_weapon.m_auto_gun = m_upgr.m_weapon >= 1 ? true : false;
+    m_upgr.m_stat_weapon.m_auto_hammer = m_upgr.m_weapon >= 2 ? true : false;
+    m_upgr.m_stat_weapon.m_auto_ninja = m_upgr.m_weapon >= 3 ? true : false;
+    if ( m_upgr.m_weapon <= 0 )
     {
-        m_upgrade.m_stat_weapon.m_speed = 1;
-        m_upgrade.m_stat_weapon.m_regeneration = 0;
-        m_upgrade.m_stat_weapon.m_stockage = 10;
+        m_upgr.m_stat_weapon.m_speed = 1;
+        m_upgr.m_stat_weapon.m_regeneration = 0;
+        m_upgr.m_stat_weapon.m_stockage = 10;
     }
-    else if ( m_upgrade.m_weapon <= 36 )
+    else if ( m_upgr.m_weapon <= 36 )
     {
-        m_upgrade.m_stat_weapon.m_speed = 1 + ((int)(m_upgrade.m_weapon/3) * 0.5f);
-        m_upgrade.m_stat_weapon.m_regeneration = (int)((m_upgrade.m_weapon - 1)/3);
-        m_upgrade.m_stat_weapon.m_stockage = 10 + (int)(((m_upgrade.m_weapon - 2)/3) * 5);
+        m_upgr.m_stat_weapon.m_speed = 1 + ((int)(m_upgr.m_weapon/3) * 0.5f);
+        m_upgr.m_stat_weapon.m_regeneration = (int)((m_upgr.m_weapon - 1)/3);
+        m_upgr.m_stat_weapon.m_stockage = 10 + (int)(((m_upgr.m_weapon - 2)/3) * 5);
     }
-    else if ( m_upgrade.m_weapon > 36 )
+    else if ( m_upgr.m_weapon > 36 )
     {
-        m_upgrade.m_stat_weapon.m_speed = 1 + ((int)(m_upgrade.m_weapon/3) * 0.5f);
-        m_upgrade.m_stat_weapon.m_regeneration = -1;
-        m_upgrade.m_stat_weapon.m_stockage = -1;
+        m_upgr.m_stat_weapon.m_speed = 1 + ((int)(m_upgr.m_weapon/3) * 0.5f);
+        m_upgr.m_stat_weapon.m_regeneration = -1;
+        m_upgr.m_stat_weapon.m_stockage = -1;
     }
-    if ( m_upgrade.m_weapon > 38 )
-        m_upgrade.m_stat_weapon.m_all_weapon = true;
+    if ( m_upgr.m_weapon > 38 )
+        m_upgr.m_stat_weapon.m_all_weapon = true;
     else
-        m_upgrade.m_stat_weapon.m_all_weapon = false;
-    if ( m_upgrade.m_weapon > 39 )
-        m_upgrade.m_stat_weapon.m_bounce = 1;
+        m_upgr.m_stat_weapon.m_all_weapon = false;
+    if ( m_upgr.m_weapon > 39 )
+        m_upgr.m_stat_weapon.m_bounce = 1;
     else
-        m_upgrade.m_stat_weapon.m_bounce = 0;
+        m_upgr.m_stat_weapon.m_bounce = 0;
 
-    m_upgrade.m_stat_life.m_protection = 1 + ((int)((m_upgrade.m_life + 3)/4) / 5.0f);
-    m_upgrade.m_stat_life.m_start_armor = (int)(m_upgrade.m_life + 2)/4;
-    m_upgrade.m_stat_life.m_regeneration = (int)(m_upgrade.m_life + 1)/4;
-    if ( m_upgrade.m_life <= 20 )
+    m_upgr.m_stat_life.m_protection = 1 + ((int)((m_upgr.m_life + 3)/4) / 5.0f);
+    m_upgr.m_stat_life.m_start_armor = (int)(m_upgr.m_life + 2)/4;
+    m_upgr.m_stat_life.m_regeneration = (int)(m_upgr.m_life + 1)/4;
+    if ( m_upgr.m_life <= 20 )
     {
-        m_upgrade.m_stat_life.m_stockage[0] = 10 + (int)(m_upgrade.m_life / 2);
-        m_upgrade.m_stat_life.m_stockage[1] = 10;
+        m_upgr.m_stat_life.m_stockage[0] = 10 + (int)(m_upgr.m_life / 2);
+        m_upgr.m_stat_life.m_stockage[1] = 10;
     }
     else
     {
-        m_upgrade.m_stat_life.m_stockage[0] = 20;
-        m_upgrade.m_stat_life.m_stockage[1] = (int)(m_upgrade.m_life / 2);
+        m_upgr.m_stat_life.m_stockage[0] = 20;
+        m_upgr.m_stat_life.m_stockage[1] = (int)(m_upgr.m_life / 2);
     }
     
-    m_upgrade.m_stat_move.m_rate_speed = 1 + ((int)((m_upgrade.m_move + 3)/ 4) * 0.2f);
-    m_upgrade.m_stat_move.m_rate_accel = 1 + ((int)((m_upgrade.m_move + 2)/ 4) * 0.1f);
-    m_upgrade.m_stat_move.m_rate_high_jump = 1 + ((int)((m_upgrade.m_move + 1)/ 4) * 0.05f);
-    m_upgrade.m_stat_move.m_num_jump = 1 + (int)(m_upgrade.m_move / 4);
-    if ( m_upgrade.m_move == 40 )
-        m_upgrade.m_stat_move.m_num_jump = -1;
+    m_upgr.m_stat_move.m_rate_speed = 1 + ((int)((m_upgr.m_move + 3)/ 4) * 0.2f);
+    m_upgr.m_stat_move.m_rate_accel = 1 + ((int)((m_upgr.m_move + 2)/ 4) * 0.1f);
+    m_upgr.m_stat_move.m_rate_high_jump = 1 + ((int)((m_upgr.m_move + 1)/ 4) * 0.05f);
+    m_upgr.m_stat_move.m_num_jump = 1 + (int)(m_upgr.m_move / 4);
+    if ( m_upgr.m_move == 40 )
+        m_upgr.m_stat_move.m_num_jump = -1;
     
-    m_upgrade.m_stat_hook.m_rate_length = 1 + ((int)((m_upgrade.m_hook + 2)/ 3) * (2.0f/13.0f));
-    m_upgrade.m_stat_hook.m_rate_time = 1 + ((int)((m_upgrade.m_hook + 1)/ 3) * (7.0f/13.0f));
-    m_upgrade.m_stat_hook.m_rate_speed = 1 + ((int)(m_upgrade.m_hook/ 3) * (2.0f/13.0f));
-    if ( m_upgrade.m_hook == 40 )
-        m_upgrade.m_stat_hook.m_hook_damage = true;
+    m_upgr.m_stat_hook.m_rate_length = 1 + ((int)((m_upgr.m_hook + 2)/ 3) * (2.0f/13.0f));
+    m_upgr.m_stat_hook.m_rate_time = 1 + ((int)((m_upgr.m_hook + 1)/ 3) * (7.0f/13.0f));
+    m_upgr.m_stat_hook.m_rate_speed = 1 + ((int)(m_upgr.m_hook/ 3) * (2.0f/13.0f));
+    if ( m_upgr.m_hook == 40 )
+        m_upgr.m_stat_hook.m_hook_damage = true;
     else
-        m_upgrade.m_stat_hook.m_hook_damage = false;
+        m_upgr.m_stat_hook.m_hook_damage = false;
 }
 
 void CStats::DisplayStat()
@@ -164,7 +120,7 @@ void CStats::DisplayStat()
     char a[256] = "";
     char stats[18][50];
 
-    str_format(stats[0], 50, "Name : %s", m_name);
+    str_format(stats[0], 50, "Name : %s", m_pseudo);
     str_format(stats[1], 50, "Level : %ld", m_level);
 //  str_format(stats[2], 50, "Rank : %ld.", m_rank.m_score);
 
@@ -202,11 +158,11 @@ void CStats::DisplayPlayer()
     char upgr[7][50];
     str_format(upgr[0], 50, "Name : %s | Level : %ld | Score : %ld", Server()->ClientName(pPlayer->GetCID()), m_level, m_score);
     str_format(upgr[1], 50, "Upgrade :");
-    str_format(upgr[2], 50, "Money : %ld", m_upgrade.m_money);
-    str_format(upgr[3], 50, "Weapon: %ld", m_upgrade.m_weapon);
-    str_format(upgr[4], 50, "Life : %ld", m_upgrade.m_life);
-    str_format(upgr[5], 50, "Move : %ld", m_upgrade.m_move);
-    str_format(upgr[6], 50, "Hook : %ld", m_upgrade.m_hook);
+    str_format(upgr[2], 50, "Money : %ld", m_upgr.m_money);
+    str_format(upgr[3], 50, "Weapon: %ld", m_upgr.m_weapon);
+    str_format(upgr[4], 50, "Life : %ld", m_upgr.m_life);
+    str_format(upgr[5], 50, "Move : %ld", m_upgr.m_move);
+    str_format(upgr[6], 50, "Hook : %ld", m_upgr.m_hook);
 
 
     for ( int i = 0; i < 7; i++ )
@@ -226,10 +182,10 @@ void CStats::ResetPartialStat()
     m_flag_capture = 0;
     m_bonus_xp = 0;
 
-    m_upgrade.m_weapon = 0;
-    m_upgrade.m_life = 0;
-    m_upgrade.m_move = 0;
-    m_upgrade.m_hook = 0;
+    m_upgr.m_weapon = 0;
+    m_upgr.m_life = 0;
+    m_upgr.m_move = 0;
+    m_upgr.m_hook = 0;
     UpdateStat();
     UpdateUpgrade();
 }
@@ -251,20 +207,20 @@ void CStatistiques::ResetAllStat()
     m_flag_capture = 0;
     m_bonus_xp = 0;
 
-    m_upgrade.m_weapon = 0;
-    m_upgrade.m_life = 0;
-    m_upgrade.m_move = 0;
-    m_upgrade.m_hook = 0;
+    m_upgr.m_weapon = 0;
+    m_upgr.m_life = 0;
+    m_upgr.m_move = 0;
+    m_upgr.m_hook = 0;
     UpdateStat();
     UpdateUpgrade();
 }
 
 void CStatistiques::ResetUpgr(long id)
 {
-    m_upgrade.m_weapon = 0;
-    m_upgrade.m_life = 0;
-    m_upgrade.m_move = 0;
-    m_upgrade.m_hook = 0;
+    m_upgr.m_weapon = 0;
+    m_upgr.m_life = 0;
+    m_upgr.m_move = 0;
+    m_upgr.m_hook = 0;
     UpdateUpgrade();
 }
 

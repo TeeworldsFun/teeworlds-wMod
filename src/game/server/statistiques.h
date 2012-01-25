@@ -73,46 +73,139 @@ struct StatHook
     bool m_hook_damage;
 };
 
-struct Conf
+struct Upgrade
+{
+    Upgrade()
     {
-        Conf()
-        {
-            m_InfoHealKiller = true;
-            m_InfoXP = true;
-            m_InfoLevelUp = true;
-            m_InfoKillingSpree = true;
-            m_InfoRace = true;
-            m_InfoAmmo = true;
-            m_ShowVoter = true;
-            m_AmmoAbsolute = true;
-            m_LifeAbsolute = true;
-            m_Lock = false;
-        }
-        bool m_InfoHealKiller;
-        bool m_InfoXP;
-        bool m_InfoLevelUp;
-        bool m_InfoKillingSpree;
-        bool m_InfoRace;
-        bool m_InfoAmmo;
-        bool m_ShowVoter;
-        bool m_AmmoAbsolute;
-        bool m_LifeAbsolute;
-        bool m_Lock;
-        int m_Weapon[NUM_WEAPONS];
+        m_money = 0;
+        m_weapon = 0;
+        m_life = 0;
+        m_move = 0;
+        m_hook = 0;
+    }
+    int m_money;
+    short int m_weapon;
+    short int m_life;
+    short int m_move;
+    short int m_hook;
+    StatWeapon m_stat_weapon;
+    StatLife m_stat_life;
+    StatMove m_stat_move;
+    StatHook m_stat_hook;
+};
+
+struct Conf
+{
+    Conf()
+    {
+        m_InfoHealKiller = true;
+        m_InfoXP = true;
+        m_InfoLevelUp = true;
+        m_InfoKillingSpree = true;
+        m_InfoRace = true;
+        m_InfoAmmo = true;
+        m_ShowVoter = true;
+        m_AmmoAbsolute = true;
+        m_LifeAbsolute = true;
+        m_Lock = false;
+        for ( int i = 0; i < NUM_WEAPONS; i++ )
+            m_Weapon[i] = WARRIOR;
+    }
+    bool m_InfoHealKiller;
+    bool m_InfoXP;
+    bool m_InfoLevelUp;
+    bool m_InfoKillingSpree;
+    bool m_InfoRace;
+    bool m_InfoAmmo;
+    bool m_ShowVoter;
+    bool m_AmmoAbsolute;
+    bool m_LifeAbsolute;
+    bool m_Lock;
+    int m_Weapon[NUM_WEAPONS];
+};
+
+enum {MAX_IP_LENGTH = 42};
+    
+struct Player
+{
+    Player()
+    {
+        m_id = 0;
+        str_copy(m_ip, "", MAX_IP_LENGTH);
+        str_copy(m_pseudo, "", MAX_NAME_LENGTH);
+        str_copy(m_clan, "", MAX_CLAN_LENGTH);
+        m_country = -1;
+        str_copy(m_name, "", MAX_NAME_LENGTH);
+        m_password = 0;
+        m_last_connect = 0;
+    }
+    unsigned int m_id;
+    char m_ip[MAX_IP_LENGTH];
+    char m_pseudo[MAX_NAME_LENGTH];
+    char m_clan[MAX_CLAN_LENGTH];
+    int m_country;
+    char m_name[MAX_NAME_LENGTH];
+    unsigned long m_password;
+    unsigned int m_last_connect;
+};
+
+struct Stats
+{
+    Stats()
+    {
+        m_level = 0;
+        m_xp = 0;
+        m_score = 0;
+        m_kill = 0;
+        m_dead = 0;
+        m_rapport = 1.0;
+        m_suicide = 0;
+        m_log_in = 0;
+        m_fire = 0;
+        m_pickup_weapon = 0;
+        m_pickup_ninja = 0;
+        m_change_weapon = 0;
+        m_time_play = 0;
+        m_message = 0;
+        m_killing_spree = 0;
+        m_max_killing_spree = 0;
+        m_flag_capture = 0;
+        m_bonus_xp = 0;
+        m_start_time = 0;
+        m_actual_kill = 0;
+    }
+    unsigned int m_level;
+    unsigned int m_xp;
+    unsigned int m_score;
+    unsigned int m_kill;
+    unsigned int m_dead;
+    unsigned int m_suicide;
+    double m_rapport;
+    unsigned int m_log_in;
+    unsigned int m_fire;
+    unsigned int m_pickup_weapon;
+    unsigned int m_pickup_ninja;
+    unsigned int m_change_weapon;
+    unsigned int m_time_play;
+    unsigned int m_message;
+    unsigned int m_killing_spree;
+    unsigned int m_max_killing_spree;
+    unsigned int m_flag_capture;
+    unsigned int m_bonus_xp;
+    unsigned int m_start_time;
+    unsigned short int m_actual_kill;
 };
 
 class CStats
 {
 public:
-    enum {MAX_IP_LENGTH = 42};
-
     CStats(CPlayer* pPlayer);
     void SetInfo(const char Name[], const char Clan[], const int Country, const char Ip[MAX_IP_LENGTH] = "");
 
-    inline unsigned int GetLevel() { UpdateStat(); return m_level; };
-    inline unsigned int GetXp() { UpdateStat(); return m_xp; };
-    inline unsigned int GetScore() { UpdateStat(); return m_score; };
-    inline unsigned int GetActualKill() { return m_actual_kill; };
+    inline unsigned int GetLevel() { UpdateStat(); return m_stats.m_level; };
+    inline unsigned int GetXp() { UpdateStat(); return m_stats.m_xp; };
+    inline unsigned int GetScore() { UpdateStat(); return m_stats.m_score; };
+    inline unsigned int GetActualKill() { return m_stats.m_actual_kill; };
     inline StatWeapon GetStatWeapon() { return m_upgr.m_stat_weapon; };
     inline StatLife GetStatLife() { return m_upgr.m_stat_life; };
     inline StatMove GetStatMove() { return m_upgr.m_stat_move; };
@@ -129,39 +222,39 @@ public:
     
     inline void AddKill(unsigned int level_victim)
     {
-        m_actual_kill++;
+        m_stats.m_actual_kill++;
         if (m_conf.m_Lock)
             return;
-        m_kill++;
-        if (!m_level)
-            m_level = 1;
-        if (static_cast<int>(level_victim/m_level) - 1 > 0)
-            m_bonus_xp += (level_victim/m_level) - 1;
+        m_stats.m_kill++;
+        if (!m_stats.m_level)
+            m_stats.m_level = 1;
+        if (static_cast<int>(level_victim/m_stats.m_level) - 1 > 0)
+            m_stats.m_bonus_xp += (level_victim/m_stats.m_level) - 1;
     }
     inline void AddDead()
     {
         if ( m_conf.m_Lock )
         {
-            m_actual_kill = 0;
+            m_stats.m_actual_kill = 0;
             return;
         }
-        m_dead++;
+        m_stats.m_dead++;
         AddKillingSpree();
-        m_actual_kill = 0;
+        m_stats.m_actual_kill = 0;
     }
-    inline void AddSuicide() { m_suicide += m_conf.m_Lock ? 0 : 1; };
-    inline void AddFire() { m_fire += m_conf.m_Lock ? 0 : 1; };
-    inline void AddPickUpWeapon() { m_pickup_weapon += m_conf.m_Lock ? 0 : 1; };
-    inline void AddPickUpNinja() { m_pickup_ninja += m_conf.m_Lock ? 0 : 1; };
-    inline void AddChangeWeapon() { m_change_weapon += m_conf.m_Lock ? 0 : 1; };
+    inline void AddSuicide() { m_stats.m_suicide += m_conf.m_Lock ? 0 : 1; };
+    inline void AddFire() { m_stats.m_fire += m_conf.m_Lock ? 0 : 1; };
+    inline void AddPickUpWeapon() { m_stats.m_pickup_weapon += m_conf.m_Lock ? 0 : 1; };
+    inline void AddPickUpNinja() { m_stats.m_pickup_ninja += m_conf.m_Lock ? 0 : 1; };
+    inline void AddChangeWeapon() { m_stats.m_change_weapon += m_conf.m_Lock ? 0 : 1; };
     inline void SetStartPlay()
     {
         for (int i = 0; i < NUM_WEAPONS; i++)
             m_pPlayer->m_WeaponType[i] = m_conf.m_Weapon[i];
         if ( m_conf.m_Lock )
             return;
-        m_start_time = time_timestamp();
-        m_log_in++;
+        m_stats.m_start_time = time_timestamp();
+        m_stats.m_log_in++;
     }
     inline void SetStopPlay()
     {
@@ -172,10 +265,11 @@ public:
             return;
         AddKillingSpree();
         UpdateStat();
-        m_start_time = 0;
+        m_stats.m_start_time = 0;
     }
-    inline void AddMessage() { m_message += m_conf.m_Lock ? 0 : 1; };
-    inline void AddFlagCapture() { m_flag_capture += m_conf.m_Lock ? 0 : 1; };
+    inline void AddMessage() { m_stats.m_message += m_conf.m_Lock ? 0 : 1; };
+    inline void AddFlagCapture() { m_stats.m_flag_capture += m_conf.m_Lock ? 0 : 1; };
+
     inline bool InfoHealKiller() { return m_conf.m_InfoHealKiller = m_conf.m_InfoHealKiller ? false : true; };
     inline bool InfoXP() { return m_conf.m_InfoXP = m_conf.m_InfoXP ? false : true; };
     inline bool InfoLevelUp() { return m_conf.m_InfoLevelUp = m_conf.m_InfoLevelUp ? false : true; };
@@ -262,49 +356,11 @@ public:
 private:
     CPlayer* m_pPlayer;
 
-    struct Player
-    {
-        unsigned int m_id;
-        char m_ip[MAX_IP_LENGTH];
-        char m_name[MAX_NAME_LENGTH];
-        char m_clan[MAX_CLAN_LENGTH];
-        int m_country;
-        unsigned int m_last_connect;
-    } m_player;
+    Player m_player;
 
-    unsigned int m_level;
-    unsigned int m_xp;
-    unsigned int m_score;
-    unsigned int m_kill;
-    unsigned int m_dead;
-    unsigned int m_suicide;
-    double m_rapport;
-    unsigned int m_log_in;
-    unsigned int m_fire;
-    unsigned int m_pickup_weapon;
-    unsigned int m_pickup_ninja;
-    unsigned int m_change_weapon;
-    unsigned int m_time_play;
-    unsigned int m_message;
-    unsigned int m_killing_spree;
-    unsigned int m_max_killing_spree;
-    unsigned int m_flag_capture;
-    unsigned int m_bonus_xp;
-    unsigned int m_start_time;
-    unsigned short int m_actual_kill;
+    Stats m_stats;
 
-    struct Upgrade
-    {
-        int m_money;
-        short int m_weapon;
-        short int m_life;
-        short int m_move;
-        short int m_hook;
-        StatWeapon m_stat_weapon;
-        StatLife m_stat_life;
-        StatMove m_stat_move;
-        StatHook m_stat_hook;
-    } m_upgr;
+    Upgrade m_upgr;
 
     Conf m_conf;
     
@@ -314,11 +370,11 @@ private:
 
     inline void AddKillingSpree()
     {
-        if ( m_actual_kill > 5 )
+        if ( m_stats.m_actual_kill > 5 )
         {
-            m_killing_spree += m_actual_kill;
-            if ( m_actual_kill > m_max_killing_spree )
-                m_max_killing_spree = m_actual_kill;
+            m_stats.m_killing_spree += m_stats.m_actual_kill;
+            if ( m_stats.m_actual_kill > m_stats.m_max_killing_spree )
+                m_stats.m_max_killing_spree = m_stats.m_actual_kill;
         }
     }
     
