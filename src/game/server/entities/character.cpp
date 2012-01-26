@@ -448,18 +448,33 @@ void CCharacter::FireWeapon()
       (Race == MINER && m_ActiveWeapon == WEAPON_SHOTGUN)))
         Limit = true;
 
+    int AdaptativeLimit = 0;
+    int ActivePlayer = 0;
+
+    for ( int i = 0; i < MAX_CLIENTS; i++ )
+    {
+        if ( GameServer()->IsClientPlayer(i) )
+            ActivePlayer++;
+    }
+
+    AdaptativeLimit = ActivePlayer ? (1000 / ActivePlayer) : 1000;
+
     // check for ammo
     if(!m_aWeapons[m_ActiveWeapon].m_Ammo || (Race == MINER && m_ActiveWeapon == WEAPON_GUN && m_aWeapons[m_ActiveWeapon].m_Ammo < 5 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
         (Race == ORC && m_ActiveWeapon != WEAPON_RIFLE && m_aWeapons[m_ActiveWeapon].m_Ammo < 2 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
         (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3) ||
         (Race == MINER && m_ActiveWeapon == WEAPON_RIFLE && m_NumExplodeWall >= 3) ||
-        (Limit && m_pPlayer->m_Mine >= 100))
+        (Limit && m_pPlayer->m_Mine >= AdaptativeLimit))
     {
         // 125ms is a magical limit of how fast a human can click
         m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
         GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
-        if (Limit && m_pPlayer->m_Mine >= 100)
-            GameServer()->SendChatTarget(m_pPlayer->GetCID(), "You can't fire more for now. For this event, Limit = 100");
+        if (Limit && m_pPlayer->m_Mine >= AdaptativeLimit)
+        {
+            char aBuf[256] = "";
+            str_format(aBuf, 256, "You can't fire more for now. Limit = %d !", AdaptativeLimit);
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
+        }
         if (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3)
         {
             char aBuf[256] = "";
