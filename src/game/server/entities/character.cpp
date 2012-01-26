@@ -1080,7 +1080,7 @@ void CCharacter::FireWeapon()
     if(!m_ReloadTimer)
     {
         m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 * m_stat_weapon->m_speed);
-        if ( Race == ORC )
+        if ( Race == ORC && m_ActiveWeapon != WEAPON_NINJA )
             m_ReloadTimer += 125 * Server()->TickSpeed() / 1000;
     }
 
@@ -1669,7 +1669,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
              GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL)
       )
     {
-        if (m_Health < m_stat_life->m_stockage[0] || m_Armor < m_stat_life->m_stockage[1])
+        if (m_Health == m_stat_life->m_stockage[0] && m_Armor == m_stat_life->m_stockage[1])
             return false;
 
         if(m_Health < m_stat_life->m_stockage[0])
@@ -1690,7 +1690,10 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
         return false;
     }
     else if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_pPlayer->GetTeam() == TEAM_RED)
+    {
+        m_Core.m_Vel += Force * 2;
         return false;
+    }
 
     if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) && !g_Config.m_SvTeamdamage)
         return false;
