@@ -448,18 +448,33 @@ void CCharacter::FireWeapon()
       (Race == MINER && m_ActiveWeapon == WEAPON_SHOTGUN)))
         Limit = true;
 
+    int AdaptativeLimit = 0;
+    int ActivePlayer = 0;
+
+    for ( int i = 0; i < MAX_CLIENTS; i++ )
+    {
+        if ( GameServer()->IsClientPlayer(i) )
+            ActivePlayer++;
+    }
+
+    AdaptativeLimit = ActivePlayer ? (1000 / ActivePlayer) : 1000;
+
     // check for ammo
     if(!m_aWeapons[m_ActiveWeapon].m_Ammo || (Race == MINER && m_ActiveWeapon == WEAPON_GUN && m_aWeapons[m_ActiveWeapon].m_Ammo < 5 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
         (Race == ORC && m_ActiveWeapon != WEAPON_RIFLE && m_aWeapons[m_ActiveWeapon].m_Ammo < 2 && m_aWeapons[m_ActiveWeapon].m_Ammo != -1) ||
         (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3) ||
         (Race == MINER && m_ActiveWeapon == WEAPON_RIFLE && m_NumExplodeWall >= 3) ||
-        (Limit && m_pPlayer->m_Mine >= 100))
+        (Limit && m_pPlayer->m_Mine >= AdaptativeLimit))
     {
         // 125ms is a magical limit of how fast a human can click
         m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
         GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
-        if (Limit && m_pPlayer->m_Mine >= 100)
-            GameServer()->SendChatTarget(m_pPlayer->GetCID(), "You can't fire more for now. For this event, Limit = 100");
+        if (Limit && m_pPlayer->m_Mine >= AdaptativeLimit)
+        {
+            char aBuf[256] = "";
+            str_format(aBuf, 256, "You can't fire more for now. Limit = %d !", AdaptativeLimit);
+            GameServer()->SendChatTarget(m_pPlayer->GetCID(), aBuf);
+        }
         if (Race == ENGINEER && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3)
         {
             char aBuf[256] = "";
@@ -1080,7 +1095,7 @@ void CCharacter::FireWeapon()
     if(!m_ReloadTimer)
     {
         m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 * m_stat_weapon->m_speed);
-        if ( Race == ORC )
+        if ( Race == ORC && m_ActiveWeapon != WEAPON_NINJA )
             m_ReloadTimer += 125 * Server()->TickSpeed() / 1000;
     }
 
@@ -1669,7 +1684,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
              GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL)
       )
     {
-        if (m_Health < m_stat_life->m_stockage[0] || m_Armor < m_stat_life->m_stockage[1])
+        if (m_Health == m_stat_life->m_stockage[0] && m_Armor == m_stat_life->m_stockage[1])
             return false;
 
         if(m_Health < m_stat_life->m_stockage[0])
@@ -1690,7 +1705,10 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
         return false;
     }
     else if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_pPlayer->GetTeam() == TEAM_RED)
+    {
+        m_Core.m_Vel += Force * 2;
         return false;
+    }
 
     if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) && !g_Config.m_SvTeamdamage)
         return false;

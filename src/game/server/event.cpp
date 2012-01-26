@@ -25,6 +25,12 @@ void CEvent::Tick()
     if ( g_Config.m_SvTwoEvent && Controller()->IsTeamplay() )
         g_Config.m_SvTwoEvent = false;
 
+    if (m_ActualEvent[1] != -1 && !g_Config.m_SvTwoEvent)
+    {
+        SetTune();
+        m_ActualEvent[1] = -1;
+    }
+
     int Elapsed[2] = {0, 0};
     char Text[256] = "";
 
@@ -422,6 +428,7 @@ void CEvent::SetTune()
         GameServer()->Tuning()->Set("gun_curvature", static_cast<float>(0.0));
         GameServer()->Tuning()->Set("shotgun_curvature", static_cast<float>(0.0));
         GameServer()->Tuning()->Set("grenade_curvature", static_cast<float>(0.0));
+        GameServer()->SendTuningParams(-1);
     }
 
 }
