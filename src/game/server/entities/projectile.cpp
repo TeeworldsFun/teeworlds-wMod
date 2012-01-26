@@ -240,6 +240,12 @@ void CProjectile::Tick()
             m_StartTick = Server()->Tick();
             m_Direction = normalize(GetPos(Ct) - PrevPos);
         }
+        else if (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING))
+        {
+            if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
+                GameServer()->m_apPlayers[m_Owner]->m_Mine -= GameServer()->m_apPlayers[m_Owner]->m_Mine > 0 ? 1 : 0;
+            GameServer()->m_World.DestroyEntity(this);
+        }
     }
 }
 
