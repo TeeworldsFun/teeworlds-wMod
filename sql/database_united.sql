@@ -2,7 +2,7 @@ CREATE DATABASE `teeworlds_wDM`;
 
 USE `teeworlds_wDM`;
 
-CREATE TABLE `Players` (
+CREATE TABLE `Players_Stats` (
   `Id` smallint unsigned NOT NULL AUTO_INCREMENT,
   `Ip` varchar(42) NOT NULL DEFAULT '0.0.0.0',
   `Pseudo` varchar(16) DEFAULT NULL,
@@ -13,13 +13,6 @@ CREATE TABLE `Players` (
   `Name` varchar(16) DEFAULT NULL,
   `Password` BIGINT unsigned DEFAULT NULL,
   `Last_Connect` datetime NOT NULL,
-  PRIMARY KEY (`Id`),
-  UNIQUE KEY `Index_Name` (`Name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `Stats` (
-  `Id` smallint unsigned NOT NULL AUTO_INCREMENT,
-  `Id_Player` smallint unsigned NOT NULL,
   `Killed` mediumint unsigned NOT NULL DEFAULT 0,
   `Dead` mediumint unsigned NOT NULL DEFAULT 0,
   `Suicide` mediumint unsigned NOT NULL DEFAULT 0,
@@ -38,13 +31,6 @@ CREATE TABLE `Stats` (
   `Upgrade_Life` tinyint unsigned NOT NULL DEFAULT 0,
   `Upgrade_Move` tinyint unsigned NOT NULL DEFAULT 0,
   `Upgrade_Hook` tinyint unsigned NOT NULL DEFAULT 0,
-  PRIMARY KEY (`Id`),
-  CONSTRAINT `Fk_Id_Player_Stats` FOREIGN KEY (`Id_Player`) REFERENCES Players(`Id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `Confs` (
-  `Id` smallint unsigned NOT NULL AUTO_INCREMENT,
-  `Id_Player` smallint unsigned NOT NULL,
   `Info_Heal_Killer` BOOLEAN NOT NULL DEFAULT 1,
   `Info_XP` BOOLEAN NOT NULL DEFAULT 1,
   `Info_Level_Up` BOOLEAN NOT NULL DEFAULT 1,
@@ -61,6 +47,6 @@ CREATE TABLE `Confs` (
   `Race_Grenade` tinyint NOT NULL DEFAULT 0,
   `Race_Rifle` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`Id`),
-  CONSTRAINT `Fk_Id_Player_Confs` FOREIGN KEY (`Id_Player`) REFERENCES Players(`Id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  UNIQUE KEY `Index_Name` (`Name`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
