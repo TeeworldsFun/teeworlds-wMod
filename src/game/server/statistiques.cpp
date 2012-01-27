@@ -1,10 +1,10 @@
 #include "statistiques.h"
 #include <game/server/gamecontext.h>
 
-CStats::CStats(CPlayer* pPlayer)
+CStats::CStats(CPlayer* pPlayer, CGameContext* pGameServer)
 {
     m_pPlayer = pPlayer;
-    m_pGameServer = pPlayer->GameServer();
+    m_pGameServer = pGameServer;
 }
 
 void CStats::SetInfo(const char Name[], const char Clan[], const int Country, const char Ip[MAX_IP_LENGTH])
@@ -14,9 +14,16 @@ void CStats::SetInfo(const char Name[], const char Clan[], const int Country, co
 
     str_copy(m_player.m_pseudo, Name, MAX_NAME_LENGTH);
     str_copy(m_player.m_clan, Clan, MAX_CLAN_LENGTH);
-    m_player.m_country = country;
+    m_player.m_country = Country;
 }
 
+void CStats::SetAll(const Player player, const Stats stats, const Upgrade upgrade, const Conf conf)
+{
+    m_player = player;
+    m_stats = stats;
+    m_upgr = upgrade;
+    m_conf = conf;
+}
 
 void CStats::UpdateStat()
 {
@@ -35,14 +42,14 @@ void CStats::UpdateStat()
 
     if (m_stats.m_start_time != 0 && !m_conf.m_Lock)
     {
-        m_stats.m_time_play += difftime(time_timestamp(), m_stats.m_start_time);
+        m_stats.m_time_play += time_timestamp() - m_stats.m_start_time;
         m_stats.m_start_time = time_timestamp();
     }
 }
 
 void CStats::UpdateUpgrade()
 {
-    m_upgr.m_money = m_level - (m_upgr.m_weapon + m_upgr.m_life + m_upgr.m_move + m_upgr.m_hook);
+    m_upgr.m_money = m_stats.m_level - (m_upgr.m_weapon + m_upgr.m_life + m_upgr.m_move + m_upgr.m_hook);
 
     if ( m_upgr.m_weapon > 40 )
         m_upgr.m_weapon = 40;
@@ -120,29 +127,29 @@ void CStats::DisplayStat()
     char a[256] = "";
     char stats[18][50];
 
-    str_format(stats[0], 50, "Name : %s", m_pseudo);
-    str_format(stats[1], 50, "Level : %ld", m_level);
-//  str_format(stats[2], 50, "Rank : %ld.", m_rank.m_score);
+    str_format(stats[0], 50, "Name : %s", m_player.m_pseudo);
+    str_format(stats[1], 50, "Level : %ld", m_stats.m_level);
+    str_format(stats[2], 50, "Rank : N/A"); //, m_rank.m_score);
 
-    str_format(stats[3], 50, "Score : %ld", m_score);
-    str_format(stats[4], 50, "Killed : %ld", m_kill);
-    str_format(stats[5], 50, "Dead : %ld", m_dead);
+    str_format(stats[3], 50, "Score : %ld", m_stats.m_score);
+    str_format(stats[4], 50, "Killed : %ld", m_stats.m_kill);
+    str_format(stats[5], 50, "Dead : %ld", m_stats.m_dead);
 
-    str_format(stats[6], 50, "Rapport K/D : %lf", m_rapport);
-    str_format(stats[7], 50, "Suicide : %ld", m_suicide);
-    str_format(stats[8], 50, "Log-in : %ld", m_log_in);
+    str_format(stats[6], 50, "Rapport K/D : %lf", m_stats.m_rapport);
+    str_format(stats[7], 50, "Suicide : %ld", m_stats.m_suicide);
+    str_format(stats[8], 50, "Log-in : %ld", m_stats.m_log_in);
 
-    str_format(stats[9], 50, "Fire : %ld", m_fire);
-    str_format(stats[10], 50, "Pick-Up Weapon : %ld", m_pickup_weapon);
-    str_format(stats[11], 50, "Pick-Up Ninja : %ld", m_pickup_ninja);
+    str_format(stats[9], 50, "Fire : %ld", m_stats.m_fire);
+    str_format(stats[10], 50, "Pick-Up Weapon : %ld", m_stats.m_pickup_weapon);
+    str_format(stats[11], 50, "Pick-Up Ninja : %ld", m_stats.m_pickup_ninja);
 
-    str_format(stats[12], 50, "Switch Weapon : %ld", m_change_weapon);
-    str_format(stats[13], 50, "Time Play : %ld min", m_time_play / 60);
-    str_format(stats[14], 50, "Msg Sent : %ld", m_message);
+    str_format(stats[12], 50, "Switch Weapon : %ld", m_stats.m_change_weapon);
+    str_format(stats[13], 50, "Time Play : %ld min", m_stats.m_time_play / 60);
+    str_format(stats[14], 50, "Msg Sent : %ld", m_stats.m_message);
 
-    str_format(stats[15], 50, "Total Killing Spree : %ld", m_killing_spree);
-    str_format(stats[16], 50, "Max Killing Spree : %ld", m_max_killing_spree);
-    str_format(stats[17], 50, "Flag Capture : %ld", m_flag_capture);
+    str_format(stats[15], 50, "Total Killing Spree : %ld", m_stats.m_killing_spree);
+    str_format(stats[16], 50, "Max Killing Spree : %ld", m_stats.m_max_killing_spree);
+    str_format(stats[17], 50, "Flag Capture : %ld", m_stats.m_flag_capture);
 
     for ( int i = 0; i < 6; i++ )
     {
@@ -156,7 +163,7 @@ void CStats::DisplayPlayer()
     UpdateUpgrade();
 
     char upgr[7][50];
-    str_format(upgr[0], 50, "Name : %s | Level : %ld | Score : %ld", Server()->ClientName(pPlayer->GetCID()), m_level, m_score);
+    str_format(upgr[0], 50, "Name : %s | Level : %ld | Score : %ld", GameServer()->Server()->ClientName(m_pPlayer->GetCID()), m_stats.m_level, m_stats.m_score);
     str_format(upgr[1], 50, "Upgrade :");
     str_format(upgr[2], 50, "Money : %ld", m_upgr.m_money);
     str_format(upgr[3], 50, "Weapon: %ld", m_upgr.m_weapon);
@@ -167,20 +174,20 @@ void CStats::DisplayPlayer()
 
     for ( int i = 0; i < 7; i++ )
     {
-        GameServer()->SendChatTarget(ClientID, upgr[i]);
+        GameServer()->SendChatTarget(m_pPlayer->GetCID(), upgr[i]);
     }
 }
 
 void CStats::ResetPartialStat()
 {
-    m_kill = 0;
-    m_dead = 0;
-    m_suicide = 0;
-    m_fire = 0;
-    m_killing_spree = 0;
-    m_max_killing_spree = 0;
-    m_flag_capture = 0;
-    m_bonus_xp = 0;
+    m_stats.m_kill = 0;
+    m_stats.m_dead = 0;
+    m_stats.m_suicide = 0;
+    m_stats.m_fire = 0;
+    m_stats.m_killing_spree = 0;
+    m_stats.m_max_killing_spree = 0;
+    m_stats.m_flag_capture = 0;
+    m_stats.m_bonus_xp = 0;
 
     m_upgr.m_weapon = 0;
     m_upgr.m_life = 0;
@@ -190,22 +197,22 @@ void CStats::ResetPartialStat()
     UpdateUpgrade();
 }
 
-void CStatistiques::ResetAllStat()
+void CStats::ResetAllStat()
 {
-    m_kill = 0;
-    m_dead = 0;
-    m_suicide = 0;
-    m_log_in = 0;
-    m_fire = 0;
-    m_pickup_weapon = 0;
-    m_pickup_ninja = 0;
-    m_change_weapon = 0;
-    m_time_play = 0;
-    m_message = 0;
-    m_killing_spree = 0;
-    m_max_killing_spree = 0;
-    m_flag_capture = 0;
-    m_bonus_xp = 0;
+    m_stats.m_kill = 0;
+    m_stats.m_dead = 0;
+    m_stats.m_suicide = 0;
+    m_stats.m_log_in = 0;
+    m_stats.m_fire = 0;
+    m_stats.m_pickup_weapon = 0;
+    m_stats.m_pickup_ninja = 0;
+    m_stats.m_change_weapon = 0;
+    m_stats.m_time_play = 0;
+    m_stats.m_message = 0;
+    m_stats.m_killing_spree = 0;
+    m_stats.m_max_killing_spree = 0;
+    m_stats.m_flag_capture = 0;
+    m_stats.m_bonus_xp = 0;
 
     m_upgr.m_weapon = 0;
     m_upgr.m_life = 0;
@@ -215,7 +222,7 @@ void CStatistiques::ResetAllStat()
     UpdateUpgrade();
 }
 
-void CStatistiques::ResetUpgr(long id)
+void CStats::ResetUpgr()
 {
     m_upgr.m_weapon = 0;
     m_upgr.m_life = 0;

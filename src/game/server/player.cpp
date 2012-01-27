@@ -32,12 +32,15 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
     for (int i = 0; i < NUM_WEAPONS; i++)
         m_WeaponType[i] = WARRIOR;
     m_Mine = 0;
+    m_pStats = new CStats(this, m_pGameServer);
 }
 
 CPlayer::~CPlayer()
 {
 	delete m_pCharacter;
 	m_pCharacter = 0;
+	delete m_pStats;
+	m_pStats = 0;
 }
 
 void CPlayer::Tick()
@@ -145,7 +148,7 @@ void CPlayer::Snap(int SnappingClient)
             str_append(Prefix, "C", 10);
 
         char Name[MAX_NAME_LENGTH + 10] = "";
-        str_format(Name, MAX_NAME_LENGTH + 10, "[%s%ld]%s", Prefix, GameServer()->m_pStatistiques->GetLevel(m_StatID), Server()->ClientName(m_ClientID));
+        str_format(Name, MAX_NAME_LENGTH + 10, "[%s%ld]%s", Prefix, m_pStats->GetLevel(), Server()->ClientName(m_ClientID));
         StrToInts(&pClientInfo->m_Name0, 4, Name);
     }
 	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
@@ -363,7 +366,7 @@ void CPlayer::SetCaptureTeam(int Team, int Killer)
 void CPlayer::SetSID(long id)
 {
     m_StatID = id;
-    m_level = m_pGameServer->m_pStatistiques->GetLevel(GetSID());
+    m_level = m_pStats->GetLevel();
 }
 
 void CPlayer::TryRespawn()
@@ -373,7 +376,7 @@ void CPlayer::TryRespawn()
 	if(!GameServer()->m_pController->CanSpawn(m_Team, &SpawnPos))
 		return;
 
-    m_Score = m_pGameServer->m_pStatistiques->GetScore(GetSID());
+    m_Score = m_pStats->GetScore();
 
 	m_Spawning = false;
 	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);

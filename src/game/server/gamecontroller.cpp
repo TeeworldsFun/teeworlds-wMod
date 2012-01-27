@@ -374,19 +374,19 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 		return 0;
 	if(pKiller == pVictim->GetPlayer())
     {
-        m_pGameServer->m_pStatistiques->AddSuicide(pVictim->GetPlayer()->GetSID());
+        pKiller->m_pStats->AddSuicide();
     }
 
 	else
 	{
         if(!(IsTeamplay() && pVictim->GetPlayer()->GetTeam() == pKiller->GetTeam()))
         {
-            m_pGameServer->m_pStatistiques->AddKill(pKiller->GetSID(), pVictim->GetPlayer()->GetSID());
-            pKiller->m_Score = m_pGameServer->m_pStatistiques->GetScore(pKiller->GetSID());
+            pKiller->m_pStats->AddKill(pVictim->GetPlayer()->m_pStats->GetLevel());
+            pKiller->m_Score = pKiller->m_pStats->GetScore();
 
-            if( m_pGameServer->m_pStatistiques->GetLevel(pKiller->GetSID()) > pKiller->m_level )
+            if( pKiller->m_pStats->GetLevel() > pKiller->m_level )
             {
-                pKiller->m_level = m_pGameServer->m_pStatistiques->GetLevel(pKiller->GetSID());
+                pKiller->m_level = pKiller->m_pStats->GetLevel();
                 char Text[256] = "";
                 str_format(Text, 256, "XP : %d/%d", pKiller->m_level, pKiller->m_level);
                 m_pGameServer->SendChatTarget(pKiller->GetCID(), Text, CGameContext::CHAT_INFO_XP);
@@ -394,42 +394,42 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
                 m_pGameServer->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_LEVELUP);
                 m_pGameServer->SendChatTarget(pKiller->GetCID(), "You've get a levelup ! Don't forget put /upgr on the chat to upgr your statistics ! Good Game ;)");
             }
-		else
+		    else
             {
                 char Text[256] = "";
-                str_format(Text, 256, "XP : %d/%d", m_pGameServer->m_pStatistiques->GetXp(pKiller->GetSID()), pKiller->m_level + 1);
+                str_format(Text, 256, "XP : %d/%d", pKiller->m_pStats->GetXp(), pKiller->m_level + 1);
                 m_pGameServer->SendChatTarget(pKiller->GetCID(), Text, CGameContext::CHAT_INFO_XP);
-	}
+	        }
         }
 
-        if ( m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) > 0 && (m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) % 5) == 0 )
+        if ( pKiller->m_pStats->GetActualKill() > 0 && (pKiller->m_pStats->GetActualKill() % 5) == 0 )
         {
             char spree_note[6][32] = { "is on a killing spree", "is on a rampage", "is dominating", "is unstoppable", "is Godlike", "is Wicked SICK" };
-            if( m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) <= 30 )
+            if( pKiller->m_pStats->GetActualKill() <= 30 )
             {
                 char buf[512];
-                str_format(buf, sizeof(buf), "%s %s with %ld kills !", Server()->ClientName(pKiller->GetCID()), spree_note[m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID())/5-1], m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()));
+                str_format(buf, sizeof(buf), "%s %s with %ld kills !", Server()->ClientName(pKiller->GetCID()), spree_note[pKiller->m_pStats->GetActualKill()/5-1], pKiller->m_pStats->GetActualKill());
                 GameServer()->SendChatTarget(-1, buf, CGameContext::CHAT_INFO_KILLING_SPREE);
             }
             else
             {
                 char Text[256] = "";
-                str_format(Text, 256, "WARNING : %s must be stopped !!! %ld kills !!! ;)", Server()->ClientName(pKiller->GetCID()), m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()));
+                str_format(Text, 256, "WARNING : %s must be stopped !!! %ld kills !!! ;)", Server()->ClientName(pKiller->GetCID()), pKiller->m_pStats->GetActualKill());
                 GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
             }
-            if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) < 5)
+            if ((pKiller->m_pStats->GetActualKill() / 5) < 5)
             {
                 char bonus_note[4][100] = {"handle x1.5 and fly unlimited", "all weapons", "invisibility", "protect for 30 sec but loses invisibility"};
                 char Text[256] = "";
-                str_format(Text, 256, "%s gets %s !", Server()->ClientName(pKiller->GetCID()), bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
+                str_format(Text, 256, "%s gets %s !", Server()->ClientName(pKiller->GetCID()), bonus_note[(pKiller->m_pStats->GetActualKill() / 5) - 1]);
                 GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
 
-                str_format(Text, 256, "You've get %s by killing spree !", bonus_note[(m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) - 1]);
+                str_format(Text, 256, "You've get %s by killing spree !", bonus_note[(pKiller->m_pStats->GetActualKill() / 5) - 1]);
                 GameServer()->SendChatTarget(pKiller->GetCID(), Text);
 
-                if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 1)
+                if ((pKiller->m_pStats->GetActualKill() / 5) == 1)
                     GameServer()->SendTuningParams(pKiller->GetCID());
-                else if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 2 && pKiller->GetCharacter())
+                else if ((pKiller->m_pStats->GetActualKill() / 5) == 2 && pKiller->GetCharacter())
                 {
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_GUN, -2);
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, -2);
@@ -437,7 +437,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
                     pKiller->GetCharacter()->GiveWeapon(WEAPON_RIFLE, -2);
                     pKiller->GetCharacter()->GiveNinja();
                 }
-                else if ((m_pGameServer->m_pStatistiques->GetActualKill(pKiller->GetSID()) / 5) == 4 && pKiller->GetCharacter())
+                else if ((pKiller->m_pStats->GetActualKill() / 5) == 4 && pKiller->GetCharacter())
                 {
                     pKiller->GetCharacter()->m_Protect = Server()->Tick() + Server()->TickSpeed() * 30;
                 }
@@ -465,17 +465,17 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
         }
     }
 
-    if ( m_pGameServer->m_pStatistiques->GetActualKill(pVictim->GetPlayer()->GetSID()) >= 5 )
+    if ( pVictim->GetPlayer()->m_pStats->GetActualKill() >= 5 )
     {
         char Text[256] = "";
-        str_format(Text, 256, "%s %ld-kills killing spree was ended by %s.", Server()->ClientName(pVictim->GetPlayer()->GetCID()),m_pGameServer->m_pStatistiques->GetActualKill(pVictim->GetPlayer()->GetSID()), Server()->ClientName(pKiller->GetCID()));
+        str_format(Text, 256, "%s %ld-kills killing spree was ended by %s.", Server()->ClientName(pVictim->GetPlayer()->GetCID()), pVictim->GetPlayer()->m_pStats->GetActualKill(), Server()->ClientName(pKiller->GetCID()));
         GameServer()->CreateExplosion(pVictim->m_Pos, pVictim->GetPlayer()->GetCID(), WEAPON_GAME, true, false);
         GameServer()->CreateSound(pVictim->m_Pos, SOUND_GRENADE_EXPLODE);
         GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
         GameServer()->SendTuningParams(pVictim->GetPlayer()->GetCID());
     }
 
-    m_pGameServer->m_pStatistiques->AddDead(pVictim->GetPlayer()->GetSID());
+    pVictim->GetPlayer()->m_pStats->AddDead();
 
 	if(Weapon == WEAPON_SELF)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;

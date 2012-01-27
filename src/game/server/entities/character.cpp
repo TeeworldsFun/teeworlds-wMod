@@ -117,12 +117,12 @@ CCharacter::~CCharacter()
     delete m_stat_move;
     delete m_stat_hook;
 
-    if (m_stat_move->m_rate_speed != GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID()).m_rate_speed || 
-        m_stat_move->m_rate_accel != GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID()).m_rate_accel || 
-        m_stat_move->m_rate_high_jump != GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID()).m_rate_high_jump || 
-        m_stat_hook->m_rate_length != GameServer()->m_pStatistiques->GetStatHook(m_pPlayer->GetSID()).m_rate_length ||
-        m_stat_hook->m_rate_time != GameServer()->m_pStatistiques->GetStatHook(m_pPlayer->GetSID()).m_rate_time ||
-        m_stat_hook->m_rate_speed != GameServer()->m_pStatistiques->GetStatHook(m_pPlayer->GetSID()).m_rate_speed )
+    if (m_stat_move->m_rate_speed != m_pPlayer->m_pStats->GetStatMove().m_rate_speed || 
+        m_stat_move->m_rate_accel != m_pPlayer->m_pStats->GetStatMove().m_rate_accel || 
+        m_stat_move->m_rate_high_jump != m_pPlayer->m_pStats->GetStatMove().m_rate_high_jump || 
+        m_stat_hook->m_rate_length != m_pPlayer->m_pStats->GetStatHook().m_rate_length ||
+        m_stat_hook->m_rate_time != m_pPlayer->m_pStats->GetStatHook().m_rate_time ||
+        m_stat_hook->m_rate_speed != m_pPlayer->m_pStats->GetStatHook().m_rate_speed )
         GameServer()->SendTuningParams(m_pPlayer->GetCID());
 }
 
@@ -155,10 +155,10 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
     mem_zero(&m_SendCore, sizeof(m_SendCore));
     mem_zero(&m_ReckoningCore, sizeof(m_ReckoningCore));
 
-    *m_stat_weapon = GameServer()->m_pStatistiques->GetStatWeapon(m_pPlayer->GetSID());
-    *m_stat_life = GameServer()->m_pStatistiques->GetStatLife(m_pPlayer->GetSID());
-    *m_stat_move = GameServer()->m_pStatistiques->GetStatMove(m_pPlayer->GetSID());
-    *m_stat_hook = GameServer()->m_pStatistiques->GetStatHook(m_pPlayer->GetSID());
+    *m_stat_weapon = m_pPlayer->m_pStats->GetStatWeapon();
+    *m_stat_life = m_pPlayer->m_pStats->GetStatLife();
+    *m_stat_move = m_pPlayer->m_pStats->GetStatMove();
+    *m_stat_hook = m_pPlayer->m_pStats->GetStatHook();
 
     m_Protect = Server()->Tick() + Server()->TickSpeed() * m_stat_life->m_protection;
     m_AuraProtect[0] = 0;
@@ -239,7 +239,7 @@ void CCharacter::SetWeapon(int W)
         GameServer()->SendChatTarget(m_pPlayer->GetCID(), a, CGameContext::CHAT_INFO_AMMO);
     }
 
-    GameServer()->m_pStatistiques->AddChangeWeapon(m_pPlayer->GetSID());
+    m_pPlayer->m_pStats->AddChangeWeapon();
 }
 
 bool CCharacter::IsGrounded()
@@ -1099,7 +1099,7 @@ void CCharacter::FireWeapon()
             m_ReloadTimer += 125 * Server()->TickSpeed() / 1000;
     }
 
-    GameServer()->m_pStatistiques->AddFire(m_pPlayer->GetSID());
+    m_pPlayer->m_pStats->AddFire();
 }
 
 void CCharacter::HandleWeapons()
@@ -1222,7 +1222,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
             GameServer()->SendChatTarget(m_pPlayer->GetCID(), a, CGameContext::CHAT_INFO_AMMO);
         }
 
-        GameServer()->m_pStatistiques->AddPickUpWeapon(m_pPlayer->GetSID());
+        m_pPlayer->m_pStats->AddPickUpWeapon();
         return true;
     }
     return false;
@@ -1241,7 +1241,7 @@ bool CCharacter::GiveNinja()
 
         GameServer()->CreateSound(m_Pos, SOUND_PICKUP_NINJA);
         if ( !GameServer()->m_pEventsGame->IsActualEvent(KATANA) )
-            GameServer()->m_pStatistiques->AddPickUpNinja(m_pPlayer->GetSID());
+            m_pPlayer->m_pStats->AddPickUpNinja();
         return true;
     }
     return false;
@@ -1329,7 +1329,7 @@ void CCharacter::Tick()
     if (IsGrounded())
         m_NumJumped = 1;
 
-    if(m_Core.m_Jumped & 2 && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000 && (GameServer()->m_pEventsGame->IsActualEvent(JUMP_UNLIMITED) || m_NumJumped < m_stat_move->m_num_jump || m_stat_move->m_num_jump == -1 || GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) >= 5))
+    if(m_Core.m_Jumped & 2 && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000 && (GameServer()->m_pEventsGame->IsActualEvent(JUMP_UNLIMITED) || m_NumJumped < m_stat_move->m_num_jump || m_stat_move->m_num_jump == -1 || m_pPlayer->m_pStats->GetActualKill() >= 5))
         m_Core.m_Jumped &= ~2;
 
     m_Core.m_Input = m_Input;
@@ -1339,7 +1339,7 @@ void CCharacter::Tick()
     float RateLengthHook = 1.0f;
     float RateTimeHook = m_stat_hook->m_rate_time;
     float RateSpeedHook = 1.0f;
-    if (GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) >= 5)
+    if (m_pPlayer->m_pStats->GetActualKill() >= 5)
     {
         RateSpeed *= 1.5f;
         RateAccel *= 1.5f;
@@ -1600,7 +1600,7 @@ bool CCharacter::IncreaseHealth(int Amount)
 {
     if(m_Health >= m_stat_life->m_stockage[0] || m_ActiveWeapon == WEAPON_NINJA)
         return false;
-    m_Health = clamp(m_Health+Amount, 0, m_stat_life->m_stockage[0]);
+    m_Health = clamp(m_Health+Amount, 0, static_cast<int>(m_stat_life->m_stockage[0]));
     return true;
 }
 
@@ -1608,7 +1608,7 @@ bool CCharacter::IncreaseArmor(int Amount)
 {
     if(m_Armor >= 10 || m_ActiveWeapon == WEAPON_NINJA)
         return false;
-    m_Armor = clamp(m_Armor+Amount, 0, m_stat_life->m_stockage[1]);
+    m_Armor = clamp(m_Armor+Amount, 0, static_cast<int>(m_stat_life->m_stockage[1]));
     return true;
 }
 
@@ -1828,7 +1828,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 
 void CCharacter::Snap(int SnappingClient)
 {
-    if(NetworkClipped(SnappingClient) || (m_pPlayer->GetCID() != SnappingClient && (m_Invisibility ||  (GameServer()->m_pStatistiques->GetActualKill(m_pPlayer->GetSID()) / 5) == 3)))
+    if(NetworkClipped(SnappingClient) || (m_pPlayer->GetCID() != SnappingClient && (m_Invisibility ||  (m_pPlayer->m_pStats->GetActualKill() / 5) == 3)))
         return;
 
     CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));
@@ -1870,7 +1870,7 @@ void CCharacter::Snap(int SnappingClient)
     if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1 ||
             (!g_Config.m_SvStrictSpectateMode && m_pPlayer->GetCID() == GameServer()->m_apPlayers[SnappingClient]->m_SpectatorID))
     {
-        if(GameServer()->m_pStatistiques->GetConf(m_pPlayer->GetSID()).m_LifeAbsolute)
+        if(m_pPlayer->m_pStats->GetConf().m_LifeAbsolute)
         {
             pCharacter->m_Health = m_Health;
             pCharacter->m_Armor = m_Armor;
@@ -1883,7 +1883,7 @@ void CCharacter::Snap(int SnappingClient)
         }
         if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
         {
-            if (GameServer()->m_pStatistiques->GetConf(m_pPlayer->GetSID()).m_AmmoAbsolute)
+            if (m_pPlayer->m_pStats->GetConf().m_AmmoAbsolute)
                 pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo;
             else
                 pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo * 10.0f/m_stat_weapon->m_stockage;

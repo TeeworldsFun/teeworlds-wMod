@@ -198,12 +198,12 @@ void CGameControllerCTF::Tick()
 
                     if (GetNumPlayer(F->m_pCarryingCharacter->GetPlayer()->GetTeam()) > 1)
                     {
-                        GameServer()->m_pStatistiques->AddFlagCapture(F->m_pCarryingCharacter->GetPlayer()->GetSID());
-                        F->m_pCarryingCharacter->GetPlayer()->m_Score = GameServer()->m_pStatistiques->GetScore(F->m_pCarryingCharacter->GetPlayer()->GetSID());
+                        F->m_pCarryingCharacter->GetPlayer()->m_pStats->AddFlagCapture();
+                        F->m_pCarryingCharacter->GetPlayer()->m_Score =F->m_pCarryingCharacter->GetPlayer()->m_pStats->GetScore();
 
-                        if( GameServer()->m_pStatistiques->GetLevel(F->m_pCarryingCharacter->GetPlayer()->GetSID()) > F->m_pCarryingCharacter->GetPlayer()->m_level )
+                        if( F->m_pCarryingCharacter->GetPlayer()->m_pStats->GetLevel() > F->m_pCarryingCharacter->GetPlayer()->m_level )
                         {
-                            F->m_pCarryingCharacter->GetPlayer()->m_level = GameServer()->m_pStatistiques->GetLevel(F->m_pCarryingCharacter->GetPlayer()->GetSID());
+                            F->m_pCarryingCharacter->GetPlayer()->m_level = F->m_pCarryingCharacter->GetPlayer()->m_pStats->GetLevel();
                             char Text[256] = "";
                             str_format(Text, 256, "%s has a levelup ! He is level %ld now ! Good Game ;) !", Server()->ClientName(F->m_pCarryingCharacter->GetPlayer()->GetCID()), F->m_pCarryingCharacter->GetPlayer()->m_level);
                             GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_LEVELUP);
@@ -211,7 +211,7 @@ void CGameControllerCTF::Tick()
                         else
                         {
                             char Text[256] = "";
-                            str_format(Text, 256, "XP : %d/%d", GameServer()->m_pStatistiques->GetXp(F->m_pCarryingCharacter->GetPlayer()->GetSID()),  F->m_pCarryingCharacter->GetPlayer()->m_level + 1);
+                            str_format(Text, 256, "XP : %d/%d", F->m_pCarryingCharacter->GetPlayer()->m_pStats->GetXp(),  F->m_pCarryingCharacter->GetPlayer()->m_level + 1);
                             GameServer()->SendChatTarget( F->m_pCarryingCharacter->GetPlayer()->GetCID(), Text, CGameContext::CHAT_INFO_XP);
                         }
                     }

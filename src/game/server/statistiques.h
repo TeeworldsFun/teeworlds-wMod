@@ -199,8 +199,9 @@ struct Stats
 class CStats
 {
 public:
-    CStats(CPlayer* pPlayer);
+    CStats(CPlayer* pPlayer, CGameContext* pGameServer);
     void SetInfo(const char Name[], const char Clan[], const int Country, const char Ip[MAX_IP_LENGTH] = "");
+    void SetAll(const Player player, const Stats stats, const Upgrade upgrade, const Conf conf);
 
     inline unsigned int GetLevel() { UpdateStat(); return m_stats.m_level; };
     inline unsigned int GetXp() { UpdateStat(); return m_stats.m_xp; };
@@ -211,6 +212,7 @@ public:
     inline StatMove GetStatMove() { return m_upgr.m_stat_move; };
     inline StatHook GetStatHook() { return m_upgr.m_stat_hook; };
     inline Conf GetConf() { return m_conf; };
+    void WriteAll();
 
     void UpdateStat();
     void UpdateUpgrade();
@@ -314,7 +316,7 @@ public:
         UpdateUpgrade();
         return 0;
     };
-    inline int UpgradeLife(long id)
+    inline int UpgradeLife()
     {
         UpdateUpgrade();
         if (m_upgr.m_money)
@@ -327,7 +329,7 @@ public:
         UpdateUpgrade();
         return 0;
     };
-    inline int UpgradeMove(long id)
+    inline int UpgradeMove()
     {
         UpdateUpgrade();
         if (m_upgr.m_money)
@@ -340,7 +342,7 @@ public:
         UpdateUpgrade();
         return 0;
     };
-    inline int UpgradeHook(long id)
+    inline int UpgradeHook()
     {
         UpdateUpgrade();
         if (m_upgr.m_money)

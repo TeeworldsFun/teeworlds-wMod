@@ -27,7 +27,7 @@ public:
     void SetSID(long id);
 	int GetTeam() const { return m_Team; };
 	int GetCID() const { return m_ClientID; };
-	unsigned long GetSID() const { return m_StatID; };
+	//unsigned long GetSID() const { return m_StatID; };
 
 	void Tick();
 	void PostTick();
@@ -100,11 +100,14 @@ public:
 		int m_Min;
 		int m_Max;
 	} m_Latency;
+
     unsigned long m_level;
     int m_BroadcastTick;
     int m_Race;
     int m_WeaponType[NUM_WEAPONS];
     int m_Mine;
+    
+    class CStats *m_pStats;
 private:
     CCharacter *m_pCharacter;
     CGameContext *m_pGameServer;
@@ -115,8 +118,8 @@ private:
     //
     bool m_Spawning;
     int m_ClientID;
+    int m_StatID;
     int m_Team;
-    unsigned long m_StatID;
 };
 
 #endif
