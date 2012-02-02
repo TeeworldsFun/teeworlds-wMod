@@ -214,13 +214,13 @@ void CProjectile::Tick()
         if(TargetExplodeWall)
             TargetExplodeWall->TakeDamage(m_Damage, m_Owner, m_Weapon, false);
 
-        if (!Collide)
+        if (m_LifeSpan < 0 || TargetExplodeWall || GameLayerClipped(CurPos))
         {
             if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
                 GameServer()->m_apPlayers[m_Owner]->m_Mine -= GameServer()->m_apPlayers[m_Owner]->m_Mine > 0 ? 1 : 0;
             GameServer()->m_World.DestroyEntity(this);
         }
-        else if ( GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) || (m_Bounce && !GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE)) )
+        else if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE) || m_Bounce)
         {
                 vec2 TempPos(0.0f , 0.0f);
                 GameServer()->Collision()->IntersectLine(PrevPos, GetPos(Ct), 0, &TempPos);

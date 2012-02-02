@@ -17,11 +17,11 @@ CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEn
     m_Dir = Direction;
     m_Bounces = 0;
     m_Vel = 1;
-    m_Limit = GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW);
+    m_Limit = GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) ? true : false;
     GameWorld()->InsertEntity(this);
     Tick();
     if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
-        GameServer()->m_apPlayers[Owner]->m_Mine++;
+        GameServer()->m_apPlayers[m_Owner]->m_Mine++;
 }
 
 
