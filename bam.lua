@@ -160,7 +160,6 @@ function build(settings)
 	-- set some platform specific settings
 	settings.cc.includes:Add("src")
     settings.cc.includes:Add("other/mysql/include")
-    settings.cc.includes:Add("other/mysql/include/cppconn")
 
 	if family == "unix" then
 		if platform == "macosx" then
@@ -168,6 +167,7 @@ function build(settings)
 			settings.link.frameworks:Add("AppKit")
 		else
 			settings.link.libs:Add("pthread")
+			settings.link.libs:Add("mysqlclient")
 			settings.link.libs:Add("mysqlcppconn")
 		end
 		

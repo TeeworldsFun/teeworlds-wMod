@@ -251,146 +251,62 @@ void str_time(char *buffer, int buffer_size, time_t time_data)
 	buffer[buffer_size-1] = 0;	/* assure null termination */
 }
 
-void WriteStat(bool Separate)
+void WriteStat()
 {
-    if (Separate)
+    std::ofstream fichier("Statistiques.db", std::ios::out | std::ios::trunc);
+    if(fichier.is_open())
     {
-        std::ofstream fichier("Statistiques.players", std::ios::out | std::ios::trunc);
-        if(fichier.is_open())
+        char Time[256] = "";
+        int Heures = 0;
+        int Minutes = 0;
+        int Secondes = 0;
+
+        for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
         {
-            char Time[256] = "";
-            for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
-            {
-                fichier << i + 1 << ";";
-                fichier << m_statistiques[i].m_ip << ";";
-                fichier << m_statistiques[i].m_name << ";";
-                fichier << m_statistiques[i].m_clan << ";";
-                fichier << m_statistiques[i].m_country << ";";
-                str_time(Time, 256, m_statistiques[i].m_last_connect);
-                fichier << Time << ";" << std::endl;
-            }
+            Heures = m_statistiques[i].m_time_play / 3600;
+            Minutes = (m_statistiques[i].m_time_play / 60) % 60;
+            Secondes = m_statistiques[i].m_time_play % 60;
 
-            fichier.close();
+            fichier << i + 1 << ";";
+            fichier << m_statistiques[i].m_ip << ";";
+            fichier << m_statistiques[i].m_name << ";";
+            fichier << m_statistiques[i].m_clan << ";";
+            fichier << m_statistiques[i].m_country << ";";
+            str_time(Time, 256, m_statistiques[i].m_last_connect);
+            fichier << Time << ";";
+            fichier << m_statistiques[i].m_kill << ";";
+            fichier << m_statistiques[i].m_dead << ";";
+            fichier << m_statistiques[i].m_suicide << ";";
+            fichier << m_statistiques[i].m_log_in << ";";
+            fichier << m_statistiques[i].m_fire << ";";
+            fichier << m_statistiques[i].m_pickup_weapon << ";";
+            fichier << m_statistiques[i].m_pickup_ninja << ";";
+            fichier << m_statistiques[i].m_change_weapon << ";";
+            fichier << Heures << ":" << Minutes << ":" << Secondes << ";";
+            fichier << m_statistiques[i].m_message << ";";
+            fichier << m_statistiques[i].m_killing_spree << ";";
+            fichier << m_statistiques[i].m_max_killing_spree << ";";
+            fichier << m_statistiques[i].m_flag_capture << ";";
+            fichier << m_statistiques[i].m_bonus_xp << ";";
+            fichier << m_statistiques[i].m_upgrade.m_weapon << ";";
+            fichier << m_statistiques[i].m_upgrade.m_life << ";";
+            fichier << m_statistiques[i].m_upgrade.m_move << ";";
+            fichier << m_statistiques[i].m_upgrade.m_hook << ";";
+            fichier << m_statistiques[i].m_conf.m_InfoHealKiller << ";";
+            fichier << m_statistiques[i].m_conf.m_InfoXP << ";";
+            fichier << m_statistiques[i].m_conf.m_InfoLevelUp << ";";
+            fichier << m_statistiques[i].m_conf.m_InfoKillingSpree << ";";
+            fichier << m_statistiques[i].m_conf.m_InfoRace << ";";
+            fichier << m_statistiques[i].m_conf.m_InfoAmmo << ";";
+            fichier << m_statistiques[i].m_conf.m_AmmoAbsolute << ";";
+            fichier << m_statistiques[i].m_conf.m_LifeAbsolute << ";";
+            fichier << m_statistiques[i].m_conf.m_ShowVoter << ";";
+            fichier << m_statistiques[i].m_conf.m_Lock << ";";
+            for (int j = 0; j < 4; j++)
+                fichier << 0 << ";";
+            fichier << std::endl;
         }
-    
-        fichier.open("Statistiques.stats", std::ios::out | std::ios::trunc);
-        if(fichier.is_open())
-        {
-            int Heures = 0;
-            int Minutes = 0;
-            int Secondes = 0;
-
-            for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
-            {
-                Heures = m_statistiques[i].m_time_play / 3600;
-                Minutes = (m_statistiques[i].m_time_play / 60) % 60;
-                Secondes = m_statistiques[i].m_time_play % 60;
-
-                fichier << i + 1 << ";";
-                fichier << m_statistiques[i].m_kill << ";";
-                fichier << m_statistiques[i].m_dead << ";";
-                fichier << m_statistiques[i].m_suicide << ";";
-                fichier << m_statistiques[i].m_log_in << ";";
-                fichier << m_statistiques[i].m_fire << ";";
-                fichier << m_statistiques[i].m_pickup_weapon << ";";
-                fichier << m_statistiques[i].m_pickup_ninja << ";";
-                fichier << m_statistiques[i].m_change_weapon << ";";
-                fichier << Heures << ":" << Minutes << ":" << Secondes << ";";
-                fichier << m_statistiques[i].m_message << ";";
-                fichier << m_statistiques[i].m_killing_spree << ";";
-                fichier << m_statistiques[i].m_max_killing_spree << ";";
-                fichier << m_statistiques[i].m_flag_capture << ";";
-                fichier << m_statistiques[i].m_bonus_xp << ";";
-                fichier << m_statistiques[i].m_upgrade.m_weapon << ";";
-                fichier << m_statistiques[i].m_upgrade.m_life << ";";
-                fichier << m_statistiques[i].m_upgrade.m_move << ";";
-                fichier << m_statistiques[i].m_upgrade.m_hook << ";" << std::endl;
-            }
-
-            fichier.close();
-        }
-
-        fichier.open("Statistiques.confs", std::ios::out | std::ios::trunc);
-        if(fichier.is_open())
-        {
-            for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
-            {
-                fichier << i + 1 << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoHealKiller << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoXP << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoLevelUp << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoKillingSpree << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoRace << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoAmmo << ";";
-                fichier << m_statistiques[i].m_conf.m_AmmoAbsolute << ";";
-                fichier << m_statistiques[i].m_conf.m_LifeAbsolute << ";";
-                fichier << m_statistiques[i].m_conf.m_ShowVoter << ";";
-                fichier << m_statistiques[i].m_conf.m_Lock << ";";
-                for (int j = 0; j < 4; j++)
-                    fichier << 0 << ";";
-                fichier << std::endl;
-            }
-            fichier.close();
-        }
-    }
-    else
-    {
-        std::ofstream fichier("Statistiques.united", std::ios::out | std::ios::trunc);
-        if(fichier.is_open())
-        {
-            char Time[256] = "";
-            int Heures = 0;
-            int Minutes = 0;
-            int Secondes = 0;
-
-            for ( unsigned long i = 0; i < m_statistiques.size(); i++ )
-            {
-                Heures = m_statistiques[i].m_time_play / 3600;
-                Minutes = (m_statistiques[i].m_time_play / 60) % 60;
-                Secondes = m_statistiques[i].m_time_play % 60;
-
-                fichier << i + 1 << ";";
-                fichier << m_statistiques[i].m_ip << ";";
-                fichier << m_statistiques[i].m_name << ";";
-                fichier << m_statistiques[i].m_clan << ";";
-                fichier << m_statistiques[i].m_country << ";";
-                str_time(Time, 256, m_statistiques[i].m_last_connect);
-                fichier << Time << ";";
-                fichier << m_statistiques[i].m_kill << ";";
-                fichier << m_statistiques[i].m_dead << ";";
-                fichier << m_statistiques[i].m_suicide << ";";
-                fichier << m_statistiques[i].m_log_in << ";";
-                fichier << m_statistiques[i].m_fire << ";";
-                fichier << m_statistiques[i].m_pickup_weapon << ";";
-                fichier << m_statistiques[i].m_pickup_ninja << ";";
-                fichier << m_statistiques[i].m_change_weapon << ";";
-                fichier << Heures << ":" << Minutes << ":" << Secondes << ";";
-                fichier << m_statistiques[i].m_message << ";";
-                fichier << m_statistiques[i].m_killing_spree << ";";
-                fichier << m_statistiques[i].m_max_killing_spree << ";";
-                fichier << m_statistiques[i].m_flag_capture << ";";
-                fichier << m_statistiques[i].m_bonus_xp << ";";
-                fichier << m_statistiques[i].m_upgrade.m_weapon << ";";
-                fichier << m_statistiques[i].m_upgrade.m_life << ";";
-                fichier << m_statistiques[i].m_upgrade.m_move << ";";
-                fichier << m_statistiques[i].m_upgrade.m_hook << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoHealKiller << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoXP << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoLevelUp << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoKillingSpree << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoRace << ";";
-                fichier << m_statistiques[i].m_conf.m_InfoAmmo << ";";
-                fichier << m_statistiques[i].m_conf.m_AmmoAbsolute << ";";
-                fichier << m_statistiques[i].m_conf.m_LifeAbsolute << ";";
-                fichier << m_statistiques[i].m_conf.m_ShowVoter << ";";
-                fichier << m_statistiques[i].m_conf.m_Lock << ";";
-                for (int j = 0; j < 4; j++)
-                    fichier << 0 << ";";
-                fichier << std::endl;
-            }
-
-            fichier.close();
-        }
+        fichier.close();
     }
 }
 
@@ -398,26 +314,6 @@ int main(int argc, char *argv[])
 {
     std::ifstream fichier("Statistiques.txt");
     Stats stats;
-
-    bool Separate = false;
-
-    if (argc <= 1)
-    {
-        std::cout << "Please choose between /separate or /unit !" << std::endl;
-        return 1;
-    }
-    else
-    {
-        if(strcmp(argv[1], "/separate") == 0)
-            Separate = true;
-        else if(strcmp(argv[1], "/unit") == 0)
-            Separate = false;
-        else
-        {
-            std::cout << "Please choose between /separate or /unit !" << std::endl;
-            return 1;
-        }
-    }
 
     if(!fichier.is_open())
     {
@@ -438,7 +334,7 @@ int main(int argc, char *argv[])
     {
         fichier.close();
 
-        std::cout << "Please upgrade Statistiques.txt !" << std::endl;
+        std::cout << "Please upgrade Statistiques.txt to ver. 1 !" << std::endl;
         return 1;
     }
 
@@ -488,7 +384,7 @@ int main(int argc, char *argv[])
 
     m_statistiques.pop_back();
 
-    WriteStat(Separate);    
+    WriteStat();    
     std::cout << "Done !" << std::endl;
 	return 0;
 }
