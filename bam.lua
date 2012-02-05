@@ -111,6 +111,7 @@ nethash = CHash("src/game/generated/nethash.cpp", "src/engine/shared/protocol.h"
 client_link_other = {}
 client_depends = {}
 server_link_other = {}
+server_sql_depends = {}
 
 if family == "windows" then
 	if platform == "win32" then
@@ -120,6 +121,8 @@ if family == "windows" then
 		table.insert(client_depends, CopyToDirectory(".", "other\\freetype\\lib64\\freetype.dll"))
 		table.insert(client_depends, CopyToDirectory(".", "other\\sdl\\lib64\\SDL.dll"))
 	end
+	table.insert(server_sql_depends, CopyToDirectory(".", "other\\mysql\\vc2005libs\\mysqlcppconn.dll"))
+	table.insert(server_sql_depends, CopyToDirectory(".", "other\\mysql\\vc2005libs\\libmysql.dll"))
 
 	if config.compiler.driver == "cl" then
 		client_link_other = {ResCompile("other/icons/teeworlds_cl.rc")}
@@ -143,14 +146,13 @@ function build(settings)
 
 	if config.compiler.driver == "cl" then
 		settings.cc.flags:Add("/wd4244")
+		settings.cc.flags:Add("/wd4291")
+		settings.cc.flags:Add("/EHsc")
 	else
-		settings.cc.flags:Add("-Wall", "-fno-exceptions")
-		if family == "windows" then
-			-- disable visibility attribute support for gcc on windows
-			settings.cc.defines:Add("NO_VIZ")
-		elseif platform == "macosx" then
-			settings.cc.flags:Add("-mmacosx-version-min=10.5", "-isysroot /Developer/SDKs/MacOSX10.5.sdk")
-			settings.link.flags:Add("-mmacosx-version-min=10.5", "-isysroot /Developer/SDKs/MacOSX10.5.sdk")
+		settings.cc.flags:Add("-Wall")
+		if platform == "macosx" then
+			settings.cc.flags:Add("-mmacosx-version-min=10.5")
+			settings.link.flags:Add("-mmacosx-version-min=10.5")
 		elseif config.stackprotector.value == 1 then
 			settings.cc.flags:Add("-fstack-protector", "-fstack-protector-all")
 			settings.link.flags:Add("-fstack-protector", "-fstack-protector-all")
@@ -167,8 +169,6 @@ function build(settings)
 			settings.link.frameworks:Add("AppKit")
 		else
 			settings.link.libs:Add("pthread")
-			settings.link.libs:Add("mysqlclient")
-			settings.link.libs:Add("mysqlcppconn")
 		end
 		
 		if platform == "solaris" then
@@ -206,22 +206,45 @@ function build(settings)
 	launcher_settings = engine_settings:Copy()
 
 	if family == "unix" then
+		if string.find(settings.config_name, "sql") then
+			server_settings.link.libs:Add("mysqlcppconn-static")
+		    server_settings.link.libs:Add("mysqlclient")
+		end
+		
 		if platform == "macosx" then
 			client_settings.link.frameworks:Add("OpenGL")
 			client_settings.link.frameworks:Add("AGL")
 			client_settings.link.frameworks:Add("Carbon")
 			client_settings.link.frameworks:Add("Cocoa")
 			launcher_settings.link.frameworks:Add("Cocoa")
+			if string.find(settings.config_name, "sql") then
+				if arch == "amd64" then
+					server_settings.link.libpath:Add("other/mysql/mac/lib64")
+				else
+					server_settings.link.libpath:Add("other/mysql/mac/lib32")
+				end
+			end
 		else
 			client_settings.link.libs:Add("X11")
 			client_settings.link.libs:Add("GL")
 			client_settings.link.libs:Add("GLU")
+			if string.find(settings.config_name, "sql") then
+				if arch == "amd64" then
+					server_settings.link.libpath:Add("other/mysql/linux/lib64")
+				else
+					server_settings.link.libpath:Add("other/mysql/linux/lib32")
+				end
+			end
 		end
 
 	elseif family == "windows" then
 		client_settings.link.libs:Add("opengl32")
 		client_settings.link.libs:Add("glu32")
 		client_settings.link.libs:Add("winmm")
+		if string.find(settings.config_name, "sql") then
+			server_settings.link.libpath:Add("other/mysql/vc2005libs")
+			server_settings.link.libs:Add("mysqlcppconn")
+		end
 	end
 
 	-- apply sdl settings
@@ -277,7 +300,11 @@ function build(settings)
 
 	-- make targets
 	c = PseudoTarget("client".."_"..settings.config_name, client_exe, client_depends)
+	if string.find(settings.config_name, "sql") then
+		s = PseudoTarget("server".."_"..settings.config_name, server_exe, serverlaunch, server_sql_depends)
+	else
 	s = PseudoTarget("server".."_"..settings.config_name, server_exe, serverlaunch)
+	end
 	g = PseudoTarget("game".."_"..settings.config_name, client_exe, server_exe)
 
 	v = PseudoTarget("versionserver".."_"..settings.config_name, versionserver_exe)
@@ -296,12 +323,26 @@ debug_settings.debug = 1
 debug_settings.optimize = 0
 debug_settings.cc.defines:Add("CONF_DEBUG")
 
+debug_sql_settings = NewSettings()
+debug_sql_settings.config_name = "sql_debug"
+debug_sql_settings.config_ext = "_sql_d"
+debug_sql_settings.debug = 1
+debug_sql_settings.optimize = 0
+debug_sql_settings.cc.defines:Add("CONF_DEBUG", "CONF_SQL")
+
 release_settings = NewSettings()
 release_settings.config_name = "release"
 release_settings.config_ext = ""
 release_settings.debug = 0
 release_settings.optimize = 1
 release_settings.cc.defines:Add("CONF_RELEASE")
+
+release_sql_settings = NewSettings()
+release_sql_settings.config_name = "sql_release"
+release_sql_settings.config_ext = "_sql"
+release_sql_settings.debug = 0
+release_sql_settings.optimize = 1
+release_sql_settings.cc.defines:Add("CONF_RELEASE", "CONF_SQL")
 
 if platform == "macosx" then
 	debug_settings_ppc = debug_settings:Copy()
@@ -311,6 +352,13 @@ if platform == "macosx" then
 	debug_settings_ppc.link.flags:Add("-arch ppc")
 	debug_settings_ppc.cc.defines:Add("CONF_DEBUG")
 
+	debug_sql_settings_ppc = debug_sql_settings:Copy()
+	debug_sql_settings_ppc.config_name = "sql_debug_ppc"
+	debug_sql_settings_ppc.config_ext = "_sql_ppc_d"
+	debug_sql_settings_ppc.cc.flags:Add("-arch ppc")
+	debug_sql_settings_ppc.link.flags:Add("-arch ppc")
+	debug_sql_settings_ppc.cc.defines:Add("CONF_DEBUG", "CONF_SQL")
+	
 	release_settings_ppc = release_settings:Copy()
 	release_settings_ppc.config_name = "release_ppc"
 	release_settings_ppc.config_ext = "_ppc"
@@ -318,8 +366,17 @@ if platform == "macosx" then
 	release_settings_ppc.link.flags:Add("-arch ppc")
 	release_settings_ppc.cc.defines:Add("CONF_RELEASE")
 
+	release_sql_settings_ppc = release_sql_settings:Copy()
+	release_sql_settings_ppc.config_name = "sql_release_ppc"
+	release_sql_settings_ppc.config_ext = "_sql_ppc"
+	release_sql_settings_ppc.cc.flags:Add("-arch ppc")
+	release_sql_settings_ppc.link.flags:Add("-arch ppc")
+	release_sql_settings_ppc.cc.defines:Add("CONF_RELEASE", "CONF_SQL")
+
 	ppc_d = build(debug_settings_ppc)
 	ppc_r = build(release_settings_ppc)
+	sql_ppc_d = build(debug_sql_settings_ppc)
+	sql_ppc_r = build(release_sql_settings_ppc)
 
 	if arch == "ia32" or arch == "amd64" then
 		debug_settings_x86 = debug_settings:Copy()
@@ -329,6 +386,13 @@ if platform == "macosx" then
 		debug_settings_x86.link.flags:Add("-arch i386")
 		debug_settings_x86.cc.defines:Add("CONF_DEBUG")
 
+		debug_sql_settings_x86 = debug_sql_settings:Copy()
+		debug_sql_settings_x86.config_name = "sql_debug_x86"
+		debug_sql_settings_x86.config_ext = "_sql_x86_d"
+		debug_sql_settings_x86.cc.flags:Add("-arch i386")
+		debug_sql_settings_x86.link.flags:Add("-arch i386")
+		debug_sql_settings_x86.cc.defines:Add("CONF_DEBUG", "CONF_SQL")
+
 		release_settings_x86 = release_settings:Copy()
 		release_settings_x86.config_name = "release_x86"
 		release_settings_x86.config_ext = "_x86"
@@ -336,8 +400,17 @@ if platform == "macosx" then
 		release_settings_x86.link.flags:Add("-arch i386")
 		release_settings_x86.cc.defines:Add("CONF_RELEASE")
 	
+		release_sql_settings_x86 = release_sql_settings:Copy()
+		release_sql_settings_x86.config_name = "sql_release_x86"
+		release_sql_settings_x86.config_ext = "_sql_x86"
+		release_sql_settings_x86.cc.flags:Add("-arch i386")
+		release_sql_settings_x86.link.flags:Add("-arch i386")
+		release_sql_settings_x86.cc.defines:Add("CONF_RELEASE", "CONF_SQL")
+
 		x86_d = build(debug_settings_x86)
+		sql_x86_d = build(debug_sql_settings_x86)
 		x86_r = build(release_settings_x86)
+		sql_x86_r = build(release_sql_settings_x86)
 	end
 
 	if arch == "amd64" then
@@ -348,6 +421,13 @@ if platform == "macosx" then
 		debug_settings_x86_64.link.flags:Add("-arch x86_64")
 		debug_settings_x86_64.cc.defines:Add("CONF_DEBUG")
 
+		debug_sql_settings_x86_64 = debug_sql_settings:Copy()
+		debug_sql_settings_x86_64.config_name = "sql_debug_x86_64"
+		debug_sql_settings_x86_64.config_ext = "_sql_x86_64_d"
+		debug_sql_settings_x86_64.cc.flags:Add("-arch x86_64")
+		debug_sql_settings_x86_64.link.flags:Add("-arch x86_64")
+		debug_sql_settings_x86_64.cc.defines:Add("CONF_DEBUG", "CONF_SQL")
+
 		release_settings_x86_64 = release_settings:Copy()
 		release_settings_x86_64.config_name = "release_x86_64"
 		release_settings_x86_64.config_ext = "_x86_64"
@@ -355,8 +435,17 @@ if platform == "macosx" then
 		release_settings_x86_64.link.flags:Add("-arch x86_64")
 		release_settings_x86_64.cc.defines:Add("CONF_RELEASE")
 
-		x86_64_d = build(debug_settings_x86_64)
-		x86_64_r = build(release_settings_x86_64)
+		release_sql_settings_x86_64 = release_sql_settings:Copy()
+		release_sql_settings_x86_64.config_name = "sql_release_x86_64"
+		release_sql_settings_x86_64.config_ext = "_sql_x86_64"
+		release_sql_settings_x86_64.cc.flags:Add("-arch x86_64")
+		release_sql_settings_x86_64.link.flags:Add("-arch x86_64")
+		release_sql_settings_x86_64.cc.defines:Add("CONF_RELEASE", "CONF_SQL")
+
+		x86_d = build(debug_settings_x86_64)
+		sql_x86_d = build(debug_sql_settings_x86_64)
+		x86_r = build(release_settings_x86_64)
+		sql_x86_r = build(release_sql_settings_x86_64)
 	end
 
 	DefaultTarget("game_debug_x86")
@@ -368,6 +457,10 @@ if platform == "macosx" then
 		PseudoTarget("server_debug", "server_debug_x86", "server_debug_ppc")
 		PseudoTarget("client_release", "client_release_x86", "client_release_ppc")
 		PseudoTarget("client_debug", "client_debug_x86", "client_debug_ppc")
+		PseudoTarget("sql_release", sql_ppc_r, sql_x86_r)
+		PseudoTarget("sql_debug", sql_ppc_d, sql_x86_d)
+		PseudoTarget("server_sql_release", "server_sql_release_x86", "server_sql_release_ppc")
+		PseudoTarget("server_sql_debug", "server_sql_debug_x86", "server_sql_debug_ppc")
 	elseif arch == "amd64" then
 		PseudoTarget("release", ppc_r, x86_r, x86_64_r)
 		PseudoTarget("debug", ppc_d, x86_d, x86_64_d)
@@ -375,6 +468,10 @@ if platform == "macosx" then
 		PseudoTarget("server_debug", "server_debug_x86", "server_release_x86_64", "server_debug_ppc")
 		PseudoTarget("client_release", "client_release_x86", "server_release_x86_64", "client_release_ppc")
 		PseudoTarget("client_debug", "client_debug_x86", "server_release_x86_64", "client_debug_ppc")
+		PseudoTarget("sql_release", sql_ppc_r, sql_x86_r, sql_x86_64_r)
+		PseudoTarget("sql_debug", sql_ppc_d, sql_x86_d, sql_x86_64_r)
+		PseudoTarget("server_sql_release", "server_sql_release_x86", "server_sql_release_x86_64", "server_sql_release_ppc")
+		PseudoTarget("server_sql_debug", "server_sql_debug_x86", "server_sql_debug_x86_64", "server_sql_debug_ppc")
 	else
 		PseudoTarget("release", ppc_r)
 		PseudoTarget("debug", ppc_d)
@@ -382,9 +479,15 @@ if platform == "macosx" then
 		PseudoTarget("server_debug", "server_debug_ppc")
 		PseudoTarget("client_release", "client_release_ppc")
 		PseudoTarget("client_debug", "client_debug_ppc")
+		PseudoTarget("sql_release", sql_ppc_r)
+		PseudoTarget("sql_debug", sql_ppc_d)
+		PseudoTarget("server_sql_release", "server_sql_release_ppc")
+		PseudoTarget("server_sql_debug", "server_sql_debug_ppc")
 	end
 else
 	build(debug_settings)
+	build(debug_sql_settings)
 	build(release_settings)
+	build(release_sql_settings)
 	DefaultTarget("game_debug")
 end

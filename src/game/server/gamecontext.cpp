@@ -16,7 +16,8 @@
 #include "entities/projectile.h"
 #include "entities/turret.h"
 #include "entities/explodewall.h"
-#include "statistiques.h"
+#include "statistics/statistiques.h"
+#include "statistics/mysqlserver.h"
 #include "event.h"
 
 enum
@@ -43,7 +44,11 @@ void CGameContext::Construct(int Resetting)
 
 	if(Resetting==NO_RESET)
     {
-    	//m_pStatistiques = new CStatistiques(this);
+        #if defined(CONF_SQL)
+    	m_pStatsServer = new CSqlServer(this);
+    	#else
+//    	m_pStatsServer = new CSqlServer(this);
+        #endif
 		m_pVoteOptionHeap = new CHeap();
     }
 }
@@ -714,7 +719,7 @@ void CGameContext::OnClientEnter(int ClientID)
             cut = true;
     }
     //m_apPlayers[ClientID]->SetSID(m_pStatistiques->GetId(ip, Server()->ClientName(ClientID), Server()->ClientClan(ClientID), Server()->ClientCountry(ClientID)));*/
-    m_apPlayers[ClientID]->m_pStats->SetInfo(Server()->ClientName(ClientID), Server()->ClientClan(ClientID), Server()->ClientCountry(ClientID), Ip);
+    //m_apPlayers[ClientID]->m_pStats->SetInfo(Server()->ClientName(ClientID), Server()->ClientClan(ClientID), Server()->ClientCountry(ClientID), Ip);
     m_apPlayers[ClientID]->m_pStats->SetStartPlay();
     SendTuningParams(ClientID);
 

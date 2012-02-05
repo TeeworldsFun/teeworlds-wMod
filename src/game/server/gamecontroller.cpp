@@ -9,7 +9,7 @@
 #include "entities/loot.h"
 #include "gamecontroller.h"
 #include "gamecontext.h"
-#include "statistiques.h"
+#include "statistics/statistiques.h"
 #include "event.h"
 
 

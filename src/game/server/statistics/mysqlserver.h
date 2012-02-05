@@ -1,0 +1,31 @@
+#ifndef GAME_SERVER_MYSQLSERVER_H
+#define GAME_SERVER_MYSQLSERVER_H
+
+#include <game/server/gamecontext.h>
+#include "stats_server.h"
+
+#include <mysql_connection.h>
+#include <cppconn/driver.h>
+/*#include <cppconn/exception.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>*/
+
+class CSqlServer : public IStatsServer
+{
+public:
+    CSqlServer(CGameContext *pGameServer);
+    int GetId(char* Name, char* Password);
+    int GetId(char* Ip, char* Pseudo, char* Clan, int Country);
+    Player GetPlayer(int id);
+    Stats GetStats(int id);
+    Upgrade GetUpgrade(int id);
+    Conf GetConf(int id);
+    AllStats GetAll(int id);
+    void WriteStats(int id, AllStats container);
+private:
+    sql::Driver *m_pDriver;
+    sql::Connection *m_pConnection;
+    sql::Statement *m_pStatement;
+};
+
+#endif

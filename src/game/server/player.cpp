@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <new>
 #include <engine/shared/config.h>
-#include <game/server/statistiques.h>
+#include <game/server/statistics/statistiques.h>
 #include <game/server/event.h>
 #include "player.h"
 

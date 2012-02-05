@@ -4,7 +4,7 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 #include <game/mapitems.h>
-#include <game/server/statistiques.h>
+#include <game/server/statistics/statistiques.h>
 #include <game/server/event.h>
 
 #include "character.h"

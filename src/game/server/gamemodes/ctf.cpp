@@ -8,7 +8,7 @@
 #include <game/server/entities/flag.h>
 #include <game/server/player.h>
 #include <game/server/gamecontext.h>
-#include <game/server/statistiques.h>
+#include <game/server/statistics/statistiques.h>
 #include "ctf.h"
 
 CGameControllerCTF::CGameControllerCTF(class CGameContext *pGameServer)

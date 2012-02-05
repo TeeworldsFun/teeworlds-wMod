@@ -101,7 +101,7 @@ public:
 	~CGameContext();
 
 	void Clear();
-	//CSql
+    class IStatsServer *m_pStatsServer;
     class CEvent *m_pEventsGame;
 
 	CEventHandler m_Events;
