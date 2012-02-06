@@ -8,6 +8,7 @@ class IStatsServer
 {
 public:
     IStatsServer(CGameContext *pGameServer);
+    virtual void OnInit() = 0;
     virtual int GetId(char* Name, char* Password) = 0;
     virtual int GetId(char* Ip, char* Pseudo, char* Clan, int Country) = 0;
     virtual Player GetPlayer(int id) = 0;
@@ -17,6 +18,7 @@ public:
     virtual AllStats GetAll(int id) = 0;
     virtual void WriteStats(int id, AllStats container) = 0;
 protected:
+    bool m_Init;
     CGameContext *GameServer() const { return m_pGameServer; };
     IServer *Server() const { return m_pGameServer->Server(); };
     IGameController *Controller() const { return m_pGameServer->m_pController; };

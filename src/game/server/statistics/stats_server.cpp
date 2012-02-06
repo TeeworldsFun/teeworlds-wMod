@@ -3,4 +3,5 @@
 IStatsServer::IStatsServer(CGameContext *pGameServer)
 {
     pGameServer = m_pGameServer;
+    m_Init = false;
 }

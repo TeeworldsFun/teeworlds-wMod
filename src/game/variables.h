@@ -87,12 +87,6 @@ MACRO_CONFIG_INT(SvForceVoteReason, sv_force_votereason, 0, 0, 1, CFGFLAG_SERVER
 
 MACRO_CONFIG_INT(SvTwoEvent, sv_two_event, 0, 0, 1, CFGFLAG_SERVER, "Two Event")
 
-MACRO_CONFIG_STR(SvSqlAddr, sv_sql_addr, 128, "localhost", CFGFLAG_SERVER, "Address of the server Mysql")
-MACRO_CONFIG_INT(SvSqlPort, sv_sql_port, 3306, 0, 0, CFGFLAG_SERVER, "Port to use for the server Mysql")
-MACRO_CONFIG_STR(SvSqlUser, sv_sql_user, 128, "root", CFGFLAG_SERVER, "Username to use for the server Mysql")
-MACRO_CONFIG_STR(SvSqlPass, sv_sql_pass, 128, "", CFGFLAG_SERVER, "Password to use for the server Mysql")
-MACRO_CONFIG_STR(SvSqlDb, sv_sql_db, 128, "teeworlds_wDM", CFGFLAG_SERVER, "Database to use for the server Mysql")
-
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, 15, CFGFLAG_SERVER, "")

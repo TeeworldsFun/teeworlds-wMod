@@ -14,6 +14,7 @@ class CSqlServer : public IStatsServer
 {
 public:
     CSqlServer(CGameContext *pGameServer);
+    void OnInit();
     int GetId(char* Name, char* Password);
     int GetId(char* Ip, char* Pseudo, char* Clan, int Country);
     Player GetPlayer(int id);
@@ -23,6 +24,8 @@ public:
     AllStats GetAll(int id);
     void WriteStats(int id, AllStats container);
 private:
+    bool Connect();
+    void Disconnect();
     sql::Driver *m_pDriver;
     sql::Connection *m_pConnection;
     sql::Statement *m_pStatement;

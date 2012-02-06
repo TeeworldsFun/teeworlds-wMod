@@ -2616,8 +2616,8 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 		}
 	}
 
-    /*if (m_pStatistiques)
-        m_pStatistiques->OnInit();*/
+    if (m_pStatsServer)
+        m_pStatsServer->OnInit();
 
 #ifdef CONF_DEBUG
 	if(g_Config.m_DbgDummies)
