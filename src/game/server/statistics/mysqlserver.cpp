@@ -7,21 +7,23 @@
 
 #include <cppconn/statement.h>
 #include <cppconn/exception.h>
+#include <cppconn/resultset.h>
+
+#include <vector>
 
 /*#include <driver.h>
 #include <connection.h>
 
 #include <prepared_statement.h>
-#include <resultset.h>
+
 #include <metadata.h>
-#include <resultset_metadata.h>
 
 #include <warning.h>
 	
 #define NUMOFFSET 100
 #define COLNAME 200*/
 
-using namespace sql::mysql;
+using namespace sql;
 
 CSqlServer::CSqlServer(CGameContext *pGameServer) : IStatsServer(pGameServer)
 {   
@@ -85,10 +87,10 @@ void CSqlServer::OnInit()
 `Race_Grenade` tinyint NOT NULL DEFAULT 0,\
 `Race_Rifle` tinyint NOT NULL DEFAULT 0,\
 PRIMARY KEY (`Id`),\
-UNIQUE KEY `Index_Name` (`Name`)\
+UNIQUE KEY `Name` (`Name`),\
+KEY `Pseudo_Hash` (`Pseudo_Hash`)\
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
 
-            dbg_msg("SQL", aBuf);
 			m_pStatement->execute(aBuf);
 
 			dbg_msg("SQL", "Tables were created successfully");
@@ -191,13 +193,70 @@ void CSqlServer::Disconnect()
 	}
 }
 
-int CSqlServer::GetId(char* Name, char* Password)
+int CSqlServer::GetId(const char* Name, const char* Password)
 {
-    return -1;
+    if (!Connect())
+        return -1;
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name=\"%s\" AND Password=%ld;", Name, str_quickhash(Password));
+    ResultSet *pResults(m_pStatement->executeQuery(aBuf));
+        
+    if(pResults->rowsCount() == 0)
+    {
+        Disconnect();
+        return -1;
+    }
+    
+    int Id = pResults->getInt(0);
+    delete pResults;
+    Disconnect();
+    return Id;
 }
 
-int CSqlServer::GetId(char* Ip, char* Pseudo, char* Clan, int Country)
+int CSqlServer::GetId(const char* Ip, const char* Pseudo, const char* Clan, const int Country)
 {
+    if (!Connect())
+        return -1;
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "SELECT * FROM Players_Stats WHERE Ip=\"%s\";", Ip);
+    ResultSet *pResults(m_pStatement->executeQuery(aBuf));
+        
+    if(pResults->rowsCount() == 1)
+    {
+        int Id = pResults->getInt(0);
+        delete pResults;
+        Disconnect();
+        return Id;
+    }
+    else if (pResults->rowsCount() > 1)
+    {
+        std::vector<int> Id;
+
+        while (pResults->next())
+        {
+            if(static_cast<unsigned int>(pResults->getInt("Pseudo_Hash")) == str_quickhash(Pseudo) &&
+               static_cast<unsigned int>(pResults->getInt("Clan_Hash")) == str_quickhash(Clan) &&
+               pResults->getInt("Country") == Country)
+            {
+                Id.push_back(pResults->getInt(0));
+            }
+        }
+        
+        if (Id.size() == 1)
+        {
+            delete pResults;
+            Disconnect();
+            return Id.at(0);
+        }
+    }
+    else
+    {
+    }
+
+    delete pResults;
+    Disconnect();
     return -1;
 }
 

@@ -15,8 +15,8 @@ class CSqlServer : public IStatsServer
 public:
     CSqlServer(CGameContext *pGameServer);
     void OnInit();
-    int GetId(char* Name, char* Password);
-    int GetId(char* Ip, char* Pseudo, char* Clan, int Country);
+    int GetId(const char* Name, const char* Password);
+    int GetId(const char* Ip, const char* Pseudo, const char* Clan, const int Country);
     Player GetPlayer(int id);
     Stats GetStats(int id);
     Upgrade GetUpgrade(int id);

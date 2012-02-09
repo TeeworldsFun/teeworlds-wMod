@@ -9,8 +9,8 @@ class IStatsServer
 public:
     IStatsServer(CGameContext *pGameServer);
     virtual void OnInit() = 0;
-    virtual int GetId(char* Name, char* Password) = 0;
-    virtual int GetId(char* Ip, char* Pseudo, char* Clan, int Country) = 0;
+    virtual int GetId(const char* Name, const char* Password) = 0;
+    virtual int GetId(const char* Ip, const char* Pseudo, const char* Clan, const int Country) = 0;
     virtual Player GetPlayer(int id) = 0;
     virtual Stats GetStats(int id) = 0;
     virtual Upgrade GetUpgrade(int id) = 0;

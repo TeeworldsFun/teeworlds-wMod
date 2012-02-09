@@ -47,6 +47,7 @@ CREATE TABLE `Players_Stats` (
   `Race_Grenade` tinyint NOT NULL DEFAULT 0,
   `Race_Rifle` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`Id`),
-  UNIQUE KEY `Index_Name` (`Name`)
+  UNIQUE KEY `Name` (`Name`),
+  KEY `Pseudo_Hash` (`Pseudo_Hash`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
