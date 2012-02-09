@@ -435,6 +435,7 @@ public:
         AddKillingSpree(id);
         UpdateStat(id);
         m_statistiques[id].m_start_time = 0;
+        m_statistiques[id].m_acutal_kill = 0;
     }
     inline void AddMessage(long id)
     {
