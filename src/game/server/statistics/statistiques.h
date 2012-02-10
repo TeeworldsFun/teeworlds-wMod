@@ -280,6 +280,8 @@ public:
             m_pPlayer->m_WeaponType[i] = m_conf.m_Weapon[i];
         if ( m_conf.m_Lock )
             return;
+
+        m_player.m_last_connect = time_timestamp();
         m_stats.m_start_time = time_timestamp();
         m_stats.m_log_in++;
     }

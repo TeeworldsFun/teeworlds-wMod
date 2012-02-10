@@ -465,7 +465,13 @@ AllStats CSqlServer::GetAll(int id)
 
 void CSqlServer::WriteStats(int id, AllStats container)
 {
+    if (id < 1)
+        return;
 
+    if (!Connect())
+        return;
+    
+//UPDATE Players_Stats SET WHERE Id=%ld;
 }
 
 void CSqlServer::DisplayRank(int id)

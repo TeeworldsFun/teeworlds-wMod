@@ -1737,7 +1737,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
             return false;
         }
     }
-    else if (Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && FromRace = WARRIOR &&
+    else if (Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && FromRace == WARRIOR &&
             (!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || FromRace != WARRIOR) && (FromRace != ENGINEER || Weapon != WEAPON_HAMMER))
         return false;
     else if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
