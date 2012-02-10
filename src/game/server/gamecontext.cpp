@@ -68,7 +68,7 @@ CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
     {
-        if ( m_apPlayers[i] )
+        if (m_apPlayers[i])
             m_apPlayers[i]->m_pStats->SetStopPlay();
 		delete m_apPlayers[i];
     }
@@ -78,7 +78,7 @@ CGameContext::~CGameContext()
 	if(!m_Resetting)
     {
 		delete m_pVoteOptionHeap;
-        //delete m_pStatistiques;
+        delete m_pStatsServer;
     }
 }
 
@@ -89,7 +89,7 @@ void CGameContext::Clear()
 	CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
 	int NumVoteOptions = m_NumVoteOptions;
 	CTuningParams Tuning = m_Tuning;
-    //CStatistiques *pStatistiques = m_pStatistiques;
+    IStatsServer *pStatsServer = m_pStatsServer;
 
 	m_Resetting = true;
 	this->~CGameContext();
@@ -102,7 +102,7 @@ void CGameContext::Clear()
 	m_NumVoteOptions = NumVoteOptions;
 	m_Tuning = Tuning;
 
-    //m_pStatistiques = pStatistiques;
+    m_pStatsServer = pStatsServer;
 }
 
 
@@ -472,36 +472,39 @@ void CGameContext::SendTuningParams(int ClientID)
     CTuningParams User = m_Tuning;
     if ( ClientID >= 0 )
     {
-        float RateSpeed = 1.0f;
-        float RateAccel = 1.0f;
-        float RateHighJump = 1.0f;
-        float RateLengthHook = 1.0f;
-        float RateSpeedHook = 1.0f;
-        if (m_apPlayers[ClientID]->m_pStats->GetActualKill() >= 5)
+        if (m_apPlayers[ClientID]->GetSID() >= 0)
         {
-            RateSpeed *= 1.5f;
-            RateAccel *= 1.5f;
-        }
-        if (!m_pEventsGame->IsActualEvent(SPEED_X10))
-        {
-            RateSpeed *= m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_speed;
-            RateAccel *= m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_accel;
-            RateSpeedHook *= m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_speed;
-        }
-        if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
-            RateHighJump *= m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_high_jump;
-        if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
-            RateLengthHook *= m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_length;
+            float RateSpeed = 1.0f;
+            float RateAccel = 1.0f;
+            float RateHighJump = 1.0f;
+            float RateLengthHook = 1.0f;
+            float RateSpeedHook = 1.0f;
+            if (m_apPlayers[ClientID]->m_pStats->GetActualKill() >= 5)
+            {
+                RateSpeed *= 1.5f;
+                RateAccel *= 1.5f;
+            }
+            if (!m_pEventsGame->IsActualEvent(SPEED_X10))
+            {
+                RateSpeed *= m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_speed;
+                RateAccel *= m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_accel;
+                RateSpeedHook *= m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_speed;
+            }
+            if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
+                RateHighJump *= m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_high_jump;
+            if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
+                RateLengthHook *= m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_length;
 
-        User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
-        User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
-        User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
-        User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
-        User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
-        User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
-        User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
-        User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
-        User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
+            User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
+            User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
+            User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
+            User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
+            User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
+            User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
+            User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
+            User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
+            User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
+        }
 
 	    CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
         int *pParams = (int *)&User;
@@ -516,37 +519,39 @@ void CGameContext::SendTuningParams(int ClientID)
             if(!m_apPlayers[i])
                 continue;
 
-            float RateSpeed = 1.0f;
-            float RateAccel = 1.0f;
-            float RateHighJump = 1.0f;
-            float RateLengthHook = 1.0f;
-            float RateSpeedHook = 1.0f;
-            if (m_apPlayers[i]->m_pStats->GetActualKill() >= 5)
+            if (m_apPlayers[i]->GetSID() >= 0)
             {
-                RateSpeed *= 1.5f;
-                RateAccel *= 1.5f;
-            }
-            if (!m_pEventsGame->IsActualEvent(SPEED_X10))
-            {
-                RateSpeed *= m_apPlayers[i]->m_pStats->GetStatMove().m_rate_speed;
-                RateAccel *=  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_accel;
-                RateSpeedHook *=  m_apPlayers[i]->m_pStats->GetStatHook().m_rate_speed;
-            }
-            if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
-                RateHighJump *=  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_high_jump;
-            if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
-                RateLengthHook *=  m_apPlayers[i]->m_pStats->GetStatHook().m_rate_length;
+                float RateSpeed = 1.0f;
+                float RateAccel = 1.0f;
+                float RateHighJump = 1.0f;
+                float RateLengthHook = 1.0f;
+                float RateSpeedHook = 1.0f;
+                if (m_apPlayers[i]->m_pStats->GetActualKill() >= 5)
+                {
+                    RateSpeed *= 1.5f;
+                    RateAccel *= 1.5f;
+                }
+                if (!m_pEventsGame->IsActualEvent(SPEED_X10))
+                {
+                    RateSpeed *= m_apPlayers[i]->m_pStats->GetStatMove().m_rate_speed;
+                    RateAccel *=  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_accel;
+                    RateSpeedHook *=  m_apPlayers[i]->m_pStats->GetStatHook().m_rate_speed;
+                }
+                if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
+                    RateHighJump *=  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_high_jump;
+                if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
+                    RateLengthHook *=  m_apPlayers[i]->m_pStats->GetStatHook().m_rate_length;
 
-            User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
-            User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
-            User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
-            User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
-            User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
-            User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
-            User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
-            User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
-            User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
-
+                User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
+                User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
+                User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
+                User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
+                User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
+                User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
+                User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
+                User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
+                User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
+            }
             CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
             int *pParams = (int *)&User;
             for(unsigned j = 0; j < sizeof(User)/sizeof(int); j++)
@@ -594,7 +599,7 @@ void CGameContext::OnTick()
 		}
 	}
 
-    //m_pStatistiques->Tick();
+    //m_pStatsServer->Tick();
 
 	// update voting
 	if(m_VoteCloseTime)
@@ -704,26 +709,6 @@ void CGameContext::OnClientPredictedInput(int ClientID, void *pInput)
 
 void CGameContext::OnClientEnter(int ClientID)
 {
-    char Ip[MAX_IP_LENGTH] = "";
-    Server()->GetClientAddr(ClientID, Ip, MAX_IP_LENGTH);
-    bool cut = true;
-    for ( int i = 0; i < MAX_IP_LENGTH; i++ )
-    {
-        if ( Ip[i] == '[' )
-            cut = false;
-        else if ( Ip[i] == ':' && cut == true )
-        {
-            Ip[i] = '\0';
-            break;
-        }
-        else if ( Ip[i] == ']' )
-            cut = true;
-    }
-    //m_apPlayers[ClientID]->SetSID(m_pStatistiques->GetId(ip, Server()->ClientName(ClientID), Server()->ClientClan(ClientID), Server()->ClientCountry(ClientID)));*/
-    //m_apPlayers[ClientID]->m_pStats->SetInfo(Server()->ClientName(ClientID), Server()->ClientClan(ClientID), Server()->ClientCountry(ClientID), Ip);
-    m_apPlayers[ClientID]->m_pStats->SetStartPlay();
-    SendTuningParams(ClientID);
-
 	//world.insert_entity(&players[client_id]);
 	m_apPlayers[ClientID]->Respawn();
 	char aBuf[512];
@@ -748,11 +733,7 @@ void CGameContext::OnClientEnter(int ClientID)
 void CGameContext::OnClientConnected(int ClientID)
 {
 	// Check which team the player should be on
-    int StartTeam;
-    if ( g_Config.m_SvTournamentMode || m_pEventsGame->IsActualEvent(SURVIVOR) || ( m_pController->IsTeamplay() && m_pEventsGame->GetActualEventTeam() == T_SURVIVOR))
-        StartTeam = TEAM_SPECTATORS;
-    else
-        StartTeam = m_pController->GetAutoTeam(ClientID);
+    int StartTeam = TEAM_SPECTATORS;
 
 	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam);
 	//players[client_id].init(client_id);
@@ -816,7 +797,8 @@ void CGameContext::ParseArguments(const char *Message, int nb_result, char Resul
         {
             Result[Actual][Pos] = 0;
             Pos = 0;
-            Actual++;
+            if (Message[i + 1] != ' ')
+                Actual++;
             if (Actual >= nb_result)
                 break;
         }
@@ -855,11 +837,129 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
         SendChatTarget(ClientID, "Say /cmdlist to get all commands available !");
         SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
     }
+    else if(str_comp_nocase(Arguments[0], "/register") == 0)
+    {
+        if(Arguments[1][0] == 0)
+        {
+            SendChatTarget(ClientID, "Usage : /register <name> <password>");
+            SendChatTarget(ClientID, "Desc : Use this command to create an account on this server. (Multi-account Allowed :D)");
+            return;
+        }
+        else if(str_length(Arguments[1]) >= MAX_NAME_LENGTH)
+        {
+            SendChatTarget(ClientID, "Your name account is too long !");
+            return;
+        }
+        else if(Arguments[2][0] == 0)
+        {
+            SendChatTarget(ClientID, "You must give a password !");
+            return; 
+        }
+        
+        int Error = m_pStatsServer->CreateId(ClientID, Arguments[1], Arguments[2]);
+        if (Error == -1)
+        {
+            SendChatTarget(ClientID, "This name account is already used !");
+            return;
+        }
+        else if (Error == -2)
+        {
+            SendChatTarget(ClientID, "Error : Can't connect to the mysql server ! Try again.");
+            return;
+        }
+        else if (Error >= 0)
+        {
+            SendChatTarget(ClientID, "Your account is successfully created !");
+            return;
+        }
+        else
+        {
+            SendChatTarget(ClientID, "Error : Unknown ! Try again and if it failed, tell an admin or moder.");
+            return;
+        }
+    }
+    else if(str_comp_nocase(Arguments[0], "/login") == 0)
+    {
+        if(Arguments[1][0] == 0)
+        {
+            SendChatTarget(ClientID, "Usage : /login <name> <password>");
+            SendChatTarget(ClientID, "Desc : Use this command login on this server.");
+            SendChatTarget(ClientID, "Info : You can use the name \"anonymous\" to play without saving.");
+            return;
+        }
+        else if(str_comp(Arguments[1], "anonymous") == 0)
+        {
+            //Connection Anonymous
+            if (m_apPlayers[ClientID]->GetSID() == 0)
+            {
+                SendChatTarget(ClientID, "You are already connected in anonymous !!");
+                return;
+            }
+
+            m_apPlayers[ClientID]->SetSID(0);
+            if(m_pController->IsTeamplay())
+                SendChatTarget(ClientID, "You are now connected ! You can join the game !");
+            else
+            {
+                SendChatTarget(ClientID, "You are now connected ! Have fun !");
+                m_apPlayers[ClientID]->SetTeam(0);
+            }
+            return;
+        }
+        else if(Arguments[2][0] == 0)
+        {
+            SendChatTarget(ClientID, "You must give a password !");
+            return; 
+        }
+        
+        int Id = m_pStatsServer->GetId(Arguments[1], Arguments[2]);
+        if (Id == -1)
+        {
+            SendChatTarget(ClientID, "This account doesn't exist or username/password are wrong !");
+            return;
+        }
+        else if (Id == -2)
+        {
+            SendChatTarget(ClientID, "Error : Can't connect to the mysql server ! Try again.");
+            return;
+        }
+        else if (Id > 0)
+        {
+            if(m_apPlayers[ClientID]->GetSID() == Id)
+            {
+                SendChatTarget(ClientID, "You are already connected with this account !!");
+                return;
+            }
+
+            if(!m_apPlayers[ClientID]->SetSID(Id))
+                SendChatTarget(ClientID, "Error while loading stats ! Please try again !");
+            else if(m_pController->IsTeamplay())
+                SendChatTarget(ClientID, "You are now connected ! You can join the game !");
+            else
+            {
+                SendChatTarget(ClientID, "You are now connected !");
+                m_apPlayers[ClientID]->SetTeam(0);
+            }
+            return;
+        }
+        else
+        {
+            SendChatTarget(ClientID, "Error : Unknown ! Try again and if it failed, tell an admin or moder.");
+            return;
+        }
+    }
     else if(str_comp_nocase(Arguments[0], "/credits") == 0)
     {
         SendChat(ClientID, Team, Arguments[0]);
         SendChatTarget(-1, "*** Extreme Weapon Mod v2.1 ***");
         SendChatTarget(-1, "** Wrote by PJK **");
+    }
+    else if(m_apPlayers[ClientID]->GetSID() < 0)
+    {
+        char error[256] = "";
+        str_format(error, 256, "Unrecognized command : %s. To have more commands, please log-in !", Arguments[0]);
+        SendChatTarget(ClientID, error);
+        return;
     }
     else if(str_comp_nocase(Arguments[0], "/ammo") == 0)
     {
@@ -1014,16 +1114,16 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
         SendChat(ClientID, Team, Arguments[0]);
         m_apPlayers[ClientID]->m_pStats->DisplayStat();
     }
-/*    else if(str_comp_nocase(Arguments[0], "/ranks") == 0)
+    else if(str_comp_nocase(Arguments[0], "/ranks") == 0)
     {
         SendChat(ClientID, Team, Arguments[0]);
-        m_pStatistiques->DisplayRank(m_apPlayers[ClientID]->GetSID(), Server()->ClientName(ClientID));
+        m_pStatsServer->DisplayRank(m_apPlayers[ClientID]->GetSID());
     }
     else if(str_comp_nocase(Arguments[0], "/bestof") == 0)
     {
         SendChat(ClientID, Team, Arguments[0]);
-        m_pStatistiques->DisplayBestOf();
-    }*/
+        m_pStatsServer->DisplayBestOf();
+    }
     else if(str_comp_nocase(Arguments[0], "/player") == 0)
         m_apPlayers[ClientID]->m_pStats->DisplayPlayer();
     else if(str_comp_nocase(Arguments[0], "/upgr") == 0)
@@ -1167,12 +1267,12 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
     }
     else if(str_comp_nocase(Arguments[0], "/reset_stats") == 0)
     {
-        m_apPlayers[ClientID]->m_pStats->ResetPartialStat();
+        m_apPlayers[ClientID]->m_pStats->ResetPartialStats();
         SendChatTarget(ClientID, "Your statistics have been partially resetted !");
     }
     else if(str_comp_nocase(Arguments[0], "/reset_all_stats") == 0)
     {
-        m_apPlayers[ClientID]->m_pStats->ResetAllStat();
+        m_apPlayers[ClientID]->m_pStats->ResetAllStats();
         SendChatTarget(ClientID, "Your statistics have been resetted !");
     }
     else if(str_comp_nocase(Arguments[0], "/reset_upgr") == 0)
@@ -1183,7 +1283,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
     else
     {
         char error[256] = "";
-        str_format(error, 256, "Unrecognized option : %s. To get commands available, say /cmdlist", Arguments[0]);
+        str_format(error, 256, "Unrecognized command : %s. To get commands available, say /cmdlist", Arguments[0]);
         SendChatTarget(ClientID, error);
     }
 }
@@ -1432,6 +1532,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			pPlayer->m_LastSetTeam = Server()->Tick();
 			SendBroadcast("Teams are locked", ClientID);
+			m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
 			return;
 		}
 
@@ -1445,6 +1546,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
         if((m_pEventsGame->IsActualEvent(SURVIVOR) || ( m_pController->IsTeamplay() && m_pEventsGame->GetActualEventTeam() == T_SURVIVOR )) && pMsg->m_Team != TEAM_SPECTATORS)
         {
             SendBroadcast("You can't join other team with this event, wait a winner", ClientID);
+            m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
+            return;
+        }
+
+        if(m_apPlayers[ClientID]->GetSID() < 0)
+        {
+            SendBroadcast("Use /register to create an account and /login to join !", ClientID);
             m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
             return;
         }
@@ -1623,7 +1731,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
 		pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
 		m_pController->OnPlayerInfoChange(pPlayer);
-        m_apPlayers[ClientID]->m_pStats->SetInfo(pMsg->m_pName, pMsg->m_pClan, pMsg->m_Country);
+        m_apPlayers[ClientID]->m_pStats->UpdateInfo();
 	}
 	else if (MsgID == NETMSGTYPE_CL_EMOTICON && !m_World.m_Paused)
 	{

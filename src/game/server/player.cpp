@@ -3,9 +3,9 @@
 #include <new>
 #include <engine/shared/config.h>
 #include <game/server/statistics/statistiques.h>
+#include <game/server/statistics/stats_server.h>
 #include <game/server/event.h>
 #include "player.h"
-
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
@@ -19,7 +19,6 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_ScoreStartTick = Server()->Tick();
 	m_pCharacter = 0;
 	m_ClientID = ClientID;
-    m_StatID = -1;
 	m_Team = GameServer()->m_pController->ClampTeam(Team);
     if ( m_pGameServer->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && Team != TEAM_SPECTATORS )
         Team = TEAM_RED;
@@ -32,6 +31,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
     for (int i = 0; i < NUM_WEAPONS; i++)
         m_WeaponType[i] = WARRIOR;
     m_Mine = 0;
+    m_pStats = 0;
     m_pStats = new CStats(this, m_pGameServer);
 }
 
@@ -146,9 +146,12 @@ void CPlayer::Snap(int SnappingClient)
             str_append(Prefix, "M", 10);
         if (GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && (GameServer()->m_pController->m_Captain[TEAM_RED] == m_ClientID || GameServer()->m_pController->m_Captain[TEAM_BLUE] == m_ClientID) )
             str_append(Prefix, "C", 10);
-
+        
         char Name[MAX_NAME_LENGTH + 10] = "";
-        str_format(Name, MAX_NAME_LENGTH + 10, "[%s%ld]%s", Prefix, m_pStats->GetLevel(), Server()->ClientName(m_ClientID));
+        if (m_pStats->GetId() < 0)
+            str_format(Name, MAX_NAME_LENGTH + 10, "[%sX]%s", Prefix, Server()->ClientName(m_ClientID));
+        else
+            str_format(Name, MAX_NAME_LENGTH + 10, "[%s%ld]%s", Prefix, m_pStats->GetLevel(), Server()->ClientName(m_ClientID));
         StrToInts(&pClientInfo->m_Name0, 4, Name);
     }
 	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
@@ -274,6 +277,9 @@ void CPlayer::Respawn()
 
 void CPlayer::SetTeam(int Team, bool DoChatMsg)
 {
+    if(m_pStats->GetId() < 0)
+        return;
+
 	// clamp the team
 	Team = GameServer()->m_pController->ClampTeam(Team);
 	if(m_Team == Team)
@@ -363,10 +369,36 @@ void CPlayer::SetCaptureTeam(int Team, int Killer)
         GameServer()->SendChatTarget(GetCID(), "You're a zombie ! Eat some brains !");
 }
 
-void CPlayer::SetSID(long id)
+int CPlayer::GetSID() const
 {
-    m_StatID = id;
-    m_level = m_pStats->GetLevel();
+    return m_pStats->GetId();
+};
+    
+bool CPlayer::SetSID(long id)
+{
+    if(m_pStats->GetId() == id)
+        return true;
+
+    if (m_pStats->GetId() > 0)
+        m_pStats->WriteAll();
+
+    delete m_pStats;
+    m_pStats = new CStats(this, m_pGameServer);
+
+    if ( id > 0 )
+    {
+        m_pStats->Set(GameServer()->m_pStatsServer->GetAll(id));
+        if (m_pStats->GetId() < 0)
+            return false;
+    }
+    else if ( id == 0 )
+        m_pStats->ConnectAnonymous();
+    else
+        return false;
+
+    KillCharacter();
+    GameServer()->SendTuningParams(m_ClientID);
+    return true;
 }
 
 void CPlayer::TryRespawn()

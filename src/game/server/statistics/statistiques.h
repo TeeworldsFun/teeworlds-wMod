@@ -130,7 +130,7 @@ struct Player
 {
     Player()
     {
-        m_id = 0;
+        m_id = -1;
         str_copy(m_ip, "", MAX_IP_LENGTH);
         str_copy(m_pseudo, "", MAX_NAME_LENGTH);
         str_copy(m_clan, "", MAX_CLAN_LENGTH);
@@ -139,7 +139,7 @@ struct Player
         m_password = 0;
         m_last_connect = 0;
     }
-    unsigned int m_id;
+    int m_id;
     char m_ip[MAX_IP_LENGTH];
     char m_pseudo[MAX_NAME_LENGTH];
     char m_clan[MAX_CLAN_LENGTH];
@@ -197,6 +197,18 @@ struct Stats
 };
 
 struct AllStats {
+    AllStats(Player player, Stats stats, Upgrade upgr, Conf conf)
+    {
+        m_player = player;
+        m_stats = stats;
+        m_upgr = upgr;
+        m_conf = conf;
+        if(stats.m_actual_kill == -1 || m_upgr.m_weapon == -1 || m_conf.m_Weapon[0] == -1)
+            m_player.m_id = -1;
+
+        if(stats.m_actual_kill == -2 || m_upgr.m_weapon == -2 || m_conf.m_Weapon[0] == -2)
+            m_player.m_id = -2;
+    }
     Player m_player;
     Stats m_stats;
     Upgrade m_upgr;
@@ -207,13 +219,14 @@ class CStats
 {
 public:
     CStats(CPlayer* pPlayer, CGameContext* pGameServer);
-    void SetInfo(const char Pseudo[], const char Clan[], const int Country);
     void Set(Player container);
     void Set(Stats container);
     void Set(Upgrade container);
     void Set(Conf container);
     void Set(AllStats container);
+    void ConnectAnonymous();
 
+    inline int GetId() { return m_player.m_id; };
     inline unsigned int GetLevel() { UpdateStat(); return m_stats.m_level; };
     inline unsigned int GetXp() { UpdateStat(); return m_stats.m_xp; };
     inline unsigned int GetScore() { UpdateStat(); return m_stats.m_score; };
@@ -225,12 +238,13 @@ public:
     inline Conf GetConf() { return m_conf; };
     void WriteAll();
 
+    void UpdateInfo();
     void UpdateStat();
     void UpdateUpgrade();
     void DisplayStat();
     void DisplayPlayer();
-    void ResetPartialStat();
-    void ResetAllStat();
+    void ResetPartialStats();
+    void ResetAllStats();
     void ResetUpgr();
     
     inline void AddKill(unsigned int level_victim)
@@ -279,6 +293,7 @@ public:
         AddKillingSpree();
         UpdateStat();
         m_stats.m_start_time = 0;
+        m_stats.m_actual_kill = 0;
     }
     inline void AddMessage() { m_stats.m_message += m_conf.m_Lock ? 0 : 1; };
     inline void AddFlagCapture() { m_stats.m_flag_capture += m_conf.m_Lock ? 0 : 1; };
@@ -381,15 +396,7 @@ private:
     IServer *Server() const { return m_pGameServer->Server(); };
     IGameController *Controller() const { return m_pGameServer->m_pController; };
 
-    inline void AddKillingSpree()
-    {
-        if ( m_stats.m_actual_kill > 5 )
-        {
-            m_stats.m_killing_spree += m_stats.m_actual_kill;
-            if ( m_stats.m_actual_kill > m_stats.m_max_killing_spree )
-                m_stats.m_max_killing_spree = m_stats.m_actual_kill;
-        }
-    }
+    void AddKillingSpree();
     
     CGameContext *m_pGameServer;
 };

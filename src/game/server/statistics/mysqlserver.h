@@ -15,14 +15,17 @@ class CSqlServer : public IStatsServer
 public:
     CSqlServer(CGameContext *pGameServer);
     void OnInit();
+    int CreateId(const int ClientID, const char* Name, const char* Password);
     int GetId(const char* Name, const char* Password);
-    int GetId(const char* Ip, const char* Pseudo, const char* Clan, const int Country);
     Player GetPlayer(int id);
     Stats GetStats(int id);
     Upgrade GetUpgrade(int id);
     Conf GetConf(int id);
     AllStats GetAll(int id);
     void WriteStats(int id, AllStats container);
+
+    void DisplayRank(int id);
+    void DisplayBestOf();
 private:
     bool Connect();
     void Disconnect();

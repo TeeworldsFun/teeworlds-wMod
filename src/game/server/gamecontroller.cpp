@@ -644,18 +644,18 @@ void IGameController::Tick()
 	}
 
 	// do team-balancing
-    if(IsTeamplay() && ((GameServer()->m_pEventsGame->GetActualEventTeam() < STEAL_TEE && m_UnbalancedTick != -1 && Server()->Tick() > m_UnbalancedTick+g_Config.m_SvTeambalanceTime*Server()->TickSpeed()*60) || (GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE && m_ForceDoBalance == true)))
+    if(IsTeamplay() && ((GameServer()->m_pEventsGame->GetActualEventTeam() < STEAL_TEE && m_UnbalancedTick != -1 && Server()->Tick() > m_UnbalancedTick+g_Config.m_SvTeambalanceTime*Server()->TickSpeed()*60)|| (GameServer()->m_pEventsGame->GetActualEventTeam() != TEE_VS_ZOMBIE && m_ForceDoBalance == true)))
 	{
 		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", "Balancing teams");
 
-        if ( GameServer()->m_pEventsGame->GetActualEventTeam() )
+        /*if ( GameServer()->m_pEventsGame->GetActualEventTeam() )
         {
             for(int i = 0; i < MAX_CLIENTS; i++)
             {
                 if (GameServer()->m_apPlayers[i])
                     GameServer()->m_apPlayers[i]->SetTeam(GetAutoTeam(i), false);
             }
-        }
+        } WTF ?! */
 
 		int aT[2] = {0,0};
 		float aTScore[2] = {0,0};
@@ -950,7 +950,7 @@ void IGameController::DoWincheck()
                 int nb_player = 0;
                 for ( int i = 0; i < MAX_CLIENTS; i++ )
                 {
-                    if ( GameServer()->m_apPlayers[i] )
+                    if ( GameServer()->IsClientPlayer(i) )
                         nb_player++;
                 }
 
@@ -1050,7 +1050,7 @@ void IGameController::DoWincheck()
                 int id = 0;
                 for ( int i = 0; i < MAX_CLIENTS; i++ )
                 {
-                    if ( GameServer()->m_apPlayers[i] )
+                    if ( GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetSID() >= 0 )
                         nb_player++;
                     if ( GameServer()->IsClientPlayer(i) )
                     {

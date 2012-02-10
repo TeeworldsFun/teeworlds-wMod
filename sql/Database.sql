@@ -6,16 +6,17 @@ CREATE TABLE `Players_Stats` (
   `Id` smallint unsigned NOT NULL AUTO_INCREMENT,
   `Ip` varchar(42) NOT NULL DEFAULT '0.0.0.0',
   `Pseudo` varchar(16) DEFAULT NULL,
-  `Pseudo_Hash` BIGINT unsigned DEFAULT NULL COMMENT 'Old System',
   `Clan` varchar(12) DEFAULT NULL,
-  `Clan_Hash` BIGINT unsigned DEFAULT NULL COMMENT 'Old System',
   `Country` smallint NOT NULL DEFAULT -1,
-  `Name` varchar(16) DEFAULT NULL,
-  `Password` BIGINT unsigned DEFAULT NULL,
-  `Last_Connect` datetime NOT NULL,
+  `Name` varchar(16) NOT NULL,
+  `Password` BIGINT unsigned NOT NULL,
+  `Last_Connect` datetime NOT NULL DEFAULT '1970-01-01 01:00:00',
+  `Level` mediumint unsigned NOT NULL DEFAULT 0,
+  `Score` mediumint unsigned NOT NULL DEFAULT 0,
   `Killed` mediumint unsigned NOT NULL DEFAULT 0,
   `Dead` mediumint unsigned NOT NULL DEFAULT 0,
   `Suicide` mediumint unsigned NOT NULL DEFAULT 0,
+  `Rapport` float unsigned NOT NULL DEFAULT 0,
   `Log_In` mediumint unsigned NOT NULL DEFAULT 0,
   `Fire` mediumint unsigned NOT NULL DEFAULT 0,
   `Pickup_Weapon` mediumint unsigned NOT NULL DEFAULT 0,
@@ -47,7 +48,6 @@ CREATE TABLE `Players_Stats` (
   `Race_Grenade` tinyint NOT NULL DEFAULT 0,
   `Race_Rifle` tinyint NOT NULL DEFAULT 0,
   PRIMARY KEY (`Id`),
-  UNIQUE KEY `Name` (`Name`),
-  KEY `Pseudo_Hash` (`Pseudo_Hash`)
+  UNIQUE KEY `Name` (`Name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 

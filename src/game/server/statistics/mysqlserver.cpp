@@ -19,7 +19,7 @@
 #include <metadata.h>
 
 #include <warning.h>
-	
+    
 #define NUMOFFSET 100
 #define COLNAME 200*/
 
@@ -35,27 +35,28 @@ void CSqlServer::OnInit()
     if (m_Init)
         return;
 
-	// create connection
-	if(Connect())
-	{
-		try
-		{
-			// create tables
-			char aBuf[] = 
+    // create connection
+    if(Connect())
+    {
+        try
+        {
+            // create tables
+            char aBuf[] = 
 "CREATE TABLE IF NOT EXISTS `Players_Stats` (\
 `Id` smallint unsigned NOT NULL AUTO_INCREMENT,\
 `Ip` varchar(42) NOT NULL DEFAULT '0.0.0.0',\
 `Pseudo` varchar(16) DEFAULT NULL,\
-`Pseudo_Hash` BIGINT unsigned DEFAULT NULL COMMENT 'Old System',\
 `Clan` varchar(12) DEFAULT NULL,\
-`Clan_Hash` BIGINT unsigned DEFAULT NULL COMMENT 'Old System',\
 `Country` smallint NOT NULL DEFAULT -1,\
 `Name` varchar(16) DEFAULT NULL,\
 `Password` BIGINT unsigned DEFAULT NULL,\
-`Last_Connect` datetime NOT NULL,\
+`Last_Connect` datetime NOT NULL DEFAULT '1970-01-01 01:00:00',\
+`Level` mediumint unsigned NOT NULL DEFAULT 0,\
 `Killed` mediumint unsigned NOT NULL DEFAULT 0,\
 `Dead` mediumint unsigned NOT NULL DEFAULT 0,\
 `Suicide` mediumint unsigned NOT NULL DEFAULT 0,\
+`Score` float unsigned NOT NULL DEFAULT 0,\
+`Rapport` float unsigned NOT NULL DEFAULT 0,\
 `Log_In` mediumint unsigned NOT NULL DEFAULT 0,\
 `Fire` mediumint unsigned NOT NULL DEFAULT 0,\
 `Pickup_Weapon` mediumint unsigned NOT NULL DEFAULT 0,\
@@ -87,202 +88,379 @@ void CSqlServer::OnInit()
 `Race_Grenade` tinyint NOT NULL DEFAULT 0,\
 `Race_Rifle` tinyint NOT NULL DEFAULT 0,\
 PRIMARY KEY (`Id`),\
-UNIQUE KEY `Name` (`Name`),\
-KEY `Pseudo_Hash` (`Pseudo_Hash`)\
+UNIQUE KEY `Name` (`Name`)\
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
 
-			m_pStatement->execute(aBuf);
+            m_pStatement->execute(aBuf);
 
-			dbg_msg("SQL", "Tables were created successfully");
+            dbg_msg("SQL", "Tables were created successfully");
 
-			// delete statement
-			delete m_pStatement;
-		}
-		catch (sql::SQLException &e)
-		{
-			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), "MySQL Error: %s", e.what());
-			dbg_msg("SQL", aBuf);
-			dbg_msg("SQL", "ERROR: Tables were NOT created");
-		}
+            // delete statement
+            delete m_pStatement;
+        }
+        catch (sql::SQLException &e)
+        {
+            char aBuf[256];
+            str_format(aBuf, sizeof(aBuf), "MySQL Error: %s", e.what());
+            dbg_msg("SQL", aBuf);
+            dbg_msg("SQL", "ERROR: Tables were NOT created");
+        }
 
-		// disconnect from database
-		Disconnect();
-	}
-	
+        // disconnect from database
+        Disconnect();
+    }
+    
     m_Init = true;
 }
 
 bool CSqlServer::Connect()
 {
-	try
-	{
-		m_pDriver = get_driver_instance();
-		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "tcp://%s:%d", g_Config.m_SvSqlAddr, g_Config.m_SvSqlPort);
+    try
+    {
+        m_pDriver = get_driver_instance();
+        char aBuf[256];
+        str_format(aBuf, sizeof(aBuf), "tcp://%s:%d", g_Config.m_SvSqlAddr, g_Config.m_SvSqlPort);
         m_pConnection = m_pDriver->connect(aBuf, g_Config.m_SvSqlUser, g_Config.m_SvSqlPass);
-		m_pStatement = m_pConnection->createStatement();
+        m_pStatement = m_pConnection->createStatement();
 
-		// Create database if not exists
-		str_format(aBuf, sizeof(aBuf), "CREATE DATABASE IF NOT EXISTS %s", g_Config.m_SvSqlDb);
-		m_pStatement->execute(aBuf);
+        // Create database if not exists
+        str_format(aBuf, sizeof(aBuf), "CREATE DATABASE IF NOT EXISTS %s", g_Config.m_SvSqlDb);
+        m_pStatement->execute(aBuf);
 
-		// Connect to specific database
-		m_pConnection->setSchema(g_Config.m_SvSqlDb);
-		dbg_msg("SQL", "SQL connection established");
-		return true;
-	}
-	catch (sql::SQLException &e)
-	{
-		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "MySQL Error: %s", e.what());
-		dbg_msg("SQL", aBuf);
+        // Connect to specific database
+        m_pConnection->setSchema(g_Config.m_SvSqlDb);
+        dbg_msg("SQL", "SQL connection established");
+        return true;
+    }
+    catch (sql::SQLException &e)
+    {
+        char aBuf[256];
+        str_format(aBuf, sizeof(aBuf), "MySQL Error: %s", e.what());
+        dbg_msg("SQL", aBuf);
 
-		dbg_msg("SQL", "ERROR: SQL connection failed");
-		return false;
-	}
-	catch (const std::exception& ex)
-	{
-		// ...
-		dbg_msg("SQL", "1 %s",ex.what());
+        dbg_msg("SQL", "ERROR: SQL connection failed");
+        return false;
+    }
+    catch (const std::exception& ex)
+    {
+        // ...
+        dbg_msg("SQL", "1 %s",ex.what());
 
-	}
-	catch (const std::string& ex)
-	{
-		// ...
-		dbg_msg("SQL", "2 %s",ex.c_str());
-	}
-	catch( int )
-	{
-		dbg_msg("SQL", "3 %s");
-	}
-	catch( float )
-	{
-		dbg_msg("SQL", "4 %s");
-	}
+    }
+    catch (const std::string& ex)
+    {
+        // ...
+        dbg_msg("SQL", "2 %s",ex.c_str());
+    }
+    catch( int )
+    {
+        dbg_msg("SQL", "3 %s");
+    }
+    catch( float )
+    {
+        dbg_msg("SQL", "4 %s");
+    }
 
-	catch( char[] )
-	{
-		dbg_msg("SQL", "5 %s");
-	}
+    catch( char[] )
+    {
+        dbg_msg("SQL", "5 %s");
+    }
 
-	catch( char )
-	{
-		dbg_msg("SQL", "6 %s");
-	}
-	catch (...)
-	{
-		dbg_msg("SQL", "Unknown Error cause by the MySQL/C++ Connector, my advice compile server_debug and use it");
+    catch( char )
+    {
+        dbg_msg("SQL", "6 %s");
+    }
+    catch (...)
+    {
+        dbg_msg("SQL", "Unknown Error cause by the MySQL/C++ Connector, my advice compile server_debug and use it");
 
-		dbg_msg("SQL", "ERROR: SQL connection failed");
-		return false;
-	}
-	return false;
+        dbg_msg("SQL", "ERROR: SQL connection failed");
+        return false;
+    }
+    return false;
 }
 
 void CSqlServer::Disconnect()
 {
-	try
-	{
-		delete m_pConnection;
-		dbg_msg("SQL", "SQL connection disconnected");
-	}
-	catch (sql::SQLException &e)
-	{
-		dbg_msg("SQL", "ERROR: No SQL connection");
-	}
+    try
+    {
+        delete m_pConnection;
+        dbg_msg("SQL", "SQL connection disconnected");
+    }
+    catch (sql::SQLException &e)
+    {
+        dbg_msg("SQL", "ERROR: No SQL connection");
+    }
 }
 
-int CSqlServer::GetId(const char* Name, const char* Password)
+int CSqlServer::CreateId(const int ClientID, const char* Name, const char* Password)
 {
     if (!Connect())
-        return -1;
+        return -2;
 
-	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name=\"%s\" AND Password=%ld;", Name, str_quickhash(Password));
+    char aBuf[256];
+    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name=\"%s\";", Name);
     ResultSet *pResults(m_pStatement->executeQuery(aBuf));
-        
-    if(pResults->rowsCount() == 0)
+
+    if(pResults->rowsCount() > 0)
     {
+        delete pResults;
         Disconnect();
         return -1;
     }
     
-    int Id = pResults->getInt(0);
+    delete pResults;
+
+    char Ip[MAX_IP_LENGTH] = "";
+    Server()->GetClientAddr(ClientID, Ip, MAX_IP_LENGTH);
+    bool cut = true;
+    for ( int i = 0; i < MAX_IP_LENGTH; i++ )
+    {
+        if ( Ip[i] == '[' )
+            cut = false;
+        else if ( Ip[i] == ':' && cut == true )
+        {
+            Ip[i] = '\0';
+            break;
+        }
+        else if ( Ip[i] == ']' )
+            cut = true;
+    }
+
+    str_format(aBuf, sizeof(aBuf), "INSERT INTO Players_Stats (Ip, Pseudo, Clan, Country, Name, Password) VALUES (\"%s\", \"%s\", \"%s\", %d,\"%s\", %u);", Ip, Server()->ClientName(ClientID), Server()->ClientClan(ClientID),  Server()->ClientCountry(ClientID), Name, str_quickhash(Password));
+    m_pStatement->execute(aBuf);
+
+    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name=\"%s\";", Name);
+    pResults = m_pStatement->executeQuery(aBuf);
+    pResults->next();
+    int Id = pResults->getInt(1);
     delete pResults;
     Disconnect();
     return Id;
 }
 
-int CSqlServer::GetId(const char* Ip, const char* Pseudo, const char* Clan, const int Country)
+int CSqlServer::GetId(const char* Name, const char* Password)
 {
     if (!Connect())
-        return -1;
+        return -2;
 
-	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "SELECT * FROM Players_Stats WHERE Ip=\"%s\";", Ip);
+    char aBuf[256];
+    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name=\"%s\" AND Password=%u;", Name, str_quickhash(Password));
     ResultSet *pResults(m_pStatement->executeQuery(aBuf));
-        
-    if(pResults->rowsCount() == 1)
-    {
-        int Id = pResults->getInt(0);
-        delete pResults;
-        Disconnect();
-        return Id;
-    }
-    else if (pResults->rowsCount() > 1)
-    {
-        std::vector<int> Id;
 
-        while (pResults->next())
-        {
-            if(static_cast<unsigned int>(pResults->getInt("Pseudo_Hash")) == str_quickhash(Pseudo) &&
-               static_cast<unsigned int>(pResults->getInt("Clan_Hash")) == str_quickhash(Clan) &&
-               pResults->getInt("Country") == Country)
-            {
-                Id.push_back(pResults->getInt(0));
-            }
-        }
-        
-        if (Id.size() == 1)
-        {
-            delete pResults;
-            Disconnect();
-            return Id.at(0);
-        }
-    }
-    else
+    int Id = -1;  
+    if(pResults->rowsCount())
     {
+        pResults->next();
+        Id = pResults->getInt(1);
     }
 
     delete pResults;
     Disconnect();
-    return -1;
+    return Id;
 }
 
 Player CSqlServer::GetPlayer(int id)
 {
+    if (id < 1)
+    {
+        Player e;
+        e.m_id = -1;
+        return e;
+    }
 
+    if (!Connect())
+    {
+        Player e;
+        e.m_id = -2;
+        return e;
+    }
+
+    char aBuf[256];
+    str_format(aBuf, sizeof(aBuf), "SELECT Ip, Pseudo, Clan, Country, Name, Password, Last_Connect FROM Players_Stats WHERE Id=%ld;", id);
+    ResultSet *pResults(m_pStatement->executeQuery(aBuf));
+
+    if(pResults->rowsCount() == 0)
+    {
+        delete pResults;
+        Disconnect();
+        Player e;
+        e.m_id = -1;
+        return e;
+    }
+
+    pResults->next();
+
+    Player player;
+    player.m_id = id;
+    str_copy(player.m_ip, pResults->getString(1).c_str(), MAX_IP_LENGTH);
+    str_copy(player.m_pseudo, pResults->getString(2).c_str(), MAX_NAME_LENGTH);
+    str_copy(player.m_clan, pResults->getString(3).c_str(), MAX_CLAN_LENGTH);
+    player.m_country = pResults->getInt(4);
+    str_copy(player.m_name, pResults->getString(5).c_str(), MAX_NAME_LENGTH);
+    player.m_password = pResults->getUInt(6);
+    delete pResults;
+    Disconnect();
+    return player;
 }
 
 Stats CSqlServer::GetStats(int id)
 {
+    if (id < 1)
+    {
+        Stats e;
+        e.m_actual_kill = -1;
+        return e;
+    }
 
+    if (!Connect())
+    {
+        Stats e;
+        e.m_actual_kill = -2;
+        return e;
+    }
+
+    char aBuf[256];
+    str_format(aBuf, sizeof(aBuf), "SELECT Level, Score, Killed, Dead, Suicide, Rapport,\
+Log_In, Fire, Pickup_Weapon, Pickup_Ninja, Change_Weapon, TIME_TO_SEC(Time_Play), Message,\
+Killing_Spree, Max_Killing_Spree, Flag_Capture, Bonus_XP FROM Players_Stats WHERE Id=%ld;", id);
+    ResultSet *pResults(m_pStatement->executeQuery(aBuf));
+
+    if(pResults->rowsCount() == 0)
+    {
+        delete pResults;
+        Disconnect();
+        Stats e;
+        e.m_actual_kill = -1;
+        return e;
+    }
+
+    pResults->next();
+
+    Stats stats;
+    stats.m_level = pResults->getUInt(1);
+    stats.m_score = pResults->getUInt(2);
+    stats.m_kill = pResults->getUInt(3);
+    stats.m_dead = pResults->getUInt(4);
+    stats.m_suicide = pResults->getUInt(5);
+    stats.m_rapport = pResults->getDouble(6);
+    stats.m_log_in = pResults->getUInt(7);
+    stats.m_fire = pResults->getUInt(8);
+    stats.m_pickup_weapon = pResults->getUInt(9);
+    stats.m_pickup_ninja = pResults->getUInt(10);
+    stats.m_change_weapon = pResults->getUInt(11);
+    stats.m_time_play = pResults->getUInt(12);
+    stats.m_message = pResults->getUInt(13);
+    stats.m_killing_spree = pResults->getUInt(14);
+    stats.m_max_killing_spree = pResults->getUInt(15);
+    stats.m_flag_capture = pResults->getUInt(16);
+    stats.m_bonus_xp = pResults->getUInt(17);
+
+    delete pResults;
+    Disconnect();
+    return stats;
 }
 
 Upgrade CSqlServer::GetUpgrade(int id)
 {
+    if (id < 1)
+    {
+        Upgrade e;
+        e.m_money = -1;
+        return e;
+    }
 
+    if (!Connect())
+    {
+        Upgrade e;
+        e.m_money = -2;
+        return e;
+    }
+
+    char aBuf[256];
+    str_format(aBuf, sizeof(aBuf), "SELECT Upgrade_Weapon, Upgrade_Life, Upgrade_Move, Upgrade_Hook FROM Players_Stats WHERE Id=%ld;", id);
+    ResultSet *pResults(m_pStatement->executeQuery(aBuf));
+
+    if(pResults->rowsCount() == 0)
+    {
+        delete pResults;
+        Disconnect();
+        Upgrade e;
+        e.m_money = -1;
+        return e;
+    }
+
+    pResults->next();
+
+    Upgrade upgr;
+    upgr.m_weapon = pResults->getUInt(1);
+    upgr.m_life = pResults->getUInt(2);
+    upgr.m_move = pResults->getUInt(3);
+    upgr.m_hook = pResults->getUInt(4);
+
+    delete pResults;
+    Disconnect();
+    return upgr;
 }
 
 Conf CSqlServer::GetConf(int id)
 {
+    if (id < 1)
+    {
+        Conf e;
+        e.m_Weapon[0] = -1;
+        return e;
+    }
 
+    if (!Connect())
+    {
+        Conf e;
+        e.m_Weapon[0] = -2;
+        return e;
+    }
+
+    char aBuf[256];
+    str_format(aBuf, sizeof(aBuf), "SELECT Info_Heal_Killer, Info_XP, Info_Level_Up, Info_Killing_Spree,\
+Info_Race, Info_Ammo, Show_Voter, Ammo_Absolute, Life_Absolute, `Lock`,\
+Race_Hammer, Race_Gun, Race_Shotgun, Race_Grenade, Race_Rifle FROM Players_Stats WHERE Id=%ld;", id);
+    ResultSet *pResults(m_pStatement->executeQuery(aBuf));
+
+    if(pResults->rowsCount() == 0)
+    {
+        delete pResults;
+        Disconnect();
+        Conf e;
+        e.m_Weapon[0] = -1;
+        return e;
+    }
+
+    pResults->next();
+
+    Conf conf;
+    conf.m_InfoHealKiller = pResults->getBoolean(1);
+    conf.m_InfoXP = pResults->getBoolean(2);
+    conf.m_InfoLevelUp = pResults->getBoolean(3);
+    conf.m_InfoKillingSpree = pResults->getBoolean(4);
+    conf.m_InfoRace = pResults->getBoolean(5);
+    conf.m_InfoAmmo = pResults->getBoolean(6);
+    conf.m_ShowVoter = pResults->getBoolean(7);
+    conf.m_AmmoAbsolute = pResults->getBoolean(8);
+    conf.m_LifeAbsolute = pResults->getBoolean(9);
+    conf.m_Lock = pResults->getBoolean(10);
+    conf.m_Weapon[WEAPON_HAMMER] = pResults->getBoolean(11);
+    conf.m_Weapon[WEAPON_GUN] = pResults->getBoolean(12);
+    conf.m_Weapon[WEAPON_SHOTGUN] = pResults->getBoolean(13);
+    conf.m_Weapon[WEAPON_GRENADE] = pResults->getBoolean(14);
+    conf.m_Weapon[WEAPON_RIFLE] = pResults->getBoolean(15);
+
+    delete pResults;
+    Disconnect();
+    return conf;
 }
 
 AllStats CSqlServer::GetAll(int id)
 {
-
+    return AllStats(GetPlayer(id), GetStats(id), GetUpgrade(id), GetConf(id));
 }
 
 void CSqlServer::WriteStats(int id, AllStats container)
@@ -290,5 +468,14 @@ void CSqlServer::WriteStats(int id, AllStats container)
 
 }
 
-    
+void CSqlServer::DisplayRank(int id)
+{
+
+}
+
+void CSqlServer::DisplayBestOf()
+{
+
+}
+
 #endif

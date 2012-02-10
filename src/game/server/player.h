@@ -24,10 +24,10 @@ public:
 	void Respawn();
 	void SetTeam(int Team, bool DoChatMsg = true);
     void SetCaptureTeam(int Team, int Killer = SPEC_FREEVIEW);
-    void SetSID(long id);
+    bool SetSID(long id);
 	int GetTeam() const { return m_Team; };
 	int GetCID() const { return m_ClientID; };
-	//unsigned long GetSID() const { return m_StatID; };
+    int GetSID() const;
 
 	void Tick();
 	void PostTick();
@@ -118,7 +118,6 @@ private:
     //
     bool m_Spawning;
     int m_ClientID;
-    int m_StatID;
     int m_Team;
 };
 

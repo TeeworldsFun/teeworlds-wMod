@@ -1,17 +1,11 @@
 #include "statistiques.h"
 #include <game/server/gamecontext.h>
+#include <game/server/statistics/stats_server.h>
 
 CStats::CStats(CPlayer* pPlayer, CGameContext* pGameServer)
 {
     m_pPlayer = pPlayer;
     m_pGameServer = pGameServer;
-}
-
-void CStats::SetInfo(const char Pseudo[], const char Clan[], const int Country)
-{
-    str_copy(m_player.m_pseudo, Pseudo, MAX_NAME_LENGTH);
-    str_copy(m_player.m_clan, Clan, MAX_CLAN_LENGTH);
-    m_player.m_country = Country;
 }
 
 void CStats::Set(Player container)
@@ -40,6 +34,37 @@ void CStats::Set(AllStats container)
     m_stats = container.m_stats;
     m_upgr = container.m_upgr;
     m_conf = container.m_conf;
+}
+
+void CStats::ConnectAnonymous()
+{
+    m_player.m_id = 0;
+    UpdateInfo();
+    ResetAllStats();
+}
+
+void CStats::UpdateInfo()
+{
+    char Ip[MAX_IP_LENGTH] = "";
+    Server()->GetClientAddr(m_pPlayer->GetCID(), Ip, MAX_IP_LENGTH);
+    bool cut = true;
+    for ( int i = 0; i < MAX_IP_LENGTH; i++ )
+    {
+        if ( Ip[i] == '[' )
+            cut = false;
+        else if ( Ip[i] == ':' && cut == true )
+        {
+            Ip[i] = '\0';
+            break;
+        }
+        else if ( Ip[i] == ']' )
+            cut = true;
+    }
+
+    str_copy(m_player.m_ip, Ip, MAX_IP_LENGTH);
+    str_copy(m_player.m_pseudo, Server()->ClientName(m_pPlayer->GetCID()), MAX_NAME_LENGTH);
+    str_copy(m_player.m_clan, Server()->ClientClan(m_pPlayer->GetCID()), MAX_CLAN_LENGTH);
+    m_player.m_country = Server()->ClientCountry(m_pPlayer->GetCID());
 }
 
 void CStats::UpdateStat()
@@ -137,6 +162,11 @@ void CStats::UpdateUpgrade()
         m_upgr.m_stat_hook.m_hook_damage = false;
 }
 
+void CStats::WriteAll()
+{
+    GameServer()->m_pStatsServer->WriteStats(m_player.m_id, AllStats(m_player, m_stats, m_upgr, m_conf));
+}
+
 void CStats::DisplayStat()
 {
     UpdateStat();
@@ -183,10 +213,10 @@ void CStats::DisplayPlayer()
     str_format(upgr[0], 50, "Name : %s | Level : %ld | Score : %ld", GameServer()->Server()->ClientName(m_pPlayer->GetCID()), m_stats.m_level, m_stats.m_score);
     str_format(upgr[1], 50, "Upgrade :");
     str_format(upgr[2], 50, "Money : %ld", m_upgr.m_money);
-    str_format(upgr[3], 50, "Weapon: %ld", m_upgr.m_weapon);
-    str_format(upgr[4], 50, "Life : %ld", m_upgr.m_life);
-    str_format(upgr[5], 50, "Move : %ld", m_upgr.m_move);
-    str_format(upgr[6], 50, "Hook : %ld", m_upgr.m_hook);
+    str_format(upgr[3], 50, "Weapon: %ld/40", m_upgr.m_weapon);
+    str_format(upgr[4], 50, "Life : %ld/40", m_upgr.m_life);
+    str_format(upgr[5], 50, "Move : %ld/40", m_upgr.m_move);
+    str_format(upgr[6], 50, "Hook : %ld/40", m_upgr.m_hook);
 
 
     for ( int i = 0; i < 7; i++ )
@@ -195,7 +225,19 @@ void CStats::DisplayPlayer()
     }
 }
 
-void CStats::ResetPartialStat()
+void CStats::AddKillingSpree()
+{
+    if ( m_stats.m_actual_kill >= 5 )
+    {
+        m_stats.m_killing_spree += m_stats.m_actual_kill;
+        if ( m_stats.m_actual_kill > m_stats.m_max_killing_spree )
+            m_stats.m_max_killing_spree = m_stats.m_actual_kill;
+    }
+    
+    m_stats.m_actual_kill = 0;
+}
+    
+void CStats::ResetPartialStats()
 {
     m_stats.m_kill = 0;
     m_stats.m_dead = 0;
@@ -214,7 +256,7 @@ void CStats::ResetPartialStat()
     UpdateUpgrade();
 }
 
-void CStats::ResetAllStat()
+void CStats::ResetAllStats()
 {
     m_stats.m_kill = 0;
     m_stats.m_dead = 0;
