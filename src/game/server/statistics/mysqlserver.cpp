@@ -117,37 +117,34 @@ UNIQUE KEY `Name` (`Name`)\
 
 // anti SQL injection
 
-void CSqlServer::AntiInjection(char Str[], int Taille)
+void CSqlServer::AntiInjection(const char From[], char To[], const int TailleFinal)
 {
-	char New[Taille*2-1];
 	int Pos = 0;
 
-	for(int i = 0; i < str_length(Str); i++)
+	for(int i = 0; i < str_length(From) && Pos + 2 < TailleFinal; i++)
 	{
-		if(Str[i] == '\\')
+		if(From[i] == '\\')
 		{
-			New[Pos++] = '\\';
-			New[Pos++] = '\\';
+			To[Pos++] = '\\';
+			To[Pos++] = '\\';
 		}
-		else if(Str[i] == '\'')
+		else if(From[i] == '\'')
 		{
-			New[Pos++] = '\\';
-			New[Pos++] = '\'';
+			To[Pos++] = '\\';
+			To[Pos++] = '\'';
 		}
-		else if(Str[i] == '"')
+		else if(From[i] == '"')
 		{
-			New[Pos++] = '\\';
-			New[Pos++] = '"';
+			To[Pos++] = '\\';
+			To[Pos++] = '"';
 		}
 		else
 		{
-			New[Pos++] = Str[i];
+			To[Pos++] = From[i];
 		}
 	}
 
-	New[Pos] = '\0';
-
-	str_copy(Str, New, Taille);
+	To[Pos] = '\0';
 }
 
 bool CSqlServer::Connect()
@@ -235,9 +232,8 @@ int CSqlServer::CreateId(const int ClientID, const char* Name, const char* Passw
     if (!Connect())
         return -2;
 
-    char sName[MAX_NAME_LENGTH*2];
-    str_copy(sName, Name, MAX_NAME_LENGTH*2);
-    AntiInjection(sName, MAX_NAME_LENGTH*2);
+    char sName[MAX_NAME_LENGTH*2+1];
+    AntiInjection(Name, sName, MAX_NAME_LENGTH*2+1);
 
     char aBuf[256];
     str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name='%s';", sName);
@@ -269,12 +265,10 @@ int CSqlServer::CreateId(const int ClientID, const char* Name, const char* Passw
     }
     Ip[MAX_IP_LENGTH - 1] = '\0';
 
-    char sPseudo[MAX_NAME_LENGTH*2];
-    str_copy(sPseudo, Server()->ClientName(ClientID), MAX_NAME_LENGTH*2);
-    AntiInjection(sPseudo, MAX_NAME_LENGTH*2);
-    char sClan[MAX_CLAN_LENGTH*2];
-    str_copy(sClan, Server()->ClientClan(ClientID), MAX_CLAN_LENGTH*2);
-    AntiInjection(sClan, MAX_CLAN_LENGTH*2);
+    char sPseudo[MAX_NAME_LENGTH*2+1];
+    AntiInjection(Server()->ClientName(ClientID), sPseudo, MAX_NAME_LENGTH*2+1);
+    char sClan[MAX_CLAN_LENGTH*2+1];
+    AntiInjection(Server()->ClientClan(ClientID), sClan, MAX_CLAN_LENGTH*2+1);
 
     str_format(aBuf, sizeof(aBuf), "INSERT INTO Players_Stats (Ip, Pseudo, Clan, Country, Name, Password) VALUES ('%s', '%s', '%s', %d,'%s', %u);", Ip, sPseudo, sClan, Server()->ClientCountry(ClientID), sName, str_quickhash(Password));
     m_pStatement->execute(aBuf);
@@ -293,9 +287,8 @@ int CSqlServer::GetId(const char* Name, const char* Password)
     if (!Connect())
         return -2;
 
-    char sName[MAX_NAME_LENGTH*2];
-    str_copy(sName, Name, MAX_NAME_LENGTH*2);
-    AntiInjection(sName, MAX_NAME_LENGTH*2);
+    char sName[MAX_NAME_LENGTH*2+1];
+    AntiInjection(Name, sName, MAX_NAME_LENGTH*2+1);
 
     char aBuf[256];
     str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name='%s' AND Password=%u;", sName, str_quickhash(Password));
@@ -530,12 +523,10 @@ void CSqlServer::WriteStats(int id, AllStats container)
     Upgrade upgr = container.m_upgr;
     Conf conf = container.m_conf;
 
-    char sPseudo[MAX_NAME_LENGTH*2];
-    str_copy(sPseudo, player.m_pseudo, MAX_NAME_LENGTH*2);
-    AntiInjection(sPseudo, MAX_NAME_LENGTH*2);
-    char sClan[MAX_CLAN_LENGTH*2];
-    str_copy(sClan, player.m_clan, MAX_CLAN_LENGTH*2);
-    AntiInjection(sClan, MAX_CLAN_LENGTH*2);
+    char sPseudo[MAX_NAME_LENGTH*2+1];
+    AntiInjection(player.m_pseudo, sPseudo, MAX_NAME_LENGTH*2+1);
+    char sClan[MAX_CLAN_LENGTH*2+1];
+    AntiInjection(player.m_clan, sClan, MAX_CLAN_LENGTH*2+1);
 
     char aBuf[900];
     str_format(aBuf, sizeof(aBuf), "UPDATE Players_Stats SET Ip='%s', Pseudo='%s', Clan='%s', Country=%d,\

@@ -15,7 +15,7 @@ class CSqlServer : public IStatsServer
 public:
     CSqlServer(CGameContext *pGameServer);
     void OnInit();
-    void AntiInjection(char Str[], int Taille);
+    void AntiInjection(const char From[], char To[], const int TailleFinal);
     int CreateId(const int ClientID, const char* Name, const char* Password);
     int GetId(const char* Name, const char* Password);
     Player GetPlayer(int id);
