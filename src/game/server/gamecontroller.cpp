@@ -989,9 +989,9 @@ void IGameController::DoWincheck()
                     {
                         while (!GameServer()->m_apPlayers[m_Captain[TEAM_BLUE] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_BLUE]]->GetTeam() != TEAM_BLUE);
                         char Text[256] = "";
-                        str_format(Text, 256, "%s is the captain of the red team !", Server()->ClientName(m_Captain[TEAM_BLUE]));
+                        str_format(Text, 256, "%s is the captain of the blue team !", Server()->ClientName(m_Captain[TEAM_BLUE]));
                         GameServer()->SendChatTarget(-1, Text);
-                        GameServer()->SendChatTarget(m_Captain[TEAM_BLUE], "You're the captain of the red team ! You must keep your teammate and capture all players !");
+                        GameServer()->SendChatTarget(m_Captain[TEAM_BLUE], "You're the captain of the blue team ! You must keep your teammate and capture all players !");
                     }
                 }
                 else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_aTeamscore[TEAM_BLUE] > 1 && m_Captain[TEAM_RED] < 0 && Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*5 )

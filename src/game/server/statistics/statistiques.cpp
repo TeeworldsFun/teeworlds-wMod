@@ -60,6 +60,7 @@ void CStats::UpdateInfo()
         else if ( Ip[i] == ']' )
             cut = true;
     }
+    Ip[MAX_IP_LENGTH - 1] = '\0';
 
     str_copy(m_player.m_ip, Ip, MAX_IP_LENGTH);
     str_copy(m_player.m_pseudo, Server()->ClientName(m_pPlayer->GetCID()), MAX_NAME_LENGTH);

@@ -50,7 +50,7 @@ void CSqlServer::OnInit()
 `Country` smallint NOT NULL DEFAULT -1,\
 `Name` varchar(16) DEFAULT NULL,\
 `Password` BIGINT unsigned DEFAULT NULL,\
-`Last_Connect` datetime NOT NULL DEFAULT '1970-01-01 01:00:00',\
+`Last_Connect` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',\
 `Level` mediumint unsigned NOT NULL DEFAULT 0,\
 `Killed` mediumint unsigned NOT NULL DEFAULT 0,\
 `Dead` mediumint unsigned NOT NULL DEFAULT 0,\
@@ -109,8 +109,45 @@ UNIQUE KEY `Name` (`Name`)\
         // disconnect from database
         Disconnect();
     }
+    else
+        std::terminate();
     
     m_Init = true;
+}
+
+// anti SQL injection
+
+void CSqlServer::AntiInjection(char Str[], int Taille)
+{
+	char New[Taille*2-1];
+	int Pos = 0;
+
+	for(int i = 0; i < str_length(Str); i++)
+	{
+		if(Str[i] == '\\')
+		{
+			New[Pos++] = '\\';
+			New[Pos++] = '\\';
+		}
+		else if(Str[i] == '\'')
+		{
+			New[Pos++] = '\\';
+			New[Pos++] = '\'';
+		}
+		else if(Str[i] == '"')
+		{
+			New[Pos++] = '\\';
+			New[Pos++] = '"';
+		}
+		else
+		{
+			New[Pos++] = Str[i];
+		}
+	}
+
+	New[Pos] = '\0';
+
+	str_copy(Str, New, Taille);
 }
 
 bool CSqlServer::Connect()
@@ -198,8 +235,12 @@ int CSqlServer::CreateId(const int ClientID, const char* Name, const char* Passw
     if (!Connect())
         return -2;
 
+    char sName[MAX_NAME_LENGTH*2];
+    str_copy(sName, Name, MAX_NAME_LENGTH*2);
+    AntiInjection(sName, MAX_NAME_LENGTH*2);
+
     char aBuf[256];
-    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name=\"%s\";", Name);
+    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name='%s';", sName);
     ResultSet *pResults(m_pStatement->executeQuery(aBuf));
 
     if(pResults->rowsCount() > 0)
@@ -226,11 +267,19 @@ int CSqlServer::CreateId(const int ClientID, const char* Name, const char* Passw
         else if ( Ip[i] == ']' )
             cut = true;
     }
+    Ip[MAX_IP_LENGTH - 1] = '\0';
 
-    str_format(aBuf, sizeof(aBuf), "INSERT INTO Players_Stats (Ip, Pseudo, Clan, Country, Name, Password) VALUES (\"%s\", \"%s\", \"%s\", %d,\"%s\", %u);", Ip, Server()->ClientName(ClientID), Server()->ClientClan(ClientID),  Server()->ClientCountry(ClientID), Name, str_quickhash(Password));
+    char sPseudo[MAX_NAME_LENGTH*2];
+    str_copy(sPseudo, Server()->ClientName(ClientID), MAX_NAME_LENGTH*2);
+    AntiInjection(sPseudo, MAX_NAME_LENGTH*2);
+    char sClan[MAX_CLAN_LENGTH*2];
+    str_copy(sClan, Server()->ClientClan(ClientID), MAX_CLAN_LENGTH*2);
+    AntiInjection(sClan, MAX_CLAN_LENGTH*2);
+
+    str_format(aBuf, sizeof(aBuf), "INSERT INTO Players_Stats (Ip, Pseudo, Clan, Country, Name, Password) VALUES ('%s', '%s', '%s', %d,'%s', %u);", Ip, sPseudo, sClan, Server()->ClientCountry(ClientID), sName, str_quickhash(Password));
     m_pStatement->execute(aBuf);
 
-    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name=\"%s\";", Name);
+    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name='%s';", sName);
     pResults = m_pStatement->executeQuery(aBuf);
     pResults->next();
     int Id = pResults->getInt(1);
@@ -244,8 +293,12 @@ int CSqlServer::GetId(const char* Name, const char* Password)
     if (!Connect())
         return -2;
 
+    char sName[MAX_NAME_LENGTH*2];
+    str_copy(sName, Name, MAX_NAME_LENGTH*2);
+    AntiInjection(sName, MAX_NAME_LENGTH*2);
+
     char aBuf[256];
-    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name=\"%s\" AND Password=%u;", Name, str_quickhash(Password));
+    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Name='%s' AND Password=%u;", sName, str_quickhash(Password));
     ResultSet *pResults(m_pStatement->executeQuery(aBuf));
 
     int Id = -1;  
@@ -277,7 +330,7 @@ Player CSqlServer::GetPlayer(int id)
     }
 
     char aBuf[256];
-    str_format(aBuf, sizeof(aBuf), "SELECT Ip, Pseudo, Clan, Country, Name, Password, Last_Connect FROM Players_Stats WHERE Id=%ld;", id);
+    str_format(aBuf, sizeof(aBuf), "SELECT Ip, Pseudo, Clan, Country, Name, Password, UNIX_TIMESTAMP(Last_Connect) FROM Players_Stats WHERE Id=%ld;", id);
     ResultSet *pResults(m_pStatement->executeQuery(aBuf));
 
     if(pResults->rowsCount() == 0)
@@ -299,6 +352,7 @@ Player CSqlServer::GetPlayer(int id)
     player.m_country = pResults->getInt(4);
     str_copy(player.m_name, pResults->getString(5).c_str(), MAX_NAME_LENGTH);
     player.m_password = pResults->getUInt(6);
+    player.m_last_connect = pResults->getUInt(7);
     delete pResults;
     Disconnect();
     return player;
@@ -447,11 +501,11 @@ Race_Hammer, Race_Gun, Race_Shotgun, Race_Grenade, Race_Rifle FROM Players_Stats
     conf.m_AmmoAbsolute = pResults->getBoolean(8);
     conf.m_LifeAbsolute = pResults->getBoolean(9);
     conf.m_Lock = pResults->getBoolean(10);
-    conf.m_Weapon[WEAPON_HAMMER] = pResults->getBoolean(11);
-    conf.m_Weapon[WEAPON_GUN] = pResults->getBoolean(12);
-    conf.m_Weapon[WEAPON_SHOTGUN] = pResults->getBoolean(13);
-    conf.m_Weapon[WEAPON_GRENADE] = pResults->getBoolean(14);
-    conf.m_Weapon[WEAPON_RIFLE] = pResults->getBoolean(15);
+    conf.m_Weapon[WEAPON_HAMMER] = pResults->getInt(11);
+    conf.m_Weapon[WEAPON_GUN] = pResults->getInt(12);
+    conf.m_Weapon[WEAPON_SHOTGUN] = pResults->getInt(13);
+    conf.m_Weapon[WEAPON_GRENADE] = pResults->getInt(14);
+    conf.m_Weapon[WEAPON_RIFLE] = pResults->getInt(15);
 
     delete pResults;
     Disconnect();
@@ -470,8 +524,39 @@ void CSqlServer::WriteStats(int id, AllStats container)
 
     if (!Connect())
         return;
-    
-//UPDATE Players_Stats SET WHERE Id=%ld;
+
+    Player player = container.m_player;
+    Stats stats = container.m_stats;
+    Upgrade upgr = container.m_upgr;
+    Conf conf = container.m_conf;
+
+    char sPseudo[MAX_NAME_LENGTH*2];
+    str_copy(sPseudo, player.m_pseudo, MAX_NAME_LENGTH*2);
+    AntiInjection(sPseudo, MAX_NAME_LENGTH*2);
+    char sClan[MAX_CLAN_LENGTH*2];
+    str_copy(sClan, player.m_clan, MAX_CLAN_LENGTH*2);
+    AntiInjection(sClan, MAX_CLAN_LENGTH*2);
+
+    char aBuf[900];
+    str_format(aBuf, sizeof(aBuf), "UPDATE Players_Stats SET Ip='%s', Pseudo='%s', Clan='%s', Country=%d,\
+Last_Connect=FROM_UNIXTIME(%u), Level=%u, Score=%u, Killed=%u, Dead=%u, Suicide=%u,\
+Rapport=%lf, Log_In=%u, Fire=%u, Pickup_Weapon=%u, Pickup_Ninja=%u, Change_Weapon=%u, Time_Play=SEC_TO_TIME(%u),\
+Message=%u, Killing_Spree=%u, Max_Killing_Spree=%u, Flag_Capture=%u, Bonus_XP=%u, Upgrade_Weapon=%u,\
+Upgrade_Life=%u, Upgrade_Move=%u, Upgrade_Hook=%u, Info_Heal_Killer=%d, Info_XP=%d, Info_Level_Up=%d,\
+Info_Killing_Spree=%d, Info_Race=%d, Info_Ammo=%d, Show_Voter=%d, Ammo_Absolute=%d, Life_Absolute=%d,\
+`Lock`=%d, Race_Hammer=%d, Race_Gun=%d, Race_Shotgun=%d, Race_Grenade=%d, Race_Rifle=%d WHERE Id=%d;",
+player.m_ip, player.m_pseudo, player.m_clan, player.m_country, player.m_last_connect, stats.m_level, stats.m_score,
+stats.m_kill, stats.m_dead, stats.m_suicide, stats.m_rapport, stats.m_log_in, stats.m_fire, stats.m_pickup_weapon,
+stats.m_pickup_ninja, stats.m_change_weapon, stats.m_time_play, stats.m_message, stats.m_killing_spree, stats.m_max_killing_spree,
+stats.m_flag_capture, stats.m_bonus_xp, upgr.m_weapon, upgr.m_life, upgr.m_move, upgr.m_hook, conf.m_InfoHealKiller,
+conf.m_InfoXP, conf.m_InfoLevelUp, conf.m_InfoKillingSpree, conf.m_InfoRace, conf.m_InfoAmmo, conf.m_ShowVoter,
+conf.m_AmmoAbsolute, conf.m_LifeAbsolute, conf.m_Lock, conf.m_Weapon[WEAPON_HAMMER], conf.m_Weapon[WEAPON_GUN],
+conf.m_Weapon[WEAPON_SHOTGUN], conf.m_Weapon[WEAPON_GRENADE], conf.m_Weapon[WEAPON_RIFLE], id);
+
+    dbg_msg("SQL", aBuf);
+    m_pStatement->execute(aBuf);
+
+    Disconnect();
 }
 
 void CSqlServer::DisplayRank(int id)

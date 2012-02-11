@@ -15,6 +15,7 @@ class CSqlServer : public IStatsServer
 public:
     CSqlServer(CGameContext *pGameServer);
     void OnInit();
+    void AntiInjection(char Str[], int Taille);
     int CreateId(const int ClientID, const char* Name, const char* Password);
     int GetId(const char* Name, const char* Password);
     Player GetPlayer(int id);
@@ -23,7 +24,6 @@ public:
     Conf GetConf(int id);
     AllStats GetAll(int id);
     void WriteStats(int id, AllStats container);
-
     void DisplayRank(int id);
     void DisplayBestOf();
 private:

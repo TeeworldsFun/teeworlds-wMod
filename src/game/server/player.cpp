@@ -39,6 +39,8 @@ CPlayer::~CPlayer()
 {
 	delete m_pCharacter;
 	m_pCharacter = 0;
+	m_pStats->SetStopPlay();
+	m_pStats->WriteAll();
 	delete m_pStats;
 	m_pStats = 0;
 }
@@ -380,7 +382,10 @@ bool CPlayer::SetSID(long id)
         return true;
 
     if (m_pStats->GetId() > 0)
+    {
+        m_pStats->SetStopPlay();
         m_pStats->WriteAll();
+    }
 
     delete m_pStats;
     m_pStats = new CStats(this, m_pGameServer);
@@ -397,6 +402,10 @@ bool CPlayer::SetSID(long id)
         return false;
 
     KillCharacter();
+    m_pStats->SetStartPlay();
+    m_pStats->UpdateInfo();
+    m_pStats->UpdateStat();
+    m_pStats->UpdateUpgrade();
     GameServer()->SendTuningParams(m_ClientID);
     return true;
 }

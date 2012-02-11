@@ -111,12 +111,7 @@ CCharacter::~CCharacter()
             delete m_AuraCaptain[i];
         m_AuraCaptain[0] = 0;
     }
-
-    delete m_stat_weapon;
-    delete m_stat_life;
-    delete m_stat_move;
-    delete m_stat_hook;
-
+    
     if (m_stat_move->m_rate_speed != m_pPlayer->m_pStats->GetStatMove().m_rate_speed || 
         m_stat_move->m_rate_accel != m_pPlayer->m_pStats->GetStatMove().m_rate_accel || 
         m_stat_move->m_rate_high_jump != m_pPlayer->m_pStats->GetStatMove().m_rate_high_jump || 
@@ -124,6 +119,11 @@ CCharacter::~CCharacter()
         m_stat_hook->m_rate_time != m_pPlayer->m_pStats->GetStatHook().m_rate_time ||
         m_stat_hook->m_rate_speed != m_pPlayer->m_pStats->GetStatHook().m_rate_speed )
         GameServer()->SendTuningParams(m_pPlayer->GetCID());
+
+    delete m_stat_weapon;
+    delete m_stat_life;
+    delete m_stat_move;
+    delete m_stat_hook;
 }
 
 void CCharacter::Reset()

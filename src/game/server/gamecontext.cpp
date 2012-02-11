@@ -68,8 +68,6 @@ CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
     {
-        if (m_apPlayers[i])
-            m_apPlayers[i]->m_pStats->SetStopPlay();
 		delete m_apPlayers[i];
     }
 
@@ -869,7 +867,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
         }
         else if (Error >= 0)
         {
-            SendChatTarget(ClientID, "Your account is successfully created !");
+            SendChatTarget(ClientID, "Your account is successfully created ! You can use /login !");
             return;
         }
         else

@@ -10,7 +10,7 @@ CREATE TABLE `Players_Stats` (
   `Country` smallint NOT NULL DEFAULT -1,
   `Name` varchar(16) NOT NULL,
   `Password` BIGINT unsigned NOT NULL,
-  `Last_Connect` datetime NOT NULL DEFAULT '1970-01-01 01:00:00',
+  `Last_Connect` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `Level` mediumint unsigned NOT NULL DEFAULT 0,
   `Score` mediumint unsigned NOT NULL DEFAULT 0,
   `Killed` mediumint unsigned NOT NULL DEFAULT 0,
