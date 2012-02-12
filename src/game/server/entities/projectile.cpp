@@ -109,6 +109,7 @@ void CProjectile::Tick()
         TargetTurret = (CTurret *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 6.0f, CurPos, CGameWorld::ENTTYPE_TURRET);
 
         {
+            float ClosestLen = -1;
             CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
             for(; p; p = (CExplodeWall *)p->TypeNext())
             {
@@ -133,10 +134,13 @@ void CProjectile::Tick()
                 if ( y < min(y1, y2) || y > max(y1, y2) || y < min(y3, y4) || y > max(y3, y4) )
                     continue;
 
-                CurPos.x = x;
-                CurPos.y = y;
-                TargetExplodeWall = p;
-                break;
+                if ( ClosestLen > distance(CurPos, vec2(x, y)) || ClosestLen == -1 )
+                {
+                    ClosestLen = distance(CurPos, vec2(x, y));
+                    CurPos.x = x;
+                    CurPos.y = y;
+                    TargetExplodeWall = p;
+                }
             }
         }
         
@@ -183,8 +187,11 @@ void CProjectile::Tick()
         int Num = GameServer()->m_World.FindEntities(CurPos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
         for(int i = 0; i < Num; i++)
         {
-            if ( OwnerChar != apEnts[i] && (!GameServer()->m_pController->IsTeamplay() || !GameServer()->m_apPlayers[m_Owner] || GameServer()->m_apPlayers[m_Owner]->GetTeam() != apEnts[i]->GetPlayer()->GetTeam()))
+            if ( OwnerChar != apEnts[i] )
             {
+                if (m_Type != WEAPON_RIFLE || !GameServer()->m_pController->IsTeamplay() ||
+                !GameServer()->m_apPlayers[m_Owner] || GameServer()->m_apPlayers[m_Owner]->GetTeam() != apEnts[i]->GetPlayer()->GetTeam()
+                || GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_HEAL)
                 TargetChr = apEnts[i];
                 break;
             }

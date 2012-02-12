@@ -16,7 +16,7 @@ CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEn
     m_Energy = StartEnergy;
     m_Dir = Direction;
     m_Bounces = 0;
-    m_Vel = 1;
+    m_Vel = 3;
     m_Limit = GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) ? true : false;
     GameWorld()->InsertEntity(this);
     Tick();

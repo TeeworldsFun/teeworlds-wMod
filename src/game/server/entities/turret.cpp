@@ -72,7 +72,8 @@ void CTurret::Tick()
             {
                 vec2 IntersectPos = closest_point_on_line(p->m_From, p->m_Pos, m_Pos);
                 float Len = distance(m_Pos, IntersectPos);
-                if(Len < p->m_ProximityRadius+450.0f && !GameServer()->Collision()->IntersectLine(m_Pos, IntersectPos, 0, 0) && p->GetOwner() != m_Owner)
+                if(Len < p->m_ProximityRadius+450.0f && !GameServer()->Collision()->IntersectLine(m_Pos, IntersectPos, 0, 0) && p->GetOwner() != m_Owner
+                   && (!GameServer()->m_pController->IsTeamplay() || GameServer()->m_apPlayers[m_Owner]->GetTeam() != GameServer()->m_apPlayers[p->GetOwner()]->GetTeam()))
                 {
                     if(Len < ClosestLen || ClosestLen == -1)
                     {

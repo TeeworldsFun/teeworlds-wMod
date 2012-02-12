@@ -862,7 +862,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
         }
         else if (Error == -2)
         {
-            SendChatTarget(ClientID, "Error : Can't connect to the mysql server ! Try again.");
+            SendChatTarget(ClientID, "Error : Can't connect to the database ! Try again.");
             return;
         }
         else if (Error >= 0)
@@ -918,7 +918,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
         }
         else if (Id == -2)
         {
-            SendChatTarget(ClientID, "Error : Can't connect to the mysql server ! Try again.");
+            SendChatTarget(ClientID, "Error : Can't connect to the database ! Try again.");
             return;
         }
         else if (Id > 0)

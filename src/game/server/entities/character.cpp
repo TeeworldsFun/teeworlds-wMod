@@ -649,16 +649,16 @@ void CCharacter::FireWeapon()
         }
         if ( Race == ENGINEER )
         {
-            int ShotSpread = 2;
+            int ShotSpread = 1;
 
             CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
             Msg.AddInt(ShotSpread*2+1);
 
             for(int i = -ShotSpread; i <= ShotSpread; ++i)
             {
-                float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+                float Spreading[] = {-0.070f, 0, 0.070f};
                 float a = GetAngle(Direction);
-                a += Spreading[i+2];
+                a += Spreading[i+1];
                 float v = 1-(absolute(i)/(float)ShotSpread);
                 float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
 
@@ -1036,7 +1036,7 @@ void CCharacter::FireWeapon()
         if ( Race == ORC )
         {
             new CLaser(GameWorld(), m_Pos, Direction, 500, m_pPlayer->GetCID());
-            m_ReloadTimer = 50 * Server()->TickSpeed() / 1000;
+            m_ReloadTimer = 375 * Server()->TickSpeed() / (1000 * m_stat_weapon->m_speed);
         }
         else if ( Race == MINER )
         {
