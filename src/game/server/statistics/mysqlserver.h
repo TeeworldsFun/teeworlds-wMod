@@ -6,9 +6,7 @@
 
 #include <mysql_connection.h>
 #include <cppconn/driver.h>
-/*#include <cppconn/exception.h>
 #include <cppconn/resultset.h>
-#include <cppconn/statement.h>*/
 
 class CSqlServer : public IStatsServer
 {
@@ -32,6 +30,7 @@ private:
     sql::Driver *m_pDriver;
     sql::Connection *m_pConnection;
     sql::Statement *m_pStatement;
+    sql::ResultSet *m_pResult;
 };
 
 #endif
