@@ -108,19 +108,19 @@ void CStats::UpdateUpgrade()
     m_upgr.m_stat_weapon.m_auto_ninja = m_upgr.m_weapon >= 3 ? true : false;
     if ( m_upgr.m_weapon <= 0 )
     {
-        m_upgr.m_stat_weapon.m_speed = 1;
+        m_upgr.m_stat_weapon.m_speed = 1.0f;
         m_upgr.m_stat_weapon.m_regeneration = 0;
         m_upgr.m_stat_weapon.m_stockage = 10;
     }
     else if ( m_upgr.m_weapon <= 36 )
     {
-        m_upgr.m_stat_weapon.m_speed = 1 + ((int)(m_upgr.m_weapon/3) * 0.5f);
-        m_upgr.m_stat_weapon.m_regeneration = (int)((m_upgr.m_weapon - 1)/3);
-        m_upgr.m_stat_weapon.m_stockage = 10 + (int)(((m_upgr.m_weapon - 2)/3) * 5);
+        m_upgr.m_stat_weapon.m_speed = 1.0f + (static_cast<int>(m_upgr.m_weapon/3) * 0.5f);
+        m_upgr.m_stat_weapon.m_regeneration = static_cast<int>((m_upgr.m_weapon - 1)/3);
+        m_upgr.m_stat_weapon.m_stockage = 10 + static_cast<int>((m_upgr.m_weapon - 2)/3) * 5;
     }
     else if ( m_upgr.m_weapon > 36 )
     {
-        m_upgr.m_stat_weapon.m_speed = 1 + ((int)(m_upgr.m_weapon/3) * 0.5f);
+        m_upgr.m_stat_weapon.m_speed = 1.0f + ((int)(m_upgr.m_weapon/3) * 0.5f);
         m_upgr.m_stat_weapon.m_regeneration = -1;
         m_upgr.m_stat_weapon.m_stockage = -1;
     }
@@ -133,30 +133,30 @@ void CStats::UpdateUpgrade()
     else
         m_upgr.m_stat_weapon.m_bounce = 0;
 
-    m_upgr.m_stat_life.m_protection = 1 + ((int)((m_upgr.m_life + 3)/4) / 5.0f);
-    m_upgr.m_stat_life.m_start_armor = (int)(m_upgr.m_life + 2)/4;
-    m_upgr.m_stat_life.m_regeneration = (int)(m_upgr.m_life + 1)/4;
+    m_upgr.m_stat_life.m_protection = 1 + (static_cast<int>((m_upgr.m_life + 3)/4) / 5.0f);
+    m_upgr.m_stat_life.m_start_armor = static_cast<int>((m_upgr.m_life + 2)/4);
+    m_upgr.m_stat_life.m_regeneration = static_cast<int>((m_upgr.m_life + 1)/4);
     if ( m_upgr.m_life <= 20 )
     {
-        m_upgr.m_stat_life.m_stockage[0] = 10 + (int)(m_upgr.m_life / 2);
+        m_upgr.m_stat_life.m_stockage[0] = 10 + static_cast<int>(m_upgr.m_life / 2);
         m_upgr.m_stat_life.m_stockage[1] = 10;
     }
     else
     {
         m_upgr.m_stat_life.m_stockage[0] = 20;
-        m_upgr.m_stat_life.m_stockage[1] = (int)(m_upgr.m_life / 2);
+        m_upgr.m_stat_life.m_stockage[1] = static_cast<int>(m_upgr.m_life / 2);
     }
     
-    m_upgr.m_stat_move.m_rate_speed = 1 + ((int)((m_upgr.m_move + 3)/ 4) * 0.2f);
-    m_upgr.m_stat_move.m_rate_accel = 1 + ((int)((m_upgr.m_move + 2)/ 4) * 0.1f);
-    m_upgr.m_stat_move.m_rate_high_jump = 1 + ((int)((m_upgr.m_move + 1)/ 4) * 0.05f);
-    m_upgr.m_stat_move.m_num_jump = 1 + (int)(m_upgr.m_move / 4);
+    m_upgr.m_stat_move.m_rate_speed = 1.0f + (static_cast<int>((m_upgr.m_move + 3)/ 4) * 0.2f);
+    m_upgr.m_stat_move.m_rate_accel = 1.0f + (static_cast<int>((m_upgr.m_move + 2)/ 4) * 0.1f);
+    m_upgr.m_stat_move.m_rate_high_jump = 1.0f + (static_cast<int>((m_upgr.m_move + 1)/ 4) * 0.05f);
+    m_upgr.m_stat_move.m_num_jump = 1 + static_cast<int>(m_upgr.m_move / 4);
     if ( m_upgr.m_move == 40 )
         m_upgr.m_stat_move.m_num_jump = -1;
     
-    m_upgr.m_stat_hook.m_rate_length = 1 + ((int)((m_upgr.m_hook + 2)/ 3) * (2.0f/13.0f));
-    m_upgr.m_stat_hook.m_rate_time = 1 + ((int)((m_upgr.m_hook + 1)/ 3) * (7.0f/13.0f));
-    m_upgr.m_stat_hook.m_rate_speed = 1 + ((int)(m_upgr.m_hook/ 3) * (2.0f/13.0f));
+    m_upgr.m_stat_hook.m_rate_length = 1.0f + (static_cast<int>((m_upgr.m_hook + 2)/ 3) * (2.0f/13.0f));
+    m_upgr.m_stat_hook.m_rate_time = 1.0f + (static_cast<int>((m_upgr.m_hook + 1)/ 3) * (7.0f/13.0f));
+    m_upgr.m_stat_hook.m_rate_speed = 1.0f + (static_cast<int>(m_upgr.m_hook/ 3) * (2.0f/13.0f));
     if ( m_upgr.m_hook == 40 )
         m_upgr.m_stat_hook.m_hook_damage = true;
     else
