@@ -721,7 +721,7 @@ void CGameContext::OnClientEnter(int ClientID)
 
 	m_VoteUpdate = true;
 
-    SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod v2.1***");
+    SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod v2.3***");
     SendChatTarget(ClientID, "** Wrote by PJK **");
     SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
     SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /upgr , /race , /stats and /ranks **");
@@ -828,7 +828,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
     }
     else if(str_comp_nocase(Arguments[0], "/info") == 0)
     {
-        SendChatTarget(ClientID, "*** Extreme Weapon Mod v2.1 ***");
+        SendChatTarget(ClientID, "*** Extreme Weapon Mod v2.3 ***");
         SendChatTarget(ClientID, "** Wrote by PJK **");
         SendChatTarget(ClientID, "It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
         SendChatTarget(ClientID, "You can choose a race, see your statistics and upgrade your gameplay !");
@@ -949,7 +949,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
     else if(str_comp_nocase(Arguments[0], "/credits") == 0)
     {
         SendChat(ClientID, Team, Arguments[0]);
-        SendChatTarget(-1, "*** Extreme Weapon Mod v2.1 ***");
+        SendChatTarget(-1, "*** Extreme Weapon Mod v2.3 ***");
         SendChatTarget(-1, "** Wrote by PJK **");
     }
     else if(m_apPlayers[ClientID]->GetSID() < 0)
@@ -2563,39 +2563,20 @@ void CGameContext::ConRemoveInvisibility(IConsole::IResult *pResult, void *pUser
 
 void CGameContext::ConSetSid(IConsole::IResult *pResult, void *pUserData)
 {
-    /*CGameContext *pSelf = (CGameContext *)pUserData;
+    CGameContext *pSelf = (CGameContext *)pUserData;
     int ClientID = pResult->GetInteger(1);
     unsigned int StatID = pResult->GetInteger(0);
     if ( ClientID >= 0 && ClientID < MAX_CLIENTS && pSelf->m_apPlayers[ClientID] )
     {
-        if (StatID >= 0 && StatID < pSelf->m_pStatistiques->GetNumStats())
+        if (StatID >= 0 && pSelf->m_apPlayers[ClientID]->SetSID(StatID))
         {
-            pSelf->m_apPlayers[ClientID]->KillCharacter();
-            char ip[MAX_IP_LENGTH] = "";
-            pSelf->Server()->GetClientAddr(ClientID, ip, MAX_IP_LENGTH);
-            bool cut = true;
-            for ( int i = 0; i < MAX_IP_LENGTH; i++ )
-            {
-                if ( ip[i] == '[' )
-                    cut = false;
-                else if ( ip[i] == ':' && cut == true )
-                {
-                    ip[i] = '\0';
-                    break;
-                }
-                else if ( ip[i] == ']' )
-                    cut = true;
-            }
-            pSelf->m_pStatistiques->SetStopPlay(pSelf->m_apPlayers[ClientID]->GetSID(), ClientID);
-            pSelf->m_apPlayers[ClientID]->SetSID(StatID);
-            pSelf->m_pStatistiques->SetStartPlay(StatID, ClientID);
-            pSelf->m_pStatistiques->SetInfo(StatID, pSelf->Server()->ClientName(ClientID), pSelf->Server()->ClientClan(ClientID), pSelf->Server()->ClientCountry(ClientID), ip);
+            /*BASIC IMPLANTATION*/
         }
         else
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Stat ID");
     }
     else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Client ID");*/
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Client ID");
 }
 
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
