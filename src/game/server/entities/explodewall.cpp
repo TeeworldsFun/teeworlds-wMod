@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <game/generated/protocol.h>
 #include <game/server/gamecontext.h>
+#include <game/server/statistics/statistiques.h>
 #include <game/server/event.h>
 #include "explodewall.h"
 
@@ -11,7 +12,7 @@ CExplodeWall::CExplodeWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner)
     m_From = StartPos;
     m_Pos = m_From;
     m_Owner = Owner;
-    m_Health = 2000;
+    m_Health = 667 * GameServer()->m_apPlayers[m_Owner]->m_pStats->GetStatLife().m_protection;
     m_ProximityRadius = 135.0f;
     m_StartTick = 0;
     m_Destroy = false;

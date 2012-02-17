@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <game/generated/protocol.h>
 #include <game/server/gamecontext.h>
+#include <game/server/statistics/statistiques.h>
 #include <game/server/event.h>
 #include "turret.h"
 #include "plasma.h"
@@ -14,7 +15,7 @@ CTurret::CTurret(CGameWorld *pGameWorld, vec2 Pos, int Owner)
     m_Owner = Owner;
     m_StartTick = Server()->Tick();
     m_LastTick = m_StartTick;
-    m_Health = 350;
+    m_Health = 120 * GameServer()->m_apPlayers[m_Owner]->m_pStats->GetStatLife().m_protection;
     m_DamageTaken = 0;
     m_DamageTakenTick = 0;
     m_Destroy = false;
@@ -24,7 +25,7 @@ CTurret::CTurret(CGameWorld *pGameWorld, vec2 Pos, int Owner)
 
 void CTurret::Tick()
 {
-    if ((Server()->Tick()-m_LastTick) < 150 * Server()->TickSpeed() / 1000.f || !GameServer()->m_apPlayers[m_Owner])
+    if (!GameServer()->m_apPlayers[m_Owner] || (Server()->Tick()-m_LastTick) < 750 * Server()->TickSpeed() / (1000.f * GameServer()->m_apPlayers[m_Owner]->m_pStats->GetStatWeapon().m_speed))
         return;
 
     m_LastTick = Server()->Tick();
