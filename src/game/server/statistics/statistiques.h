@@ -334,7 +334,7 @@ public:
     inline int UpgradeWeapon()
     {
         UpdateUpgrade();
-        if (m_upgr.m_money)
+        if (!m_upgr.m_money)
             return 1;
         if (m_conf.m_Lock)
             return 2;
@@ -347,7 +347,7 @@ public:
     inline int UpgradeLife()
     {
         UpdateUpgrade();
-        if (m_upgr.m_money)
+        if (!m_upgr.m_money)
             return 1;
         if (m_conf.m_Lock)
             return 2;
@@ -360,7 +360,7 @@ public:
     inline int UpgradeMove()
     {
         UpdateUpgrade();
-        if (m_upgr.m_money)
+        if (!m_upgr.m_money)
             return 1;
         if (m_conf.m_Lock)
             return 2;
@@ -373,7 +373,7 @@ public:
     inline int UpgradeHook()
     {
         UpdateUpgrade();
-        if (m_upgr.m_money)
+        if (!m_upgr.m_money)
             return 1;
         if (m_conf.m_Lock)
             return 2;
