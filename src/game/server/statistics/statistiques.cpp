@@ -177,7 +177,7 @@ void CStats::DisplayStat()
 
     str_format(stats[0], 50, "Name : %s", m_player.m_pseudo);
     str_format(stats[1], 50, "Level : %ld", m_stats.m_level);
-    str_format(stats[2], 50, "Rank : N/A"); //, m_rank.m_score);
+    str_format(stats[2], 50, "Rank : %ld.", GameServer()->m_pStatsServer->GetRank(m_player.m_id));
 
     str_format(stats[3], 50, "Score : %ld", m_stats.m_score);
     str_format(stats[4], 50, "Killed : %ld", m_stats.m_kill);

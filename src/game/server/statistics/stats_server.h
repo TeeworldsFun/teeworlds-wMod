@@ -23,6 +23,7 @@ public:
     virtual AllStats GetAll(int id) = 0;
     virtual void WriteStats(int id, AllStats container) = 0;
 
+    virtual int GetRank(int id) = 0;
     virtual void DisplayRank(int id) = 0;
     virtual void DisplayBestOf() = 0;
 protected:

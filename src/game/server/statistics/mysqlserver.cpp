@@ -532,9 +532,128 @@ conf.m_Weapon[WEAPON_SHOTGUN], conf.m_Weapon[WEAPON_GRENADE], conf.m_Weapon[WEAP
     Disconnect();
 }
 
+int CSqlServer::GetRank(int id)
+{
+    if (id < 1 || !Connect())
+    {
+        return -1;
+    }
+
+    char aBuf[256];
+    str_format(aBuf, sizeof(aBuf), "SELECT Id FROM Players_Stats WHERE Id=%d;", id);
+    m_pResult = m_pStatement->executeQuery(aBuf);
+
+    if(m_pResult->rowsCount() == 0)
+    {
+        delete m_pResult;
+        Disconnect();
+        return -1;
+    }
+
+    delete m_pResult;
+
+    str_format(aBuf, sizeof(aBuf), "SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Score > (SELECT Score FROM Players_Stats t2 WHERE Id=%d);", id);
+    m_pResult = m_pStatement->executeQuery(aBuf);
+    m_pResult->next();
+
+    int Rank = m_pResult->getUInt(1);
+    delete m_pResult;
+    Disconnect();
+    return Rank;
+}
+    
+const char* Suffix(unsigned long number)
+{
+    if ( number != 11 && (number - 1) % 10 == 0)
+        return "st";
+    else if ( number != 12 && (number - 2) % 10 == 0)
+        return "nd";
+    else if ( number != 13 && (number - 3) % 10 == 0)
+        return "rd";
+    else
+        return "th";
+}
+
 void CSqlServer::DisplayRank(int id)
 {
+    if (id < 1)
+    {
+        GameServer()->SendChatTarget(-1, "The anonymous account hasn't got ranks !");
+        return;
+    }
 
+    if (!Connect())
+    {
+        GameServer()->SendChatTarget(-1, "Error while connecting to the database, try again !");
+        return;
+    }
+
+    char Name[MAX_NAME_LENGTH] = "";
+    char aBuf[2100];
+    str_format(aBuf, sizeof(aBuf), "SELECT Pseudo FROM Players_Stats WHERE Id=%d;", id);
+    m_pResult = m_pStatement->executeQuery(aBuf);
+
+    if(m_pResult->rowsCount() == 0)
+    {
+        GameServer()->SendChatTarget(-1, "Error while getting ranks ! Try again !");
+        delete m_pResult;
+        Disconnect();
+        return;
+    }
+    
+    m_pResult->next();
+    str_copy(Name, m_pResult->getString(1).c_str(), MAX_NAME_LENGTH);
+    delete m_pResult;
+
+    str_format(aBuf, sizeof(aBuf), "SELECT (SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Level > (SELECT Level FROM Players_Stats t2 WHERE Id=%d)) AS Level, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Score > (SELECT Score FROM Players_Stats t2 WHERE Id=%d)) AS Score, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Killed > (SELECT Killed FROM Players_Stats t2 WHERE Id=%d)) AS Killed, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Rapport > (SELECT Rapport FROM Players_Stats t2 WHERE Id=%d)) AS Rapport, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Log_In > (SELECT Log_In FROM Players_Stats t2 WHERE Id=%d)) AS Log_In, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Fire > (SELECT Fire FROM Players_Stats t2 WHERE Id=%d)) AS Fire, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Pickup_Weapon > (SELECT Pickup_Weapon FROM Players_Stats t2 WHERE Id=%d)) AS Pickup_Weapon, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Pickup_Ninja > (SELECT Pickup_Ninja FROM Players_Stats t2 WHERE Id=%d)) AS Pickup_Ninja, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Change_Weapon > (SELECT Change_Weapon FROM Players_Stats t2 WHERE Id=%d)) AS Change_Weapon, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Time_Play > (SELECT Time_Play FROM Players_Stats t2 WHERE Id=%d)) AS Time_Play, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Message > (SELECT Message FROM Players_Stats t2 WHERE Id=%d)) AS Message, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Killing_Spree > (SELECT Killing_Spree FROM Players_Stats t2 WHERE Id=%d)) AS Killing_Spree, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Max_Killing_Spree > (SELECT Max_Killing_Spree FROM Players_Stats t2 WHERE Id=%d)) AS Max_Killing_Spree, \
+(SELECT COUNT(*) + 1 AS Position FROM Players_Stats t1 WHERE t1.Flag_Capture > (SELECT Flag_Capture FROM Players_Stats t2 WHERE Id=%d)) AS Flag_Capture;",
+id, id, id, id, id, id, id, id, id, id, id, id, id, id);
+    m_pResult = m_pStatement->executeQuery(aBuf);
+    m_pResult->next();
+
+    char a[256] = "";
+    char ranks[15][50];
+
+    str_format(ranks[0], 50, "Name : %s", Name);
+    str_format(ranks[1], 50, "Level : %ld%s.", m_pResult->getUInt(1), Suffix(m_pResult->getUInt(1)));
+    str_format(ranks[2], 50, "Score : %ld%s.", m_pResult->getUInt(2), Suffix(m_pResult->getUInt(2)));
+
+    str_format(ranks[3], 50, "Killed : %ld%s.", m_pResult->getUInt(3), Suffix(m_pResult->getUInt(3)));
+    str_format(ranks[4], 50, "Rapport K/D : %ld%s.", m_pResult->getUInt(4), Suffix(m_pResult->getUInt(4)));
+    str_format(ranks[5], 50, "Log-in : %ld%s.", m_pResult->getUInt(5), Suffix(m_pResult->getUInt(5)));
+
+    str_format(ranks[6], 50, "Fire : %ld%s.", m_pResult->getUInt(6), Suffix(m_pResult->getUInt(6)));
+    str_format(ranks[7], 50, "Pick-Up Weapon : %ld%s.", m_pResult->getUInt(7), Suffix(m_pResult->getUInt(7)));
+    str_format(ranks[8], 50, "Pick-Up Ninja : %ld%s.", m_pResult->getUInt(8), Suffix(m_pResult->getUInt(8)));
+
+    str_format(ranks[9], 50, "Switch Weapon : %ld%s.", m_pResult->getUInt(9), Suffix(m_pResult->getUInt(9)));
+    str_format(ranks[10], 50, "Time Play : %ld%s.", m_pResult->getUInt(10), Suffix(m_pResult->getUInt(10)));
+    str_format(ranks[11], 50, "Msg Sent : %ld%s.", m_pResult->getUInt(11), Suffix(m_pResult->getUInt(11)));
+
+    str_format(ranks[12], 50, "Total Killing Spree : %ld%s.", m_pResult->getUInt(12), Suffix(m_pResult->getUInt(12)));
+    str_format(ranks[13], 50, "Max Killing Spree : %ld%s.", m_pResult->getUInt(13), Suffix(m_pResult->getUInt(13)));
+    str_format(ranks[14], 50, "Flag Capture : %ld%s.", m_pResult->getUInt(14), Suffix(m_pResult->getUInt(14)));
+
+    for ( int i = 0; i < 5; i++ )
+    {
+        str_format(a, 256, "%s | %s | %s", ranks[i * 3], ranks[(i * 3) + 1], ranks[(i * 3) + 2]);
+        GameServer()->SendChatTarget(-1, a);
+    }
+
+    delete m_pResult;
+    Disconnect();
 }
 
 void CSqlServer::DisplayBestOf()

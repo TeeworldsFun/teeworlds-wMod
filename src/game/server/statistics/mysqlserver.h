@@ -22,6 +22,8 @@ public:
     Conf GetConf(int id);
     AllStats GetAll(int id);
     void WriteStats(int id, AllStats container);
+
+    int GetRank(int id);
     void DisplayRank(int id);
     void DisplayBestOf();
 private:
