@@ -120,6 +120,11 @@ void CSqlServer::AntiInjection(const char From[], char To[], const int TailleFin
 			To[Pos++] = '\\';
 			To[Pos++] = '"';
 		}
+		else if(From[i] == '`')
+		{
+			To[Pos++] = '\\';
+			To[Pos++] = '`';
+		}
 		else
 		{
 			To[Pos++] = From[i];
@@ -674,7 +679,7 @@ MAX(Max_Killing_Spree), MAX(Flag_Capture) FROM Players_Stats;");
     str_format(stats[2], 50, "Score : %u", m_pResult->getUInt(2));
 
     str_format(stats[3], 50, "Killed : %u", m_pResult->getUInt(3));
-    str_format(stats[4], 50, "Rapport K/D : %lf", m_pResult->getDouble(4));
+    str_format(stats[4], 50, "Rapport K/D : %f", m_pResult->getDouble(4));
     str_format(stats[5], 50, "Log-in : %u", m_pResult->getUInt(5));
 
     str_format(stats[6], 50, "Fire : %u", m_pResult->getUInt(6));
