@@ -1541,7 +1541,9 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             return;
         }
 
-        if((m_pEventsGame->IsActualEvent(SURVIVOR) || ( m_pController->IsTeamplay() && m_pEventsGame->GetActualEventTeam() == T_SURVIVOR )) && pMsg->m_Team != TEAM_SPECTATORS)
+        if(pMsg->m_Team != TEAM_SPECTATORS &&
+        ((m_pEventsGame->IsActualEvent(SURVIVOR) && m_pController->GetNumPlayer(0) > 0)
+        || (m_pController->IsTeamplay() && m_pEventsGame->GetActualEventTeam() == T_SURVIVOR && m_pController->GetNumPlayer(0) > 0 && m_pController->GetNumPlayer(1) > 0)))
         {
             SendBroadcast("You can't join other team with this event, wait a winner", ClientID);
             m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
