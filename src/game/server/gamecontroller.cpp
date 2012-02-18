@@ -472,10 +472,10 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
         GameServer()->CreateExplosion(pVictim->m_Pos, pVictim->GetPlayer()->GetCID(), WEAPON_GAME, true, false);
         GameServer()->CreateSound(pVictim->m_Pos, SOUND_GRENADE_EXPLODE);
         GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
-        GameServer()->SendTuningParams(pVictim->GetPlayer()->GetCID());
     }
 
     pVictim->GetPlayer()->m_pStats->AddDead();
+    GameServer()->SendTuningParams(pVictim->GetPlayer()->GetCID());
 
 	if(Weapon == WEAPON_SELF)
 		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;

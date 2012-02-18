@@ -477,21 +477,21 @@ void CGameContext::SendTuningParams(int ClientID)
             float RateHighJump = 1.0f;
             float RateLengthHook = 1.0f;
             float RateSpeedHook = 1.0f;
+            if (!m_pEventsGame->IsActualEvent(SPEED_X10))
+            {
+                RateSpeed = m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_speed;
+                RateAccel = m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_accel;
+                RateSpeedHook = m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_speed;
+            }
             if (m_apPlayers[ClientID]->m_pStats->GetActualKill() >= 5)
             {
                 RateSpeed *= 1.5f;
                 RateAccel *= 1.5f;
             }
-            if (!m_pEventsGame->IsActualEvent(SPEED_X10))
-            {
-                RateSpeed *= m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_speed;
-                RateAccel *= m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_accel;
-                RateSpeedHook *= m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_speed;
-            }
             if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
-                RateHighJump *= m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_high_jump;
+                RateHighJump = m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_high_jump;
             if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
-                RateLengthHook *= m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_length;
+                RateLengthHook = m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_length;
 
             User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
             User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
@@ -524,21 +524,21 @@ void CGameContext::SendTuningParams(int ClientID)
                 float RateHighJump = 1.0f;
                 float RateLengthHook = 1.0f;
                 float RateSpeedHook = 1.0f;
+                if (!m_pEventsGame->IsActualEvent(SPEED_X10))
+                {
+                    RateSpeed = m_apPlayers[i]->m_pStats->GetStatMove().m_rate_speed;
+                    RateAccel =  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_accel;
+                    RateSpeedHook = m_apPlayers[i]->m_pStats->GetStatHook().m_rate_speed;
+                }
                 if (m_apPlayers[i]->m_pStats->GetActualKill() >= 5)
                 {
                     RateSpeed *= 1.5f;
                     RateAccel *= 1.5f;
                 }
-                if (!m_pEventsGame->IsActualEvent(SPEED_X10))
-                {
-                    RateSpeed *= m_apPlayers[i]->m_pStats->GetStatMove().m_rate_speed;
-                    RateAccel *=  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_accel;
-                    RateSpeedHook *=  m_apPlayers[i]->m_pStats->GetStatHook().m_rate_speed;
-                }
                 if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
-                    RateHighJump *=  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_high_jump;
+                    RateHighJump = m_apPlayers[i]->m_pStats->GetStatMove().m_rate_high_jump;
                 if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
-                    RateLengthHook *=  m_apPlayers[i]->m_pStats->GetStatHook().m_rate_length;
+                    RateLengthHook = m_apPlayers[i]->m_pStats->GetStatHook().m_rate_length;
 
                 User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
                 User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
@@ -2258,7 +2258,7 @@ void CGameContext::ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserDa
 
 void CGameContext::ConListPlayer(IConsole::IResult *pResult, void *pUserData)
 {
-    /*CGameContext *pSelf = (CGameContext *)pUserData;
+    CGameContext *pSelf = (CGameContext *)pUserData;
     pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "List of Players :");
 
     for ( int i = 0; i < MAX_CLIENTS; i++ )
@@ -2269,7 +2269,7 @@ void CGameContext::ConListPlayer(IConsole::IResult *pResult, void *pUserData)
             str_format(Text, 256, "Client ID : %d. Name : %s. Stats ID : %ld.", i, pSelf->Server()->ClientName(i), pSelf->m_apPlayers[i]->GetSID());
             pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", Text);
         }
-    }*/
+    }
 }
 
 void CGameContext::ConGiveShotgun(IConsole::IResult *pResult, void *pUserData)
