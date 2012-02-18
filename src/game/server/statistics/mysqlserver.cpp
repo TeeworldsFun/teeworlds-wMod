@@ -524,7 +524,7 @@ Message=%u, Killing_Spree=%u, Max_Killing_Spree=%u, Flag_Capture=%u, Bonus_XP=%u
 Upgrade_Life=%u, Upgrade_Move=%u, Upgrade_Hook=%u, Info_Heal_Killer=%d, Info_XP=%d, Info_Level_Up=%d,\
 Info_Killing_Spree=%d, Info_Race=%d, Info_Ammo=%d, Show_Voter=%d, Ammo_Absolute=%d, Life_Absolute=%d,\
 `Lock`=%d, Race_Hammer=%d, Race_Gun=%d, Race_Shotgun=%d, Race_Grenade=%d, Race_Rifle=%d WHERE Id=%d;",
-player.m_ip, player.m_pseudo, player.m_clan, player.m_country, player.m_last_connect, stats.m_level, stats.m_score,
+player.m_ip, sPseudo, sClan, player.m_country, player.m_last_connect, stats.m_level, stats.m_score,
 stats.m_kill, stats.m_dead, stats.m_suicide, stats.m_rapport, stats.m_log_in, stats.m_fire, stats.m_pickup_weapon,
 stats.m_pickup_ninja, stats.m_change_weapon, stats.m_time_play, stats.m_message, stats.m_killing_spree, stats.m_max_killing_spree,
 stats.m_flag_capture, stats.m_bonus_xp, upgr.m_weapon, upgr.m_life, upgr.m_move, upgr.m_hook, conf.m_InfoHealKiller,
