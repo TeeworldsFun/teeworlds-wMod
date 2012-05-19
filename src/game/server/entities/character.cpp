@@ -397,6 +397,9 @@ void CCharacter::FireWeapon()
 {
     if(m_ReloadTimer != 0)
         return;
+        
+    DoWeaponSwitch();
+    vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 
     int Race = 0;
     if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_WARRIOR) )
@@ -411,9 +414,6 @@ void CCharacter::FireWeapon()
         Race = (rand() % ((MINER + 1) - WARRIOR)) + WARRIOR;
     else
         Race = m_pPlayer->m_WeaponType[m_ActiveWeapon];
-
-    DoWeaponSwitch();
-    vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 
     bool FullAuto = false;
     if((m_ActiveWeapon != WEAPON_HAMMER || (Race != ENGINEER && m_stat_weapon->m_auto_hammer)) &&

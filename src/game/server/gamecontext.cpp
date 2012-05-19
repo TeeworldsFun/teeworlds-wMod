@@ -896,10 +896,10 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 
             m_apPlayers[ClientID]->SetSID(0);
             if(m_pController->IsTeamplay())
-                SendChatTarget(ClientID, "You are now connected ! You can join the game !");
+                SendChatTarget(ClientID, "You are now connected anonymously ! You can join the game !");
             else
             {
-                SendChatTarget(ClientID, "You are now connected ! Have fun !");
+                SendChatTarget(ClientID, "You are now connected anonymously ! Have fun !");
                 m_apPlayers[ClientID]->SetTeam(0);
             }
             return;
@@ -1550,13 +1550,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             return;
         }
 
-        if(m_apPlayers[ClientID]->GetSID() < 0)
-        {
-            SendBroadcast("Use /register to create an account and /login to join !", ClientID);
-            m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
-            return;
-        }
-
 		if(pPlayer->m_TeamChangeTick > Server()->Tick())
 		{
 			pPlayer->m_LastSetTeam = Server()->Tick();
@@ -1573,6 +1566,14 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			if(m_pController->CanChangeTeam(pPlayer, pMsg->m_Team))
 			{
+    	        if(m_apPlayers[ClientID]->GetSID() < 0)
+                {
+                    SendBroadcast("You are logged anonymously, nothing is save !", ClientID);
+                    SendChatTarget(ClientID, "You are logged anonymously, nothing is save ! If you want keep your level and statistics, please /register or login ! Have fun ;)", ClientID);
+                    m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
+                    m_apPlayers[ClientID]->SetSID(0);
+                }
+
 				pPlayer->m_LastSetTeam = Server()->Tick();
 				if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
 					m_VoteUpdate = true;
