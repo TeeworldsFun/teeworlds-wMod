@@ -845,7 +845,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
         }
         else if(str_length(Arguments[1]) >= MAX_NAME_LENGTH)
         {
-            SendChatTarget(ClientID, "Your name account is too long !");
+            SendChatTarget(ClientID, "Your account name is too long !");
             return;
         }
         else if(Arguments[2][0] == 0)
@@ -857,7 +857,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
         int Error = m_pStatsServer->CreateId(ClientID, Arguments[1], Arguments[2]);
         if (Error == -1)
         {
-            SendChatTarget(ClientID, "This name account is already used !");
+            SendChatTarget(ClientID, "This account name is already used !");
             return;
         }
         else if (Error == -2)

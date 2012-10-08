@@ -199,7 +199,7 @@ void CGameControllerCTF::Tick()
                     if (GetNumPlayer(F->m_pCarryingCharacter->GetPlayer()->GetTeam()) > 1)
                     {
                         F->m_pCarryingCharacter->GetPlayer()->m_pStats->AddFlagCapture();
-                        F->m_pCarryingCharacter->GetPlayer()->m_Score =F->m_pCarryingCharacter->GetPlayer()->m_pStats->GetScore();
+                        F->m_pCarryingCharacter->GetPlayer()->m_Score = F->m_pCarryingCharacter->GetPlayer()->m_pStats->GetScore();
 
                         if( F->m_pCarryingCharacter->GetPlayer()->m_pStats->GetLevel() > F->m_pCarryingCharacter->GetPlayer()->m_level )
                         {
