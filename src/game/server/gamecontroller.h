@@ -1,5 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+/* If you are missing that file, acquire a complete release at teeworlds.com.				*/
 #ifndef GAME_SERVER_GAMECONTROLLER_H
 #define GAME_SERVER_GAMECONTROLLER_H
 
@@ -16,9 +16,9 @@ class IGameController
 	vec2 m_aaSpawnPoints[3][64];
 	int m_aNumSpawnPoints[3];
 
-    bool m_ForceDoBalance;
+	bool m_ForceDoBalance;
 
-    bool m_GameWeapon[NUM_WEAPONS];
+	bool m_GameWeapon[NUM_WEAPONS];
 
 	class CGameContext *m_pGameServer;
 	class IServer *m_pServer;
@@ -82,11 +82,11 @@ public:
 	void EndRound();
 	void ChangeMap(const char *pToMap);
 
-    bool IsFriendlyFire(int ClientID1, int ClientID2, int Weapon);
+	bool IsFriendlyFire(int ClientID1, int ClientID2, int Weapon);
 
 	bool IsForceBalanced();
 
-    bool IsNormalEnd();
+	bool IsNormalEnd();
 
 	/*
 
@@ -110,10 +110,10 @@ public:
 			bool?
 	*/
 	virtual bool OnEntity(int Index, vec2 Pos);
-    bool IsWeaponEntity(int Weapon)
-    {
-        return m_GameWeapon[Weapon];
-    };
+	bool IsWeaponEntity(int Weapon)
+	{
+		return m_GameWeapon[Weapon];
+	};
 
 	/*
 		Function: on_CCharacter_spawn
@@ -154,16 +154,16 @@ public:
 
 	virtual void PostReset();
 
-    int GetNumPlayer(int Team);
-    int GetTeamScore(int Team)
-    {
-        return m_aTeamscore[Team];
-    };
-    int GetRoundStartTick()
-    {
-        return m_RoundStartTick;
-    };
-    int m_Captain[2];
+	int GetNumPlayer(int Team);
+	int GetTeamScore(int Team)
+	{
+		return m_aTeamscore[Team];
+	};
+	int GetRoundStartTick()
+	{
+		return m_RoundStartTick;
+	};
+	int m_Captain[2];
 };
 
 #endif

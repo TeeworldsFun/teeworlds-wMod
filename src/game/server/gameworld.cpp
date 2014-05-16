@@ -1,5 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+/* If you are missing that file, acquire a complete release at teeworlds.com.				*/
 
 #include "gameworld.h"
 #include "entity.h"
@@ -47,8 +47,8 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, 
 	int Num = 0;
 	for(CEntity *pEnt = m_apFirstEntityTypes[Type];	pEnt; pEnt = pEnt->m_pNextTypeEntity)
 	{
-        if((Type != ENTTYPE_EXPLODEWALL && distance(pEnt->m_Pos, Pos) < Radius+pEnt->m_ProximityRadius) ||
-           (Type == ENTTYPE_EXPLODEWALL && distance(closest_point_on_line(reinterpret_cast<CExplodeWall*>(pEnt)->m_From, pEnt->m_Pos, Pos), Pos) < Radius+pEnt->m_ProximityRadius))
+		if((Type != ENTTYPE_EXPLODEWALL && distance(pEnt->m_Pos, Pos) < Radius+pEnt->m_ProximityRadius) ||
+		   (Type == ENTTYPE_EXPLODEWALL && distance(closest_point_on_line(reinterpret_cast<CExplodeWall*>(pEnt)->m_From, pEnt->m_Pos, Pos), Pos) < Radius+pEnt->m_ProximityRadius))
 		{
 			if(ppEnts)
 				ppEnts[Num] = pEnt;
@@ -223,33 +223,33 @@ CCharacter *CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 
 CEntity *CGameWorld::IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos, int Type, CEntity *pNotThis)
 {
-    if(Type < 0 || Type >= NUM_ENTTYPES)
-        return 0;
+	if(Type < 0 || Type >= NUM_ENTTYPES)
+		return 0;
 
-    float ClosestLen = distance(Pos0, Pos1) * 100.0f;
-    CEntity *pClosest = 0;
+	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+	CEntity *pClosest = 0;
 
-    CEntity *p = (CEntity *)FindFirst(Type);
-    for(; p; p = (CEntity *)p->TypeNext())
-    {
-        if(p == pNotThis)
-            continue;
+	CEntity *p = (CEntity *)FindFirst(Type);
+	for(; p; p = (CEntity *)p->TypeNext())
+	{
+		if(p == pNotThis)
+			continue;
 
-        vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, p->m_Pos);
-        float Len = distance(p->m_Pos, IntersectPos);
-        if(Len < p->m_ProximityRadius+Radius)
-        {
-            Len = distance(Pos0, IntersectPos);
-            if(Len < ClosestLen)
-            {
-                NewPos = IntersectPos;
-                ClosestLen = Len;
-                pClosest = p;
-            }
-        }
-    }
+		vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, p->m_Pos);
+		float Len = distance(p->m_Pos, IntersectPos);
+		if(Len < p->m_ProximityRadius+Radius)
+		{
+			Len = distance(Pos0, IntersectPos);
+			if(Len < ClosestLen)
+			{
+				NewPos = IntersectPos;
+				ClosestLen = Len;
+				pClosest = p;
+			}
+		}
+	}
 
-    return pClosest;
+	return pClosest;
 }
 
 CCharacter *CGameWorld::ClosestCharacter(vec2 Pos, float Radius, CEntity *pNotThis)

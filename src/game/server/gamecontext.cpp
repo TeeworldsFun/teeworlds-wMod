@@ -1,5 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+/* If you are missing that file, acquire a complete release at teeworlds.com.				*/
 #include <new>
 #include <base/math.h>
 #include <engine/shared/config.h>
@@ -41,17 +41,17 @@ void CGameContext::Construct(int Resetting)
 	m_NumVoteOptions = 0;
 	m_LockTeams = 0;
 
-    m_pEventsGame = new CEvent(this);
+	m_pEventsGame = new CEvent(this);
 
 	if(Resetting==NO_RESET)
-    {
-        #if defined(CONF_SQL)
-    	m_pStatsServer = new CSqlServer(this);
-    	#else
-//    	m_pStatsServer = new CSqlServer(this);
-        #endif
+	{
+		#if defined(CONF_SQL)
+		m_pStatsServer = new CSqlServer(this);
+		#else
+		m_pStatsServer = 0;
+		#endif
 		m_pVoteOptionHeap = new CHeap();
-    }
+	}
 }
 
 CGameContext::CGameContext(int Resetting)
@@ -67,17 +67,17 @@ CGameContext::CGameContext()
 CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
-    {
 		delete m_apPlayers[i];
-    }
 
-    delete m_pEventsGame;
+	delete m_pEventsGame;
 
 	if(!m_Resetting)
-    {
+	{
 		delete m_pVoteOptionHeap;
-        delete m_pStatsServer;
-    }
+		#if defined(CONF_SQL)
+		delete m_pStatsServer;
+		#endif
+	}
 }
 
 void CGameContext::Clear()
@@ -87,7 +87,7 @@ void CGameContext::Clear()
 	CVoteOptionServer *pVoteOptionLast = m_pVoteOptionLast;
 	int NumVoteOptions = m_NumVoteOptions;
 	CTuningParams Tuning = m_Tuning;
-    IStatsServer *pStatsServer = m_pStatsServer;
+	IStatsServer *pStatsServer = m_pStatsServer;
 
 	m_Resetting = true;
 	this->~CGameContext();
@@ -100,7 +100,7 @@ void CGameContext::Clear()
 	m_NumVoteOptions = NumVoteOptions;
 	m_Tuning = Tuning;
 
-    m_pStatsServer = pStatsServer;
+	m_pStatsServer = pStatsServer;
 }
 
 
@@ -144,16 +144,6 @@ void CGameContext::CreateHammerHit(vec2 Pos)
 
 void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke)
 {
-    if ( Smoke == true )
-    {
-        CCharacter *apEnts[MAX_CLIENTS];
-        int Num = m_World.FindEntities(Pos, 135.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-        for(int i = 0; i < Num; i++)
-        {
-            if ( Owner == apEnts[i]->GetPlayer()->GetCID() )
-                return;
-        }
-    }
 
 	// create the event
 	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
@@ -172,6 +162,8 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 		int Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 		for(int i = 0; i < Num; i++)
 		{
+			if (Smoke && apEnts[i]->GetPlayer()->GetCID() == Owner)
+				continue;
 			vec2 Diff = apEnts[i]->m_Pos - Pos;
 			vec2 ForceDir(0,1);
 			float l = length(Diff);
@@ -180,34 +172,34 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 			l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
 			float Dmg = 6 * l;
 			if((int)Dmg)
-                apEnts[i]->TakeDamage(ForceDir*Dmg*2, (int)Dmg, Owner, Weapon, false);
-        }
+				apEnts[i]->TakeDamage(ForceDir*Dmg*2, m_pEventsGame->IsActualEvent(WALLSHOT) ? 0 : (int)Dmg, Owner, Weapon, false);
+		}
 
-        CTurret *apEntsTurret[MAX_CLIENTS * 5];
-        Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEntsTurret, MAX_CLIENTS * 5, CGameWorld::ENTTYPE_TURRET);
-        for(int i = 0; i < Num; i++)
-        {
-            vec2 Diff = apEntsTurret[i]->m_Pos - Pos;
-            float l = length(Diff);
-            l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
-            float Dmg = 6 * l;
-            if((int)Dmg)
-                apEntsTurret[i]->TakeDamage((int)Dmg, Owner, Weapon, false);
-        }
+		CTurret *apEntsTurret[MAX_CLIENTS * 5];
+		Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEntsTurret, MAX_CLIENTS * 5, CGameWorld::ENTTYPE_TURRET);
+		for(int i = 0; i < Num; i++)
+		{
+			vec2 Diff = apEntsTurret[i]->m_Pos - Pos;
+			float l = length(Diff);
+			l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
+			float Dmg = 6 * l;
+			if((int)Dmg)
+				apEntsTurret[i]->TakeDamage((int)Dmg, Owner, Weapon, false);
+		}
 
-        CExplodeWall *p = (CExplodeWall *)m_World.FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
-        for(; p; p = (CExplodeWall *)p->TypeNext())
-        {
-            vec2 IntersectPos = closest_point_on_line(p->m_From, p->m_Pos, Pos);
-            float Len = distance(Pos, IntersectPos);
-            if(Len < p->m_ProximityRadius+Radius)
-            {
-                Len = distance(Pos, IntersectPos);
-                float l = 1-clamp((Len-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
-                float Dmg = 6 * l;
-                if((int)Dmg)
-                    p->TakeDamage((int)Dmg, Owner, Weapon, false);
-            }
+		CExplodeWall *p = (CExplodeWall *)m_World.FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
+		for(; p; p = (CExplodeWall *)p->TypeNext())
+		{
+			vec2 IntersectPos = closest_point_on_line(p->m_From, p->m_Pos, Pos);
+			float Len = distance(Pos, IntersectPos);
+			if(Len < p->m_ProximityRadius+Radius)
+			{
+				Len = distance(Pos, IntersectPos);
+				float l = 1-clamp((Len-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
+				float Dmg = 6 * l;
+				if((int)Dmg)
+					p->TakeDamage((int)Dmg, Owner, Weapon, false);
+			}
 		}
 	}
 }
@@ -287,39 +279,39 @@ void CGameContext::SendChatTarget(int To, const char *pText, int Type)
 	Msg.m_Team = 0;
 	Msg.m_ClientID = -1;
 	Msg.m_pMessage = pText;
-    if (Type == CHAT_INFO)
-	    Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
-    else
-    {
-        if (To != -1)
-        {
-            if ( (Type == CHAT_INFO_HEAL_KILLER && m_apPlayers[To]->m_pStats->GetConf().m_InfoHealKiller) ||
-                 (Type == CHAT_INFO_XP && m_apPlayers[To]->m_pStats->GetConf().m_InfoXP) ||
-                 (Type == CHAT_INFO_LEVELUP && m_apPlayers[To]->m_pStats->GetConf().m_InfoLevelUp) ||
-                 (Type == CHAT_INFO_KILLING_SPREE && m_apPlayers[To]->m_pStats->GetConf().m_InfoKillingSpree) ||
-                 (Type == CHAT_INFO_RACE && m_apPlayers[To]->m_pStats->GetConf().m_InfoRace) ||
-                 (Type == CHAT_INFO_AMMO && m_apPlayers[To]->m_pStats->GetConf().m_InfoAmmo) ||
-                 (Type == CHAT_INFO_VOTER && m_apPlayers[To]->m_pStats->GetConf().m_ShowVoter))
-                Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
-        }
-        else
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++)
-            {
-                if (m_apPlayers[i])
-                {
-                    if ( (Type == CHAT_INFO_HEAL_KILLER && m_apPlayers[i]->m_pStats->GetConf().m_InfoHealKiller) ||
-                         (Type == CHAT_INFO_XP && m_apPlayers[i]->m_pStats->GetConf().m_InfoXP) ||
-                         (Type == CHAT_INFO_LEVELUP && m_apPlayers[i]->m_pStats->GetConf().m_InfoLevelUp) ||
-                         (Type == CHAT_INFO_KILLING_SPREE && m_apPlayers[i]->m_pStats->GetConf().m_InfoKillingSpree) ||
-                         (Type == CHAT_INFO_RACE && m_apPlayers[i]->m_pStats->GetConf().m_InfoRace) ||
-                         (Type == CHAT_INFO_AMMO && m_apPlayers[i]->m_pStats->GetConf().m_InfoAmmo) ||
-                         (Type == CHAT_INFO_VOTER && m_apPlayers[i]->m_pStats->GetConf().m_ShowVoter))
-                        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
-                }
-            }
-        }
-    }
+	if (Type == CHAT_INFO)
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
+	else
+	{
+		if (To != -1)
+		{
+			if ( (Type == CHAT_INFO_HEAL_KILLER && m_apPlayers[To]->m_pStats->GetConf().m_InfoHealKiller) ||
+				 (Type == CHAT_INFO_XP && m_apPlayers[To]->m_pStats->GetConf().m_InfoXP) ||
+				 (Type == CHAT_INFO_LEVELUP && m_apPlayers[To]->m_pStats->GetConf().m_InfoLevelUp) ||
+				 (Type == CHAT_INFO_KILLING_SPREE && m_apPlayers[To]->m_pStats->GetConf().m_InfoKillingSpree) ||
+				 (Type == CHAT_INFO_RACE && m_apPlayers[To]->m_pStats->GetConf().m_InfoRace) ||
+				 (Type == CHAT_INFO_AMMO && m_apPlayers[To]->m_pStats->GetConf().m_InfoAmmo) ||
+				 (Type == CHAT_INFO_VOTER && m_apPlayers[To]->m_pStats->GetConf().m_ShowVoter))
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
+		}
+		else
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if (m_apPlayers[i])
+				{
+					if ( (Type == CHAT_INFO_HEAL_KILLER && m_apPlayers[i]->m_pStats->GetConf().m_InfoHealKiller) ||
+						 (Type == CHAT_INFO_XP && m_apPlayers[i]->m_pStats->GetConf().m_InfoXP) ||
+						 (Type == CHAT_INFO_LEVELUP && m_apPlayers[i]->m_pStats->GetConf().m_InfoLevelUp) ||
+						 (Type == CHAT_INFO_KILLING_SPREE && m_apPlayers[i]->m_pStats->GetConf().m_InfoKillingSpree) ||
+						 (Type == CHAT_INFO_RACE && m_apPlayers[i]->m_pStats->GetConf().m_InfoRace) ||
+						 (Type == CHAT_INFO_AMMO && m_apPlayers[i]->m_pStats->GetConf().m_InfoAmmo) ||
+						 (Type == CHAT_INFO_VOTER && m_apPlayers[i]->m_pStats->GetConf().m_ShowVoter))
+						Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
+				}
+			}
+		}
+	}
 }
 
 
@@ -375,11 +367,31 @@ void CGameContext::SendWeaponPickup(int ClientID, int Weapon)
 }
 
 
-void CGameContext::SendBroadcast(const char *pText, int ClientID)
+void CGameContext::SendBroadcast(const char *pText, int ClientID, int LifeTime)
+{
+	if (ClientID != -1)
+	{
+		if (m_apPlayers[ClientID] && m_apPlayers[ClientID]->m_EndBroadcastTick <= Server()->Tick())
 {
 	CNetMsg_Sv_Broadcast Msg;
 	Msg.m_pMessage = pText;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+			m_apPlayers[ClientID]->m_EndBroadcastTick = Server()->Tick() + Server()->TickSpeed()*LifeTime;
+		}
+	}
+	else
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(m_apPlayers[i] && m_apPlayers[i]->m_EndBroadcastTick <= Server()->Tick())
+			{
+				CNetMsg_Sv_Broadcast Msg;
+				Msg.m_pMessage = pText;
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
+				m_apPlayers[i]->m_EndBroadcastTick = Server()->Tick() + Server()->TickSpeed()*LifeTime;
+			}
+		}
+	}
 }
 
 //
@@ -467,103 +479,103 @@ void CGameContext::SendTuningParams(int ClientID)
 {
 	CheckPureTuning();
 
-    CTuningParams User = m_Tuning;
-    if ( ClientID >= 0 )
-    {
-        if (m_apPlayers[ClientID]->GetSID() >= 0)
-        {
-            float RateSpeed = 1.0f;
-            float RateAccel = 1.0f;
-            float RateHighJump = 1.0f;
-            float RateLengthHook = 1.0f;
-            float RateSpeedHook = 1.0f;
-            if (!m_pEventsGame->IsActualEvent(SPEED_X10))
-            {
-                RateSpeed = m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_speed;
-                RateAccel = m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_accel;
-                RateSpeedHook = m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_speed;
-            }
-            if (m_apPlayers[ClientID]->m_pStats->GetActualKill() >= 5)
-            {
-                RateSpeed *= 1.5f;
-                RateAccel *= 1.5f;
-            }
-            if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
-                RateHighJump = m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_high_jump;
-            if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
-                RateLengthHook = m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_length;
+	CTuningParams User = m_Tuning;
+	if ( ClientID >= 0 )
+	{
+		if (m_apPlayers[ClientID]->GetSID() >= 0)
+		{
+			float RateSpeed = 1.0f;
+			float RateAccel = 1.0f;
+			float RateHighJump = 1.0f;
+			float RateLengthHook = 1.0f;
+			float RateSpeedHook = 1.0f;
+			if (!m_pEventsGame->IsActualEvent(SPEED_X10))
+			{
+				RateSpeed = m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_speed;
+				RateAccel = m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_accel;
+				RateSpeedHook = m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_speed;
+			}
+			if (m_apPlayers[ClientID]->m_pStats->GetActualKill() >= 5)
+			{
+				RateSpeed *= 1.5f;
+				RateAccel *= 1.5f;
+			}
+			if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
+				RateHighJump = m_apPlayers[ClientID]->m_pStats->GetStatMove().m_rate_high_jump;
+			if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
+				RateLengthHook = m_apPlayers[ClientID]->m_pStats->GetStatHook().m_rate_length;
 
-            User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
-            User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
-            User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
-            User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
-            User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
-            User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
-            User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
-            User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
-            User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
-        }
+			User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
+			User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
+			User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
+			User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
+			User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
+			User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
+			User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
+			User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
+			User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
+		}
 
-	    CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-        int *pParams = (int *)&User;
-        for(unsigned i = 0; i < sizeof(User)/sizeof(int); i++)
+		CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
+		int *pParams = (int *)&User;
+		for(unsigned i = 0; i < sizeof(User)/sizeof(int); i++)
 		Msg.AddInt(pParams[i]);
-    	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
-    }
-    else
-    {
-        for (int i = 0; i < MAX_CLIENTS; i++)
-        {
-            if(!m_apPlayers[i])
-                continue;
+		Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	}
+	else
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(!m_apPlayers[i])
+				continue;
 
-            if (m_apPlayers[i]->GetSID() >= 0)
-            {
-                float RateSpeed = 1.0f;
-                float RateAccel = 1.0f;
-                float RateHighJump = 1.0f;
-                float RateLengthHook = 1.0f;
-                float RateSpeedHook = 1.0f;
-                if (!m_pEventsGame->IsActualEvent(SPEED_X10))
-                {
-                    RateSpeed = m_apPlayers[i]->m_pStats->GetStatMove().m_rate_speed;
-                    RateAccel =  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_accel;
-                    RateSpeedHook = m_apPlayers[i]->m_pStats->GetStatHook().m_rate_speed;
-                }
-                if (m_apPlayers[i]->m_pStats->GetActualKill() >= 5)
-                {
-                    RateSpeed *= 1.5f;
-                    RateAccel *= 1.5f;
-                }
-                if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
-                    RateHighJump = m_apPlayers[i]->m_pStats->GetStatMove().m_rate_high_jump;
-                if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
-                    RateLengthHook = m_apPlayers[i]->m_pStats->GetStatHook().m_rate_length;
+			if (m_apPlayers[i]->GetSID() >= 0)
+			{
+				float RateSpeed = 1.0f;
+				float RateAccel = 1.0f;
+				float RateHighJump = 1.0f;
+				float RateLengthHook = 1.0f;
+				float RateSpeedHook = 1.0f;
+				if (!m_pEventsGame->IsActualEvent(SPEED_X10))
+				{
+					RateSpeed = m_apPlayers[i]->m_pStats->GetStatMove().m_rate_speed;
+					RateAccel =  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_accel;
+					RateSpeedHook = m_apPlayers[i]->m_pStats->GetStatHook().m_rate_speed;
+				}
+				if (m_apPlayers[i]->m_pStats->GetActualKill() >= 5)
+				{
+					RateSpeed *= 1.5f;
+					RateAccel *= 1.5f;
+				}
+				if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
+					RateHighJump = m_apPlayers[i]->m_pStats->GetStatMove().m_rate_high_jump;
+				if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
+					RateLengthHook = m_apPlayers[i]->m_pStats->GetStatHook().m_rate_length;
 
-                User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
-                User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
-                User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
-                User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
-                User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
-                User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
-                User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
-                User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
-                User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
-            }
-            CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-            int *pParams = (int *)&User;
-            for(unsigned j = 0; j < sizeof(User)/sizeof(int); j++)
-                Msg.AddInt(pParams[j]);
-            Server()->SendMsg(&Msg, MSGFLAG_VITAL, i);
-        }
-    }
+				User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
+				User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
+				User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
+				User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
+				User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
+				User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
+				User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
+				User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
+				User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
+			}
+			CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
+			int *pParams = (int *)&User;
+			for(unsigned j = 0; j < sizeof(User)/sizeof(int); j++)
+				Msg.AddInt(pParams[j]);
+			Server()->SendMsg(&Msg, MSGFLAG_VITAL, i);
+		}
+	}
 }
 
 void CGameContext::SwapTeams()
 {
 	if(!m_pController->IsTeamplay())
 		return;
-	
+
 	SendChat(-1, CGameContext::CHAT_ALL, "Teams were swapped");
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -586,7 +598,7 @@ void CGameContext::OnTick()
 
 	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();
-    m_pEventsGame->Tick();
+	m_pEventsGame->Tick();
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -597,7 +609,7 @@ void CGameContext::OnTick()
 		}
 	}
 
-    //m_pStatsServer->Tick();
+	//m_pStatsServer->Tick();
 
 	// update voting
 	if(m_VoteCloseTime)
@@ -621,7 +633,7 @@ void CGameContext::OnTick()
 				bool aVoteChecked[MAX_CLIENTS] = {0};
 				for(int i = 0; i < MAX_CLIENTS; i++)
 				{
-                    if(!m_apPlayers[i] || (m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS && (!m_pController->IsTeamplay() || m_pEventsGame->GetActualEventTeam() != T_SURVIVOR) && !m_pEventsGame->IsActualEvent(SURVIVOR)) || aVoteChecked[i])	// don't count in votes by spectators
+					if(!m_apPlayers[i] || (m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS && (!m_pController->IsTeamplay() || m_pEventsGame->GetActualEventTeam() != T_SURVIVOR) && !m_pEventsGame->IsActualEvent(SURVIVOR)) || aVoteChecked[i])	// don't count in votes by spectators
 						continue;
 
 					int ActVote = m_apPlayers[i]->m_Vote;
@@ -654,7 +666,7 @@ void CGameContext::OnTick()
 					m_VoteEnforce = VOTE_ENFORCE_NO;
 			}
 
-            if(m_VoteEnforce == VOTE_ENFORCE_YES || (time_get() > m_VoteCloseTime && Yes >= Total/2) || (time_get() > m_VoteCloseTime && No == 0))
+			if(m_VoteEnforce == VOTE_ENFORCE_YES || (time_get() > m_VoteCloseTime && Yes >= Total/2) || (time_get() > m_VoteCloseTime && No == 0))
 			{
 				Server()->SetRconCID(IServer::RCON_CID_VOTE);
 				Console()->ExecuteLine(m_aVoteCommand);
@@ -710,10 +722,10 @@ void CGameContext::OnClientEnter(int ClientID)
 	//world.insert_entity(&players[client_id]);
 	m_apPlayers[ClientID]->Respawn();
 	char aBuf[512];
-    if ( m_pEventsGame->GetActualEventTeam() != ANONYMOUS )
-        str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s =D", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
-    else
-        str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the game =D", Server()->ClientName(ClientID));
+	if ( m_pEventsGame->GetActualEventTeam() != ANONYMOUS )
+		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s =D", Server()->ClientName(ClientID), m_pController->GetTeamName(m_apPlayers[ClientID]->GetTeam()));
+	else
+		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the game =D", Server()->ClientName(ClientID));
 	SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d", ClientID, Server()->ClientName(ClientID), m_apPlayers[ClientID]->GetTeam());
@@ -721,17 +733,17 @@ void CGameContext::OnClientEnter(int ClientID)
 
 	m_VoteUpdate = true;
 
-    SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod v2.3***");
-    SendChatTarget(ClientID, "** Wrote by PJK **");
-    SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
-    SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /upgr , /race , /stats and /ranks **");
-    SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
+	SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod v2.3***");
+	SendChatTarget(ClientID, "** Wrote by PJK **");
+	SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
+	SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /upgr , /race , /stats and /ranks **");
+	SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
 }
 
 void CGameContext::OnClientConnected(int ClientID)
 {
 	// Check which team the player should be on
-    int StartTeam = TEAM_SPECTATORS;
+	int StartTeam = TEAM_SPECTATORS;
 
 	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam);
 	//players[client_id].init(client_id);
@@ -759,13 +771,13 @@ void CGameContext::OnClientConnected(int ClientID)
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 {
-    if ( ClientID == m_pController->m_Captain[TEAM_RED] )
-        m_pController->m_Captain[TEAM_RED] = -1;
-    else if ( ClientID == m_pController->m_Captain[TEAM_BLUE] )
-        m_pController->m_Captain[TEAM_BLUE] = -1;
+	if ( ClientID == m_pController->m_Captain[TEAM_RED] )
+		m_pController->m_Captain[TEAM_RED] = -1;
+	else if ( ClientID == m_pController->m_Captain[TEAM_BLUE] )
+		m_pController->m_Captain[TEAM_BLUE] = -1;
 
 	AbortVoteKickOnDisconnect(ClientID);
-    m_apPlayers[ClientID]->m_pStats->SetStopPlay();
+	m_apPlayers[ClientID]->m_pStats->SetStopPlay();
 	m_apPlayers[ClientID]->OnDisconnect(pReason);
 	delete m_apPlayers[ClientID];
 	m_apPlayers[ClientID] = 0;
@@ -783,507 +795,524 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 
 void CGameContext::ParseArguments(const char *Message, int nb_result, char Result[][256])
 {
-    for (int i = 0; i < nb_result; i++)
-        Result[i][0] = 0;
+	for (int i = 0; i < nb_result; i++)
+		Result[i][0] = 0;
 
-    int Actual = 0;
-    int Pos = 0;
+	int Actual = 0;
+	int Pos = 0;
 
-    for (int i = 0; i < str_length(Message); i++)
-    {
-        if (Message[i] == ' ')
-        {
-            Result[Actual][Pos] = 0;
-            Pos = 0;
-            if (Message[i + 1] != ' ')
-                Actual++;
-            if (Actual >= nb_result)
-                break;
-        }
-        else if (Pos < 255)
-        {
-            Result[Actual][Pos] = Message[i];
-            Pos++;
-        }
-    }
-    
-    Result[Actual][Pos] = 0;
+	for (int i = 0; i < str_length(Message); i++)
+	{
+		if (Message[i] == ' ')
+		{
+			Result[Actual][Pos] = 0;
+			Pos = 0;
+			if (Message[i + 1] != ' ')
+				Actual++;
+			if (Actual >= nb_result)
+				break;
+		}
+		else if (Pos < 255)
+		{
+			Result[Actual][Pos] = Message[i];
+			Pos++;
+		}
+	}
+
+	Result[Actual][Pos] = 0;
 }
 
 void CGameContext::CommandOnChat(const char *Message, const int ClientID, const int Team)
 {
-    char Arguments[3][256];
-    ParseArguments(Message, 3, Arguments);
-    if (str_comp_nocase(Arguments[0], "/cmdlist") == 0 || str_comp_nocase(Arguments[0], "/help") == 0 )
-    {
-        SendChatTarget(ClientID, "*** Commands available are : ***");
-        SendChatTarget(ClientID, "/cmdlist or /help : To get commands available.");
-        SendChatTarget(ClientID, "/info or /credits : To get informations of this mod.");
-        SendChatTarget(ClientID, "/ammo : To get ammo of your actual weapon.");
-        SendChatTarget(ClientID, "/race : To choose a race");
-        SendChatTarget(ClientID, "/stats or /ranks : To get your statistics or your rank.");
-        SendChatTarget(ClientID, "/player or /upgr : To get or to add your upgrades.");
-        SendChatTarget(ClientID, "/conf : To change yours settings.");
-        SendChatTarget(ClientID, "/reset_stats or /reset_all_stats or /reset_upgr: To reset partially or all your statistics.");
-    }
-    else if(str_comp_nocase(Arguments[0], "/info") == 0)
-    {
-        SendChatTarget(ClientID, "*** Extreme Weapon Mod v2.3 ***");
-        SendChatTarget(ClientID, "** Wrote by PJK **");
-        SendChatTarget(ClientID, "It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
-        SendChatTarget(ClientID, "You can choose a race, see your statistics and upgrade your gameplay !");
-        SendChatTarget(ClientID, "Say /cmdlist to get all commands available !");
-        SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
-    }
-    else if(str_comp_nocase(Arguments[0], "/register") == 0)
-    {
-        if(Arguments[1][0] == 0)
-        {
-            SendChatTarget(ClientID, "Usage : /register <name> <password>");
-            SendChatTarget(ClientID, "Desc : Use this command to create an account on this server. (Multi-account Allowed :D)");
-            return;
-        }
-        else if(str_length(Arguments[1]) >= MAX_NAME_LENGTH)
-        {
-            SendChatTarget(ClientID, "Your account name is too long !");
-            return;
-        }
-        else if(Arguments[2][0] == 0)
-        {
-            SendChatTarget(ClientID, "You must give a password !");
-            return; 
-        }
-        
-        int Error = m_pStatsServer->CreateId(ClientID, Arguments[1], Arguments[2]);
-        if (Error == -1)
-        {
-            SendChatTarget(ClientID, "This account name is already used !");
-            return;
-        }
-        else if (Error == -2)
-        {
-            SendChatTarget(ClientID, "Error : Can't connect to the database ! Try again.");
-            return;
-        }
-        else if (Error >= 0)
-        {
-            SendChatTarget(ClientID, "Your account is successfully created ! You can use /login !");
-            return;
-        }
-        else
-        {
-            SendChatTarget(ClientID, "Error : Unknown ! Try again and if it failed, tell an admin or moder.");
-            return;
-        }
-    }
-    else if(str_comp_nocase(Arguments[0], "/login") == 0)
-    {
-        if(Arguments[1][0] == 0)
-        {
-            SendChatTarget(ClientID, "Usage : /login <name> <password>");
-            SendChatTarget(ClientID, "Desc : Use this command login on this server.");
-            SendChatTarget(ClientID, "Info : You can use the name \"anonymous\" to play without saving.");
-            return;
-        }
-        else if(str_comp(Arguments[1], "anonymous") == 0)
-        {
-            //Connection Anonymous
-            if (m_apPlayers[ClientID]->GetSID() == 0)
-            {
-                SendChatTarget(ClientID, "You are already connected in anonymous !!");
-                return;
-            }
+	char Arguments[3][256];
+	ParseArguments(Message, 3, Arguments);
+	if (str_comp_nocase(Arguments[0], "/cmdlist") == 0 || str_comp_nocase(Arguments[0], "/help") == 0 )
+	{
+		SendChatTarget(ClientID, "*** Commands available are : ***");
+		SendChatTarget(ClientID, "/cmdlist or /help : To get commands available.");
+		SendChatTarget(ClientID, "/info or /credits : To get informations of this mod.");
+		SendChatTarget(ClientID, "/ammo : To get ammo of your actual weapon.");
+		SendChatTarget(ClientID, "/race : To choose a race");
+		SendChatTarget(ClientID, "/stats or /ranks : To get your statistics or your rank.");
+		SendChatTarget(ClientID, "/player or /upgr : To get or to add your upgrades.");
+		SendChatTarget(ClientID, "/conf : To change yours settings.");
+		SendChatTarget(ClientID, "/reset_stats or /reset_all_stats or /reset_upgr: To reset partially or all your statistics.");
+	}
+	else if(str_comp_nocase(Arguments[0], "/info") == 0)
+	{
+		SendChatTarget(ClientID, "*** Extreme Weapon Mod v2.3 ***");
+		SendChatTarget(ClientID, "** Wrote by PJK **");
+		SendChatTarget(ClientID, "It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
+		SendChatTarget(ClientID, "You can choose a race, see your statistics and upgrade your gameplay !");
+		SendChatTarget(ClientID, "Say /cmdlist to get all commands available !");
+		SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
+	}
+	else if(str_comp_nocase(Arguments[0], "/register") == 0)
+	{
+		if(Arguments[1][0] == 0)
+		{
+			SendChatTarget(ClientID, "Usage : /register <name> <password>");
+			SendChatTarget(ClientID, "Desc : Use this command to create an account on this server. (Multi-account Allowed :D)");
+			return;
+		}
+		else if(str_length(Arguments[1]) >= MAX_NAME_LENGTH)
+		{
+			SendChatTarget(ClientID, "Your account name is too long !");
+			return;
+		}
+		else if(Arguments[2][0] == 0)
+		{
+			SendChatTarget(ClientID, "You must give a password !");
+			return; 
+		}
 
-            m_apPlayers[ClientID]->SetSID(0);
-            if(m_pController->IsTeamplay())
-                SendChatTarget(ClientID, "You are now connected anonymously ! You can join the game !");
-            else
-            {
-                SendChatTarget(ClientID, "You are now connected anonymously ! Have fun !");
-                m_apPlayers[ClientID]->SetTeam(0);
-            }
-            return;
-        }
-        else if(Arguments[2][0] == 0)
-        {
-            SendChatTarget(ClientID, "You must give a password !");
-            return; 
-        }
-        
-        int Id = m_pStatsServer->GetId(Arguments[1], Arguments[2]);
-        if (Id == -1)
-        {
-            SendChatTarget(ClientID, "This account doesn't exist or username/password are wrong !");
-            return;
-        }
-        else if (Id == -2)
-        {
-            SendChatTarget(ClientID, "Error : Can't connect to the database ! Try again.");
-            return;
-        }
-        else if (Id > 0)
-        {
-            if(m_apPlayers[ClientID]->GetSID() == Id)
-            {
-                SendChatTarget(ClientID, "You are already connected with this account !!");
-                return;
-            }
+		#if defined(CONF_SQL)
+		int Error = m_pStatsServer->CreateId(ClientID, Arguments[1], Arguments[2]);
+		if (Error == -1)
+		{
+			SendChatTarget(ClientID, "This account name is already used !");
+			return;
+		}
+		else if (Error == -2)
+		{
+			SendChatTarget(ClientID, "Error : Can't connect to the database ! Try again.");
+			return;
+		}
+		else if (Error >= 0)
+		{
+			SendChatTarget(ClientID, "Your account is successfully created ! You can use /login !");
+			return;
+		}
+		else
+		{
+			SendChatTarget(ClientID, "Error : Unknown ! Try again and if it failed, tell an admin or moder.");
+			return;
+		}
+		#else
+			SendChatTarget(ClientID, "This is a version-compilated without support SQL so no account :(");
+		#endif
+	}
+	else if(str_comp_nocase(Arguments[0], "/login") == 0)
+	{
+		if(Arguments[1][0] == 0)
+		{
+			SendChatTarget(ClientID, "Usage : /login <name> <password>");
+			SendChatTarget(ClientID, "Desc : Use this command login on this server.");
+			SendChatTarget(ClientID, "Info : You can use the name \"anonymous\" to play without saving.");
+			return;
+		}
+		else if(str_comp(Arguments[1], "anonymous") == 0)
+		{
+			//Connection Anonymous
+			if (m_apPlayers[ClientID]->GetSID() == 0)
+			{
+				SendChatTarget(ClientID, "You are already connected in anonymous !!");
+				return;
+			}
 
-            if(!m_apPlayers[ClientID]->SetSID(Id))
-                SendChatTarget(ClientID, "Error while loading stats ! Please try again !");
-            else if(m_pController->IsTeamplay())
-                SendChatTarget(ClientID, "You are now connected ! You can join the game !");
-            else
-            {
-                SendChatTarget(ClientID, "You are now connected !");
-                m_apPlayers[ClientID]->SetTeam(0);
-            }
-            return;
-        }
-        else
-        {
-            SendChatTarget(ClientID, "Error : Unknown ! Try again and if it failed, tell an admin or moder.");
-            return;
-        }
-    }
-    else if(str_comp_nocase(Arguments[0], "/credits") == 0)
-    {
-        SendChat(ClientID, Team, Arguments[0]);
-        SendChatTarget(-1, "*** Extreme Weapon Mod v2.3 ***");
-        SendChatTarget(-1, "** Wrote by PJK **");
-    }
-    else if(m_apPlayers[ClientID]->GetSID() < 0)
-    {
-        char error[256] = "";
-        str_format(error, 256, "Unrecognized command : %s. To have more commands, please log-in !", Arguments[0]);
-        SendChatTarget(ClientID, error);
-        return;
-    }
-    else if(str_comp_nocase(Arguments[0], "/ammo") == 0)
-    {
-        CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
-        if ( pChr )
-        {
-            char aBuf[256] = "";
-            str_format(aBuf, 256, "Ammo of the actual weapon is : %d/%d.", pChr->GetAmmoActiveWeapon(), g_pData->m_Weapons.m_aId[pChr->GetActiveWeapon()].m_Maxammo);
-            SendChatTarget(ClientID, aBuf);
-        }
-        else
-            SendChatTarget(ClientID, "You are dead or you are only a spectator");
-    }
-    else if(str_comp_nocase(Arguments[0], "/race") == 0)
-    {
-            if(str_comp_nocase(Arguments[1], "warrior") == 0)
-            {
-                if(m_apPlayers[ClientID]->m_Race == WARRIOR)
-                    return;
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "%s is now a warrior !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                m_apPlayers[ClientID]->KillCharacter();
-                m_apPlayers[ClientID]->m_Race = WARRIOR;
-                for (int i = 0; i < NUM_WEAPONS; i++)
-                    m_apPlayers[ClientID]->m_WeaponType[i] = WARRIOR;
-            }
-            else if(str_comp_nocase(Arguments[1], "engineer") == 0)
-            {
-                if(m_apPlayers[ClientID]->m_Race == ENGINEER)
-                    return;
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "%s is now an engineer !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                m_apPlayers[ClientID]->KillCharacter();
-                m_apPlayers[ClientID]->m_Race = ENGINEER;
-                for (int i = 0; i < NUM_WEAPONS; i++)
-                    m_apPlayers[ClientID]->m_WeaponType[i] = ENGINEER;
-            }
-            else if(str_comp_nocase(Arguments[1], "orc") == 0)
-            {
-                if(m_apPlayers[ClientID]->m_Race == ORC)
-                    return;
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "%s is now an orc !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                m_apPlayers[ClientID]->KillCharacter();
-                m_apPlayers[ClientID]->m_Race = ORC;
-                for (int i = 0; i < NUM_WEAPONS; i++)
-                    m_apPlayers[ClientID]->m_WeaponType[i] = ORC;
-            }
-            else if(str_comp_nocase(Arguments[1], "miner") == 0)
-            {
-                if(m_apPlayers[ClientID]->m_Race == MINER)
-                    return;
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "%s is now a miner !", Server()->ClientName(ClientID));
-                SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                m_apPlayers[ClientID]->KillCharacter();
-                m_apPlayers[ClientID]->m_Race = MINER;
-                for (int i = 0; i < NUM_WEAPONS; i++)
-                    m_apPlayers[ClientID]->m_WeaponType[i] = MINER;
-            }
-            else if(str_comp_nocase(Arguments[1], "custom") == 0)
-            {
-                if(m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->KillCharacter();
-                }
+			m_apPlayers[ClientID]->SetSID(0);
+			if(m_pController->IsTeamplay())
+				SendChatTarget(ClientID, "You are now connected anonymously ! You can join the game !");
+			else
+			{
+				SendChatTarget(ClientID, "You are now connected anonymously ! Have fun !");
+				m_apPlayers[ClientID]->SetTeam(0);
+			}
+			return;
+		}
+		else if(Arguments[2][0] == 0)
+		{
+			SendChatTarget(ClientID, "You must give a password !");
+			return; 
+		}
 
-                SendChatTarget(ClientID, "Use /hammer | /gun | /shotgun | /grenade | /rifle to customize !");            
-                m_apPlayers[ClientID]->m_Race = CUSTOM;
-            }
-            else if(Arguments[1][0] == 0 || Arguments[1][0] == ' ')
-            {
-                SendChatTarget(ClientID, "Usage : /race <race>");
-                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner or Custom");
-            }
-            else
-            {
-                SendChatTarget(ClientID, "This race doesn't exist !");
-            }
-    }
-    else if (str_comp_nocase(Arguments[0], "/hammer") == 0 ||
-             str_comp_nocase(Arguments[0], "/gun") == 0 ||
-             str_comp_nocase(Arguments[0], "/shotgun") == 0 ||
-             str_comp_nocase(Arguments[0], "/grenade") == 0 ||
-             str_comp_nocase(Arguments[0], "/rifle") == 0)
-    {
-            if (str_comp_nocase(Arguments[1], "warrior") == 0 ||
-                     str_comp_nocase(Arguments[1], "engineer") == 0 ||
-                     str_comp_nocase(Arguments[1], "orc") == 0 ||
-                     str_comp_nocase(Arguments[1], "miner") == 0)
-            {
-                if (m_apPlayers[ClientID]->m_Race != CUSTOM)
-                {
-                    char aBuf[256] = "";
-                    str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
-                    SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
-                    m_apPlayers[ClientID]->m_Race = CUSTOM;
-                }
-                
-                m_apPlayers[ClientID]->KillCharacter();
-            }
-            else if (Arguments[1][0] == 0 || Arguments[1][0] == ' ')
-            {
-                char aBuf[256] = "";
-                str_format(aBuf, 256, "Usage : %s <race>", Arguments[0]);
-                SendChatTarget(ClientID, aBuf);
-                SendChatTarget(ClientID, "Race : Warrior or Engineer or Orc or Miner");
-            }
-            else
-            {
-                SendChatTarget(ClientID, "This race doesn't exist !");
-                return;
-            }
+		#if defined(CONF_SQL)
+		int Id = m_pStatsServer->GetId(Arguments[1], Arguments[2]);
+		if (Id == -1)
+		{
+			SendChatTarget(ClientID, "This account doesn't exist or username/password are wrong !");
+			return;
+		}
+		else if (Id == -2)
+		{
+			SendChatTarget(ClientID, "Error : Can't connect to the database ! Try again.");
+			return;
+		}
+		else if (Id > 0)
+		{
+			if(m_apPlayers[ClientID]->GetSID() == Id)
+			{
+				SendChatTarget(ClientID, "You are already connected with this account !!");
+				return;
+			}
 
-            int Weapon = 0;
-            int Race = 0;
+			if(!m_apPlayers[ClientID]->SetSID(Id))
+				SendChatTarget(ClientID, "Error while loading stats ! Please try again !");
+			else if(m_pController->IsTeamplay())
+				SendChatTarget(ClientID, "You are now connected ! You can join the game !");
+			else
+			{
+				SendChatTarget(ClientID, "You are now connected !");
+				m_apPlayers[ClientID]->SetTeam(0);
+			}
+			return;
+		}
+		else
+		{
+			SendChatTarget(ClientID, "Error : Unknown ! Try again and if it failed, tell an admin or moder.");
+			return;
+		}
+		#else
+			SendChatTarget(ClientID, "This is a version-compilated without support SQL so no account :(");
+		#endif
+	}
+	else if(str_comp_nocase(Arguments[0], "/credits") == 0)
+	{
+		SendChat(ClientID, Team, Arguments[0]);
+		SendChatTarget(-1, "*** Extreme Weapon Mod v2.3 ***");
+		SendChatTarget(-1, "** Wrote by PJK **");
+	}
+	else if(m_apPlayers[ClientID]->GetSID() < 0)
+	{
+		char error[256] = "";
+		str_format(error, 256, "Unrecognized command : %s. To have more commands, please log-in !", Arguments[0]);
+		SendChatTarget(ClientID, error);
+		return;
+	}
+	else if(str_comp_nocase(Arguments[0], "/ammo") == 0)
+	{
+		CCharacter *pChr = m_apPlayers[ClientID]->GetCharacter();
+		if ( pChr )
+		{
+			char aBuf[256] = "";
+			str_format(aBuf, 256, "Ammo of the actual weapon is : %d/%d.", pChr->GetAmmoActiveWeapon(), g_pData->m_Weapons.m_aId[pChr->GetActiveWeapon()].m_Maxammo);
+			SendChatTarget(ClientID, aBuf);
+		}
+		else
+			SendChatTarget(ClientID, "You are dead or you are only a spectator");
+	}
+	else if(str_comp_nocase(Arguments[0], "/race") == 0)
+	{
+			if(str_comp_nocase(Arguments[1], "human") == 0)
+			{
+				if(m_apPlayers[ClientID]->m_Race == HUMAN)
+					return;
+				char aBuf[256] = "";
+				str_format(aBuf, 256, "%s is now a human !", Server()->ClientName(ClientID));
+				SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+				m_apPlayers[ClientID]->KillCharacter();
+				m_apPlayers[ClientID]->m_Race = HUMAN;
+				for (int i = 0; i < NUM_WEAPONS; i++)
+					m_apPlayers[ClientID]->m_WeaponType[i] = HUMAN;
+			}
+			else if(str_comp_nocase(Arguments[1], "gnome") == 0)
+			{
+				if(m_apPlayers[ClientID]->m_Race == GNOME)
+					return;
+				char aBuf[256] = "";
+				str_format(aBuf, 256, "%s is now an gnome !", Server()->ClientName(ClientID));
+				SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+				m_apPlayers[ClientID]->KillCharacter();
+				m_apPlayers[ClientID]->m_Race = GNOME;
+				for (int i = 0; i < NUM_WEAPONS; i++)
+					m_apPlayers[ClientID]->m_WeaponType[i] = GNOME;
+			}
+			else if(str_comp_nocase(Arguments[1], "orc") == 0)
+			{
+				if(m_apPlayers[ClientID]->m_Race == ORC)
+					return;
+				char aBuf[256] = "";
+				str_format(aBuf, 256, "%s is now an orc !", Server()->ClientName(ClientID));
+				SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+				m_apPlayers[ClientID]->KillCharacter();
+				m_apPlayers[ClientID]->m_Race = ORC;
+				for (int i = 0; i < NUM_WEAPONS; i++)
+					m_apPlayers[ClientID]->m_WeaponType[i] = ORC;
+			}
+			else if(str_comp_nocase(Arguments[1], "elf") == 0)
+			{
+				if(m_apPlayers[ClientID]->m_Race == ELF)
+					return;
+				char aBuf[256] = "";
+				str_format(aBuf, 256, "%s is now an elf !", Server()->ClientName(ClientID));
+				SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+				m_apPlayers[ClientID]->KillCharacter();
+				m_apPlayers[ClientID]->m_Race = ELF;
+				for (int i = 0; i < NUM_WEAPONS; i++)
+					m_apPlayers[ClientID]->m_WeaponType[i] = ELF;
+			}
+			else if(str_comp_nocase(Arguments[1], "custom") == 0)
+			{
+				if(m_apPlayers[ClientID]->m_Race != CUSTOM)
+				{
+					char aBuf[256] = "";
+					str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
+					SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+					m_apPlayers[ClientID]->KillCharacter();
+				}
 
-            if (str_comp_nocase(Arguments[0], "/hammer") == 0)
-                Weapon = WEAPON_HAMMER;
-            else if (str_comp_nocase(Arguments[0], "/gun") == 0)
-                Weapon = WEAPON_GUN;
-            else if (str_comp_nocase(Arguments[0], "/shotgun") == 0)
-                Weapon = WEAPON_SHOTGUN;
-            else if (str_comp_nocase(Arguments[0], "/grenade") == 0)
-                Weapon = WEAPON_GRENADE;
-            else if (str_comp_nocase(Arguments[0], "/rifle") == 0)
-                Weapon = WEAPON_RIFLE;
+				SendChatTarget(ClientID, "Use /hammer | /gun | /shotgun | /grenade | /rifle to customize !");			
+				m_apPlayers[ClientID]->m_Race = CUSTOM;
+			}
+			else if(Arguments[1][0] == 0 || Arguments[1][0] == ' ')
+			{
+				SendChatTarget(ClientID, "Usage : /race <race>");
+				SendChatTarget(ClientID, "Race : Human or Gnome or Orc or Elf or Custom");
+			}
+			else
+			{
+				SendChatTarget(ClientID, "This race doesn't exist !");
+			}
+	}
+	else if (str_comp_nocase(Arguments[0], "/hammer") == 0 ||
+			 str_comp_nocase(Arguments[0], "/gun") == 0 ||
+			 str_comp_nocase(Arguments[0], "/shotgun") == 0 ||
+			 str_comp_nocase(Arguments[0], "/grenade") == 0 ||
+			 str_comp_nocase(Arguments[0], "/rifle") == 0)
+	{
+			if (str_comp_nocase(Arguments[1], "human") == 0 ||
+					 str_comp_nocase(Arguments[1], "gnome") == 0 ||
+					 str_comp_nocase(Arguments[1], "orc") == 0 ||
+					 str_comp_nocase(Arguments[1], "elf") == 0)
+			{
+				if (m_apPlayers[ClientID]->m_Race != CUSTOM)
+				{
+					char aBuf[256] = "";
+					str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
+					SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
+					m_apPlayers[ClientID]->m_Race = CUSTOM;
+				}
 
-            if (str_comp_nocase(Arguments[1], "warrior") == 0)
-                Race = WARRIOR;
-            else if (str_comp_nocase(Arguments[1], "engineer") == 0)
-                Race = ENGINEER;
-            else if (str_comp_nocase(Arguments[1], "orc") == 0)
-                Race = ORC;
-            else if (str_comp_nocase(Arguments[1], "miner") == 0)
-                Race = MINER;
+				m_apPlayers[ClientID]->KillCharacter();
+			}
+			else if (Arguments[1][0] == 0 || Arguments[1][0] == ' ')
+			{
+				char aBuf[256] = "";
+				str_format(aBuf, 256, "Usage : %s <race>", Arguments[0]);
+				SendChatTarget(ClientID, aBuf);
+				SendChatTarget(ClientID, "Race : Human or Gnome or Orc or Elf");
+			}
+			else
+			{
+				SendChatTarget(ClientID, "This race doesn't exist !");
+				return;
+			}
 
-            m_apPlayers[ClientID]->m_WeaponType[Weapon] = Race;
-            
-            char aBuf[256] = "";
-            str_format(aBuf, 256, "The type of your %s is %s now !", Arguments[0], Arguments[1]);
-            SendChatTarget(ClientID, aBuf, CHAT_INFO_RACE);
-    }
-    else if(str_comp_nocase(Arguments[0], "/stats") == 0)
-    {
-        SendChat(ClientID, Team, Arguments[0]);
-        m_apPlayers[ClientID]->m_pStats->DisplayStat();
-    }
-    else if(str_comp_nocase(Arguments[0], "/ranks") == 0)
-    {
-        SendChat(ClientID, Team, Arguments[0]);
-        m_pStatsServer->DisplayRank(m_apPlayers[ClientID]->GetSID());
-    }
-    else if(str_comp_nocase(Arguments[0], "/bestof") == 0)
-    {
-        SendChat(ClientID, Team, Arguments[0]);
-        m_pStatsServer->DisplayBestOf();
-    }
-    else if(str_comp_nocase(Arguments[0], "/player") == 0)
-        m_apPlayers[ClientID]->m_pStats->DisplayPlayer();
-    else if(str_comp_nocase(Arguments[0], "/upgr") == 0)
-    {
-        
-        int Code = 4;
-        if (Arguments[1][0] == 0 || Arguments[1][0] == ' ')
-        {
-                SendChatTarget(ClientID, "Usage : /upgr <type>");
-                SendChatTarget(ClientID, "Type : Weapon or Life or Move or Hook");
-                return;
-        }
-        else if (str_comp_nocase(Arguments[1], "weapon") != 0 &&
-                 str_comp_nocase(Arguments[1], "life") != 0 &&
-                 str_comp_nocase(Arguments[1], "move") != 0 &&
-                 str_comp_nocase(Arguments[1], "hook") != 0)
-        {
-                SendChatTarget(ClientID, "This upgrade doesn't exist !");
-                return;
-        }
+			int Weapon = 0;
+			int Race = 0;
 
-        if (str_comp_nocase(Arguments[1], "weapon") == 0)
-            Code = m_apPlayers[ClientID]->m_pStats->UpgradeWeapon();
-        else if (str_comp_nocase(Arguments[1], "life") == 0)
-            Code = m_apPlayers[ClientID]->m_pStats->UpgradeLife();
-        else if (str_comp_nocase(Arguments[1], "move") == 0)
-            Code = m_apPlayers[ClientID]->m_pStats->UpgradeMove();
-        else if (str_comp_nocase(Arguments[1], "hook") == 0)
-            Code = m_apPlayers[ClientID]->m_pStats->UpgradeHook();
+			if (str_comp_nocase(Arguments[0], "/hammer") == 0)
+				Weapon = WEAPON_HAMMER;
+			else if (str_comp_nocase(Arguments[0], "/gun") == 0)
+				Weapon = WEAPON_GUN;
+			else if (str_comp_nocase(Arguments[0], "/shotgun") == 0)
+				Weapon = WEAPON_SHOTGUN;
+			else if (str_comp_nocase(Arguments[0], "/grenade") == 0)
+				Weapon = WEAPON_GRENADE;
+			else if (str_comp_nocase(Arguments[0], "/rifle") == 0)
+				Weapon = WEAPON_RIFLE;
 
-        switch (Code)
-        {
-                case 0:
-                    SendChatTarget(ClientID, "Your account has been upgraded !");
-                    break;
+			if (str_comp_nocase(Arguments[1], "human") == 0)
+				Race = HUMAN;
+			else if (str_comp_nocase(Arguments[1], "gnome") == 0)
+				Race = GNOME;
+			else if (str_comp_nocase(Arguments[1], "orc") == 0)
+				Race = ORC;
+			else if (str_comp_nocase(Arguments[1], "elf") == 0)
+				Race = ELF;
 
-                case 1:
-                    SendChatTarget(ClientID, "You haven't got enough money");
-                    break;
+			m_apPlayers[ClientID]->m_WeaponType[Weapon] = Race;
 
-                case 2:
-                    SendChatTarget(ClientID, "You have locked your account !");
-                    break;
+			char aBuf[256] = "";
+			str_format(aBuf, 256, "The type of your %s is %s now !", Arguments[0], Arguments[1]);
+			SendChatTarget(ClientID, aBuf, CHAT_INFO_RACE);
+	}
+	else if(str_comp_nocase(Arguments[0], "/stats") == 0)
+	{
+		SendChat(ClientID, Team, Arguments[0]);
+		m_apPlayers[ClientID]->m_pStats->DisplayStat();
+	}
+	else if(str_comp_nocase(Arguments[0], "/ranks") == 0)
+	{
+		SendChat(ClientID, Team, Arguments[0]);
+		#if defined(CONF_SQL)
+		m_pStatsServer->DisplayRank(m_apPlayers[ClientID]->GetSID());
+		#else
+			SendChatTarget(ClientID, "This is a version-compilated without support SQL so no ranks :(");
+		#endif
+	}
+	else if(str_comp_nocase(Arguments[0], "/bestof") == 0)
+	{
+		SendChat(ClientID, Team, Arguments[0]);
+		#if defined(CONF_SQL)
+		m_pStatsServer->DisplayBestOf();
+		#else
+			SendChatTarget(ClientID, "This is a version-compilated without support SQL so no bestof :(");
+		#endif
+	}
+	else if(str_comp_nocase(Arguments[0], "/player") == 0)
+		m_apPlayers[ClientID]->m_pStats->DisplayPlayer();
+	else if(str_comp_nocase(Arguments[0], "/upgr") == 0)
+	{
 
-                case 3:
-                    SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
-                    break;
-                default:
-                    SendChatTarget(ClientID, "An unknown error is occurred !");
-                    break;
-        }
-    }
-    else if(str_comp_nocase(Arguments[0], "/conf") == 0)
-    {
-        if(str_comp_nocase(Arguments[1], "InfoHealKiller") == 0)
-        {
-            bool statut = m_apPlayers[ClientID]->m_pStats->InfoHealKiller();
-            char a[256] = "";
-            str_format(a, 256, "Information of Heal of Killer is now : %s. ", statut ? "Enabled" : "Disabled");
-            SendChatTarget(ClientID, a);
-        }
-        else if(str_comp_nocase(Arguments[1], "InfoXP") == 0)
-        {
-            bool statut = m_apPlayers[ClientID]->m_pStats->InfoXP();
-            char a[256] = "";
-            str_format(a, 256, "Information of XP is now : %s. ", statut ? "Enabled" : "Disabled");
-            SendChatTarget(ClientID, a);
-        }
-        else if(str_comp_nocase(Arguments[1], "InfoLevelUp") == 0)
-        {
-            bool statut = m_apPlayers[ClientID]->m_pStats->InfoLevelUp();
-            char a[256] = "";
-            str_format(a, 256, "Information of Level Up is now : %s. ", statut ? "Enabled" : "Disabled");
-            SendChatTarget(ClientID, a);
-        }
-        else if(str_comp_nocase(Arguments[1], "InfoKillingSpree") == 0)
-        {
-            bool statut = m_apPlayers[ClientID]->m_pStats->InfoKillingSpree();
-            char a[256] = "";
-            str_format(a, 256, "Information of Killing Spree is now : %s. ", statut ? "Enabled" : "Disabled");
-            SendChatTarget(ClientID, a);
-        }
-        else if(str_comp_nocase(Arguments[1], "InfoRace") == 0)
-        {
-            bool statut = m_apPlayers[ClientID]->m_pStats->InfoRace();
-            char a[256] = "";
-            str_format(a, 256, "Information of Race is now : %s. ", statut ? "Enabled" : "Disabled");
-            SendChatTarget(ClientID, a);
-        }
-        else if(str_comp_nocase(Arguments[1], "InfoAmmo") == 0)
-        {
-            bool statut = m_apPlayers[ClientID]->m_pStats->InfoAmmo();
-            char a[256] = "";
-            str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Enabled" : "Disabled");
-            SendChatTarget(ClientID, a);
-        }
-        else if(str_comp_nocase(Arguments[1], "InfoVoter") == 0)
-        {
-            bool statut = m_apPlayers[ClientID]->m_pStats->ShowVoter();
-            char a[256] = "";
-            str_format(a, 256, "Information of Voter is now : %s. ", statut ? "Enabled" : "Disabled");
-            SendChatTarget(ClientID, a);
-        }
-        else if(str_comp_nocase(Arguments[1], "EnableAllInfo") == 0)
-        {
-            m_apPlayers[ClientID]->m_pStats->EnableAllInfo();
-            SendChatTarget(ClientID, "All information are enabled");
-        }
-        else if(str_comp_nocase(Arguments[1], "DisableAllInfo") == 0)
-        {
-            m_apPlayers[ClientID]->m_pStats->DisableAllInfo();
-            SendChatTarget(ClientID, "All information are disabled");
-        }
-        else if(str_comp_nocase(Arguments[1], "AmmoAbsolute") == 0)
-        {
-            bool statut = m_apPlayers[ClientID]->m_pStats->AmmoAbsolute();
-            char a[256] = "";
-            str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Absolute" : "Relative");
-            SendChatTarget(ClientID, a);
-        }
-        else if(str_comp_nocase(Arguments[1], "LifeAbsolute") == 0)
-        {
-            bool statut = m_apPlayers[ClientID]->m_pStats->LifeAbsolute();
-            char a[256] = "";
-            str_format(a, 256, "Information of Life is now : %s. ", statut ? "Absolute" : "Relative");
-            SendChatTarget(ClientID, a);
-        }
-        else if(str_comp_nocase(Arguments[1], "Lock") == 0)
-        {
-            bool lock = m_apPlayers[ClientID]->m_pStats->Lock();
-            char a[256] = "";
-            str_format(a, 256, "Your statistics are now : %s. ", lock ? "Locked" : "Unlocked");
-            SendChatTarget(ClientID, a);
-        }
-        else
-        {
-            SendChatTarget(ClientID, "Usage : /conf <type>");
-            SendChatTarget(ClientID, "Type : InfoHealKiller or InfoXP or InfoLevelUp or InfoKillingSpree or InfoRace or InfoAmmo or InfoVoter or EnableAllInfo or DisableAllInfo or AmmoAbsolute or LifeAbsolute or Lock");
-            SendChatTarget(ClientID, "Description : Enable or disable functionnality.");
-        }
-    }
-    else if(str_comp_nocase(Arguments[0], "/reset_stats") == 0)
-    {
-        m_apPlayers[ClientID]->m_pStats->ResetPartialStats();
-        SendChatTarget(ClientID, "Your statistics have been partially resetted !");
-    }
-    else if(str_comp_nocase(Arguments[0], "/reset_all_stats") == 0)
-    {
-        m_apPlayers[ClientID]->m_pStats->ResetAllStats();
-        SendChatTarget(ClientID, "Your statistics have been resetted !");
-    }
-    else if(str_comp_nocase(Arguments[0], "/reset_upgr") == 0)
-    {
-        m_apPlayers[ClientID]->m_pStats->ResetUpgr();
-        SendChatTarget(ClientID, "Your upgrades have been resetted !");
-    }
-    else
-    {
-        char error[256] = "";
-        str_format(error, 256, "Unrecognized command : %s. To get commands available, say /cmdlist", Arguments[0]);
-        SendChatTarget(ClientID, error);
-    }
+		int Code = 4;
+		if (Arguments[1][0] == 0 || Arguments[1][0] == ' ')
+		{
+                SendChatTarget(ClientID, "Usage : /upgr <type> [count]");
+				SendChatTarget(ClientID, "Type : Weapon or Life or Move or Hook");
+				return;
+		}
+		else if (str_comp_nocase(Arguments[1], "weapon") != 0 &&
+				 str_comp_nocase(Arguments[1], "life") != 0 &&
+				 str_comp_nocase(Arguments[1], "move") != 0 &&
+				 str_comp_nocase(Arguments[1], "hook") != 0)
+		{
+				SendChatTarget(ClientID, "This upgrade doesn't exist !");
+				return;
+		}
+
+        unsigned int count = max(1, str_toint(Arguments[2]));
+		if (str_comp_nocase(Arguments[1], "weapon") == 0)
+            Code = m_apPlayers[ClientID]->m_pStats->UpgradeWeapon(count);
+		else if (str_comp_nocase(Arguments[1], "life") == 0)
+            Code = m_apPlayers[ClientID]->m_pStats->UpgradeLife(count);
+		else if (str_comp_nocase(Arguments[1], "move") == 0)
+            Code = m_apPlayers[ClientID]->m_pStats->UpgradeMove(count);
+		else if (str_comp_nocase(Arguments[1], "hook") == 0)
+            Code = m_apPlayers[ClientID]->m_pStats->UpgradeHook(count);
+
+		switch (Code)
+		{
+				case 0:
+					SendChatTarget(ClientID, "Your account has been upgraded !");
+					break;
+
+				case 1:
+					SendChatTarget(ClientID, "You haven't got enough money");
+					break;
+
+				case 2:
+					SendChatTarget(ClientID, "You have locked your account !");
+					break;
+
+				case 3:
+					SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
+					break;
+				default:
+					SendChatTarget(ClientID, "An unknown error is occurred !");
+					break;
+		}
+	}
+	else if(str_comp_nocase(Arguments[0], "/conf") == 0)
+	{
+		if(str_comp_nocase(Arguments[1], "InfoHealKiller") == 0)
+		{
+			bool statut = m_apPlayers[ClientID]->m_pStats->InfoHealKiller();
+			char a[256] = "";
+			str_format(a, 256, "Information of Heal of Killer is now : %s. ", statut ? "Enabled" : "Disabled");
+			SendChatTarget(ClientID, a);
+		}
+		else if(str_comp_nocase(Arguments[1], "InfoXP") == 0)
+		{
+			bool statut = m_apPlayers[ClientID]->m_pStats->InfoXP();
+			char a[256] = "";
+			str_format(a, 256, "Information of XP is now : %s. ", statut ? "Enabled" : "Disabled");
+			SendChatTarget(ClientID, a);
+		}
+		else if(str_comp_nocase(Arguments[1], "InfoLevelUp") == 0)
+		{
+			bool statut = m_apPlayers[ClientID]->m_pStats->InfoLevelUp();
+			char a[256] = "";
+			str_format(a, 256, "Information of Level Up is now : %s. ", statut ? "Enabled" : "Disabled");
+			SendChatTarget(ClientID, a);
+		}
+		else if(str_comp_nocase(Arguments[1], "InfoKillingSpree") == 0)
+		{
+			bool statut = m_apPlayers[ClientID]->m_pStats->InfoKillingSpree();
+			char a[256] = "";
+			str_format(a, 256, "Information of Killing Spree is now : %s. ", statut ? "Enabled" : "Disabled");
+			SendChatTarget(ClientID, a);
+		}
+		else if(str_comp_nocase(Arguments[1], "InfoRace") == 0)
+		{
+			bool statut = m_apPlayers[ClientID]->m_pStats->InfoRace();
+			char a[256] = "";
+			str_format(a, 256, "Information of Race is now : %s. ", statut ? "Enabled" : "Disabled");
+			SendChatTarget(ClientID, a);
+		}
+		else if(str_comp_nocase(Arguments[1], "InfoAmmo") == 0)
+		{
+			bool statut = m_apPlayers[ClientID]->m_pStats->InfoAmmo();
+			char a[256] = "";
+			str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Enabled" : "Disabled");
+			SendChatTarget(ClientID, a);
+		}
+		else if(str_comp_nocase(Arguments[1], "InfoVoter") == 0)
+		{
+			bool statut = m_apPlayers[ClientID]->m_pStats->ShowVoter();
+			char a[256] = "";
+			str_format(a, 256, "Information of Voter is now : %s. ", statut ? "Enabled" : "Disabled");
+			SendChatTarget(ClientID, a);
+		}
+		else if(str_comp_nocase(Arguments[1], "EnableAllInfo") == 0)
+		{
+			m_apPlayers[ClientID]->m_pStats->EnableAllInfo();
+			SendChatTarget(ClientID, "All information are enabled");
+		}
+		else if(str_comp_nocase(Arguments[1], "DisableAllInfo") == 0)
+		{
+			m_apPlayers[ClientID]->m_pStats->DisableAllInfo();
+			SendChatTarget(ClientID, "All information are disabled");
+		}
+		else if(str_comp_nocase(Arguments[1], "AmmoAbsolute") == 0)
+		{
+			bool statut = m_apPlayers[ClientID]->m_pStats->AmmoAbsolute();
+			char a[256] = "";
+			str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Absolute" : "Relative");
+			SendChatTarget(ClientID, a);
+		}
+		else if(str_comp_nocase(Arguments[1], "LifeAbsolute") == 0)
+		{
+			bool statut = m_apPlayers[ClientID]->m_pStats->LifeAbsolute();
+			char a[256] = "";
+			str_format(a, 256, "Information of Life is now : %s. ", statut ? "Absolute" : "Relative");
+			SendChatTarget(ClientID, a);
+		}
+		else if(str_comp_nocase(Arguments[1], "Lock") == 0)
+		{
+			bool lock = m_apPlayers[ClientID]->m_pStats->Lock();
+			char a[256] = "";
+			str_format(a, 256, "Your statistics are now : %s. ", lock ? "Locked" : "Unlocked");
+			SendChatTarget(ClientID, a);
+		}
+		else
+		{
+			SendChatTarget(ClientID, "Usage : /conf <type>");
+			SendChatTarget(ClientID, "Type : InfoHealKiller or InfoXP or InfoLevelUp or InfoKillingSpree or InfoRace or InfoAmmo or InfoVoter or EnableAllInfo or DisableAllInfo or AmmoAbsolute or LifeAbsolute or Lock");
+			SendChatTarget(ClientID, "Description : Enable or disable functionnality.");
+		}
+	}
+	else if(str_comp_nocase(Arguments[0], "/reset_stats") == 0)
+	{
+		m_apPlayers[ClientID]->m_pStats->ResetPartialStats();
+		SendChatTarget(ClientID, "Your statistics have been partially resetted !");
+	}
+	else if(str_comp_nocase(Arguments[0], "/reset_all_stats") == 0)
+	{
+		m_apPlayers[ClientID]->m_pStats->ResetAllStats();
+		SendChatTarget(ClientID, "Your statistics have been resetted !");
+	}
+	else if(str_comp_nocase(Arguments[0], "/reset_upgr") == 0)
+	{
+		m_apPlayers[ClientID]->m_pStats->ResetUpgr();
+		SendChatTarget(ClientID, "Your upgrades have been resetted !");
+	}
+	else
+	{
+		char error[256] = "";
+		str_format(error, 256, "Unrecognized command : %s. To get commands available, say /cmdlist", Arguments[0]);
+		SendChatTarget(ClientID, error);
+	}
 }
 
 void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
@@ -1317,20 +1346,20 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pMessage++;
 		}
 
-        if(g_Config.m_SvSpamprotection && pPlayer->m_LastChat && pPlayer->m_LastChat+Server()->TickSpeed() > Server()->Tick() && pMsg->m_pMessage[0] != '/')
-            return;
+		if(g_Config.m_SvSpamprotection && pPlayer->m_LastChat && pPlayer->m_LastChat+Server()->TickSpeed() > Server()->Tick() && pMsg->m_pMessage[0] != '/')
+			return;
 
-        pPlayer->m_LastChat = Server()->Tick();
+		pPlayer->m_LastChat = Server()->Tick();
 
-        if(pMsg->m_pMessage[0]=='/')
-        {
-            CommandOnChat(pMsg->m_pMessage, ClientID, Team);
-        }
-        else
-        {
-		    SendChat(ClientID, Team, pMsg->m_pMessage);
-            m_apPlayers[ClientID]->m_pStats->AddMessage();
-        }
+		if(pMsg->m_pMessage[0]=='/')
+		{
+			CommandOnChat(pMsg->m_pMessage, ClientID, Team);
+		}
+		else
+		{
+			SendChat(ClientID, Team, pMsg->m_pMessage);
+			m_apPlayers[ClientID]->m_pStats->AddMessage();
+		}
 	}
 	else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 	{
@@ -1398,11 +1427,21 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 			}
 
-            if(g_Config.m_SvForceVoteReason && (str_comp_nocase(pReason, "No reason given") == 0 || str_length(pReason) < 3))
-            {
-                SendChatTarget(ClientID, "Server does not allow voting to kick players without reason");
-                return;
-            }
+			if(g_Config.m_SvForceVoteReason && (str_comp_nocase(pReason, "No reason given") == 0 || str_length(pReason) < 3))
+			{
+				SendChatTarget(ClientID, "Server does not allow voting to kick players without reason");
+				return;
+			}
+				else if(g_Config.m_SvForceVoteReason && (
+					str_comp_nocase(pReason, "lol") == 0 ||
+					str_comp_nocase(pReason, "noob") == 0 ||
+					str_comp_nocase(pReason, "pro") == 0 ||
+					str_comp_nocase(pReason, "gay") == 0 ||
+					str_comp_nocase(pReason, "cheat") == 0))
+				{
+					SendChatTarget(ClientID, "Server does not allow voting to kick players without REAL reason !");
+					return;
+				}
 
 			if(g_Config.m_SvVoteKickMin)
 			{
@@ -1434,7 +1473,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			{
 				SendChatTarget(ClientID, "You can't kick admins");
 				char aBufKick[128];
-                str_format(aBufKick, sizeof(aBufKick), "'%s' called for vote to kick you (Reason : %s)", Server()->ClientName(ClientID), pReason);
+				str_format(aBufKick, sizeof(aBufKick), "'%s' called for vote to kick you (Reason : %s)", Server()->ClientName(ClientID), pReason);
 				SendChatTarget(KickID, aBufKick);
 				return;
 			}
@@ -1452,17 +1491,27 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		}
 		else if(str_comp_nocase(pMsg->m_Type, "spectate") == 0)
 		{
-            if(!g_Config.m_SvVoteSpectate && !m_pEventsGame->IsActualEvent(SURVIVOR) && (!m_pController->IsTeamplay() || !m_pEventsGame->GetActualEventTeam() != T_SURVIVOR) )
+				if(!g_Config.m_SvVoteSpectate)
 			{
 				SendChatTarget(ClientID, "Server does not allow voting to move players to spectators");
 				return;
 			}
 
-            if(str_comp_nocase(pReason, "No reason given") == 0)
-            {
-                SendChatTarget(ClientID, "Server does not allow voting to move players to spectators without reason");
-                return;
-            }
+				if(g_Config.m_SvForceVoteReason && ((str_comp_nocase(pReason, "No reason given") == 0 || str_length(pReason) < 3)))
+			{
+				SendChatTarget(ClientID, "Server does not allow voting to move players to spectators without reason");
+					return;
+				}
+				else if(g_Config.m_SvForceVoteReason && (
+					str_comp_nocase(pReason, "lol") == 0 ||
+					str_comp_nocase(pReason, "noob") == 0 ||
+					str_comp_nocase(pReason, "pro") == 0 ||
+					str_comp_nocase(pReason, "gay") == 0 ||
+					str_comp_nocase(pReason, "cheat") == 0))
+				{
+					SendChatTarget(ClientID, "Server does not allow voting to move players to spectators without REAL reason !");
+				return;
+			}
 
 			int SpectateID = str_toint(pMsg->m_Value);
 			if(SpectateID < 0 || SpectateID >= MAX_CLIENTS || !m_apPlayers[SpectateID] || m_apPlayers[SpectateID]->GetTeam() == TEAM_SPECTATORS)
@@ -1502,17 +1551,17 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(!pMsg->m_Vote)
 				return;
 
-            if(g_Config.m_SvShowPersonalVote)
-            {
-                char aBuf[128];
+			if(g_Config.m_SvShowPersonalVote)
+			{
+				char aBuf[128];
 
-                if(pMsg->m_Vote < 0) //no
-                    str_format(aBuf, sizeof(aBuf), "%s voted no", Server()->ClientName(pPlayer->GetCID()));
-                else
-                    str_format(aBuf, sizeof(aBuf), "%s voted yes", Server()->ClientName(pPlayer->GetCID()));
+				if(pMsg->m_Vote < 0) //no
+					str_format(aBuf, sizeof(aBuf), "%s voted no", Server()->ClientName(pPlayer->GetCID()));
+				else
+					str_format(aBuf, sizeof(aBuf), "%s voted yes", Server()->ClientName(pPlayer->GetCID()));
 
-                SendChatTarget(-1, aBuf, CHAT_INFO_VOTER);
-            }
+				SendChatTarget(-1, aBuf, CHAT_INFO_VOTER);
+			}
 
 			pPlayer->m_Vote = pMsg->m_Vote;
 			pPlayer->m_VotePos = ++m_VotePos;
@@ -1530,25 +1579,22 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			pPlayer->m_LastSetTeam = Server()->Tick();
 			SendBroadcast("Teams are locked", ClientID);
-			m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
 			return;
 		}
 
-        if(m_pEventsGame->GetActualEventTeam() >= STEAL_TEE && pMsg->m_Team != TEAM_SPECTATORS)
-        {
-            SendBroadcast("You can't join other team with this event, wait a team capture all players", ClientID);
-            m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
-            return;
-        }
+		if(m_pEventsGame->GetActualEventTeam() >= STEAL_TEE && pMsg->m_Team != TEAM_SPECTATORS)
+		{
+			SendBroadcast("You can't join other team with this event, wait a team capture all players", ClientID);
+			return;
+		}
 
-        if(pMsg->m_Team != TEAM_SPECTATORS &&
-        ((m_pEventsGame->IsActualEvent(SURVIVOR) && m_pController->GetNumPlayer(0) > 0)
-        || (m_pController->IsTeamplay() && m_pEventsGame->GetActualEventTeam() == T_SURVIVOR && m_pController->GetNumPlayer(0) > 0 && m_pController->GetNumPlayer(1) > 0)))
-        {
-            SendBroadcast("You can't join other team with this event, wait a winner", ClientID);
-            m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
-            return;
-        }
+		if(pMsg->m_Team != TEAM_SPECTATORS &&
+		((m_pEventsGame->IsActualEvent(SURVIVOR) && m_pController->GetNumPlayer(0) > 0)
+		|| (m_pController->IsTeamplay() && m_pEventsGame->GetActualEventTeam() == T_SURVIVOR && m_pController->GetNumPlayer(0) > 0 && m_pController->GetNumPlayer(1) > 0)))
+		{
+			SendBroadcast("You can't join other team with this event, wait a winner", ClientID);
+			return;
+		}
 
 		if(pPlayer->m_TeamChangeTick > Server()->Tick())
 		{
@@ -1557,7 +1603,6 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf), "Time to wait before changing team: %02d:%02d", TimeLeft/60, TimeLeft%60);
 			SendBroadcast(aBuf, ClientID);
-            m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
 			return;
 		}
 
@@ -1566,13 +1611,12 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			if(m_pController->CanChangeTeam(pPlayer, pMsg->m_Team))
 			{
-    	        if(m_apPlayers[ClientID]->GetSID() < 0)
-                {
-                    SendBroadcast("You are logged anonymously, nothing is save !", ClientID);
-                    SendChatTarget(ClientID, "You are logged anonymously, nothing is save ! If you want keep your level and statistics, please /register or login ! Have fun ;)", ClientID);
-                    m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
-                    m_apPlayers[ClientID]->SetSID(0);
-                }
+				if(m_apPlayers[ClientID]->GetSID() < 0)
+				{
+					SendBroadcast("You are logged anonymously, nothing is save !", ClientID);
+					SendChatTarget(ClientID, "You are logged anonymously, nothing is save ! If you want keep your level and statistics, please /register or login ! Have fun ;)", ClientID);
+					m_apPlayers[ClientID]->SetSID(0);
+				}
 
 				pPlayer->m_LastSetTeam = Server()->Tick();
 				if(pPlayer->GetTeam() == TEAM_SPECTATORS || pMsg->m_Team == TEAM_SPECTATORS)
@@ -1582,17 +1626,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				pPlayer->m_TeamChangeTick = Server()->Tick();
 			}
 			else
-            {
 				SendBroadcast("Teams must be balanced, please join other team", ClientID);
-                m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
-            }
 		}
 		else
 		{
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf), "Only %d active players are allowed", Server()->MaxClients()-g_Config.m_SvSpectatorSlots);
 			SendBroadcast(aBuf, ClientID);
-            m_apPlayers[ClientID]->m_BroadcastTick = Server()->Tick();
 		}
 	}
 	else if (MsgID == NETMSGTYPE_CL_SETSPECTATORMODE && !m_World.m_Paused)
@@ -1732,7 +1772,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
 		pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
 		m_pController->OnPlayerInfoChange(pPlayer);
-        m_apPlayers[ClientID]->m_pStats->UpdateInfo();
+		m_apPlayers[ClientID]->m_pStats->UpdateInfo();
 	}
 	else if (MsgID == NETMSGTYPE_CL_EMOTICON && !m_World.m_Paused)
 	{
@@ -1823,13 +1863,6 @@ void CGameContext::ConBroadcast(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	pSelf->SendBroadcast(pResult->GetString(0), -1);
-    for ( int i = 0; i < MAX_CLIENTS; i++ )
-    {
-        if (pSelf->m_apPlayers[i])
-        {
-            pSelf->m_apPlayers[i]->m_BroadcastTick = pSelf->Server()->Tick();
-        }
-    }
 }
 
 void CGameContext::ConSay(IConsole::IResult *pResult, void *pUserData)
@@ -1891,7 +1924,7 @@ void CGameContext::ConShuffleTeams(IConsole::IResult *pResult, void *pUserData)
 		if(pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 			++PlayerTeam;
 	PlayerTeam = (PlayerTeam+1)/2;
-	
+
 	pSelf->SendChat(-1, CGameContext::CHAT_ALL, "Teams were shuffled");
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -2168,415 +2201,429 @@ void CGameContext::ConVote(IConsole::IResult *pResult, void *pUserData)
 
 void CGameContext::ConNextEvent(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    pSelf->m_pEventsGame->NextEvent();
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->m_pEventsGame->NextEvent();
 }
 
 void CGameContext::ConNextRandomEvent(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    pSelf->m_pEventsGame->NextRandomEvent();
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->m_pEventsGame->NextRandomEvent();
 }
 
 void CGameContext::ConSetEvent(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    if (!pSelf->m_pEventsGame->SetEvent(pResult->GetInteger(0)))
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid event id to set");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (!pSelf->m_pEventsGame->SetEvent(pResult->GetInteger(0)))
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid event id to set");
 }
 
 void CGameContext::ConAddTimeEvent(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    if (pResult->NumArguments())
-    {
-        if (!pSelf->m_pEventsGame->AddTime(pResult->GetInteger(0)))
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid time to add");
-    }
-    else
-    {
-        if (!pSelf->m_pEventsGame->AddTime())
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Error unknown to add time");
-    }
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if (pResult->NumArguments())
+	{
+		if (!pSelf->m_pEventsGame->AddTime(pResult->GetInteger(0)))
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid time to add");
+	}
+	else
+	{
+		if (!pSelf->m_pEventsGame->AddTime())
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Error unknown to add time");
+	}
 }
 
 void CGameContext::ConNextEventTeam(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    if ( pSelf->m_pController->IsTeamplay() )
-        pSelf->m_pEventsGame->NextEventTeam();
-    else
-    {
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
-        pSelf->SendChatTarget(-1, "The actual gametype is not with teams !");
-    }
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if ( pSelf->m_pController->IsTeamplay() )
+		pSelf->m_pEventsGame->NextEventTeam();
+	else
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+		pSelf->SendChatTarget(-1, "The actual gametype is not with teams !");
+	}
 }
 
 void CGameContext::ConNextRandomEventTeam(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    if ( pSelf->m_pController->IsTeamplay() )
-        pSelf->m_pEventsGame->NextRandomEventTeam();
-    else
-    {
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
-        pSelf->SendChatTarget(-1, "The actual gametype is not with teams !");
-    }
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if ( pSelf->m_pController->IsTeamplay() )
+		pSelf->m_pEventsGame->NextRandomEventTeam();
+	else
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+		pSelf->SendChatTarget(-1, "The actual gametype is not with teams !");
+	}
 }
 
 void CGameContext::ConSetEventTeam(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    if ( pSelf->m_pController->IsTeamplay() )
-    {
-        if (!pSelf->m_pEventsGame->SetEventTeam(pResult->GetInteger(0)))
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid event id to set");
-    }
-    else
-    {
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
-        pSelf->SendChatTarget(-1, "The actual gametype is not with teams !");
-    }
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if ( pSelf->m_pController->IsTeamplay() )
+	{
+		if (!pSelf->m_pEventsGame->SetEventTeam(pResult->GetInteger(0)))
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid event id to set");
+	}
+	else
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+		pSelf->SendChatTarget(-1, "The actual gametype is not with teams !");
+	}
 }
 
 void CGameContext::ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    if ( pSelf->m_pController->IsTeamplay() )
-    {
-        if (pResult->NumArguments())
-        {
-            if (!pSelf->m_pEventsGame->AddTimeTeam(pResult->GetInteger(0)))
-                pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid time to add");
-        }
-        else
-        {
-            if (!pSelf->m_pEventsGame->AddTimeTeam())
-                pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Error unknown to add time");
-        }
-    }
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if ( pSelf->m_pController->IsTeamplay() )
+	{
+		if (pResult->NumArguments())
+		{
+			if (!pSelf->m_pEventsGame->AddTimeTeam(pResult->GetInteger(0)))
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid time to add");
+		}
+		else
+		{
+			if (!pSelf->m_pEventsGame->AddTimeTeam())
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Error unknown to add time");
+		}
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "The actual gametype is not with teams");
 }
 
 void CGameContext::ConListPlayer(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-    pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "List of Players :");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "List of Players :");
 
-    for ( int i = 0; i < MAX_CLIENTS; i++ )
-    {
-        if ( pSelf->m_apPlayers[i] )
-        {
-            char Text[256] = "";
-            str_format(Text, 256, "Client ID : %d. Name : %s. Stats ID : %ld.", i, pSelf->Server()->ClientName(i), pSelf->m_apPlayers[i]->GetSID());
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", Text);
-        }
-    }
+	for ( int i = 0; i < MAX_CLIENTS; i++ )
+	{
+		if ( pSelf->m_apPlayers[i] )
+		{
+			char Text[256] = "";
+			str_format(Text, 256, "Client ID : %d. Name : %s. Stats ID : %ld.", i, pSelf->Server()->ClientName(i), pSelf->m_apPlayers[i]->GetSID());
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", Text);
+		}
+	}
 }
 
 void CGameContext::ConGiveShotgun(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 10);
-                    pSelf->SendChatTarget(i, "An admin give to you a shotgun !");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 10);
-            pSelf->SendChatTarget(id, "An admin give to you a shotgun !");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 10);
+					pSelf->SendChatTarget(i, "An admin give to you a shotgun !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 10);
+			pSelf->SendChatTarget(id, "An admin give to you a shotgun !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConGiveGrenade(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    if(pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 10))
-                        pSelf->SendChatTarget(i, "An admin give to you a launch-grenade !");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            if(pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 10))
-                pSelf->SendChatTarget(id, "An admin give to you a launch-grenade !");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 10))
+						pSelf->SendChatTarget(i, "An admin give to you a launch-grenade !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 10))
+				pSelf->SendChatTarget(id, "An admin give to you a launch-grenade !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConGiveRifle(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    if (pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 10))
-                        pSelf->SendChatTarget(i, "An admin give to you  a rifle !");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            if (pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 10))
-                pSelf->SendChatTarget(id, "An admin give to you a rifle !");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if (pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 10))
+						pSelf->SendChatTarget(i, "An admin give to you  a rifle !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if (pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 10))
+				pSelf->SendChatTarget(id, "An admin give to you a rifle !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConGiveKatana(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    if (pSelf->m_apPlayers[i]->GetCharacter()->GiveNinja())
-                        pSelf->SendChatTarget(i, "An admin give to you a katana !");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            if (pSelf->m_apPlayers[id]->GetCharacter()->GiveNinja())
-                pSelf->SendChatTarget(id, "An admin give to you a katana !");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if (pSelf->m_apPlayers[i]->GetCharacter()->GiveNinja())
+						pSelf->SendChatTarget(i, "An admin give to you a katana !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if (pSelf->m_apPlayers[id]->GetCharacter()->GiveNinja())
+				pSelf->SendChatTarget(id, "An admin give to you a katana !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConGiveProtect(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    pSelf->m_apPlayers[i]->GetCharacter()->m_Protect = -1;
-                    pSelf->SendChatTarget(i, "An admin give to you a protection");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            pSelf->m_apPlayers[id]->GetCharacter()->m_Protect = -1;
-            pSelf->SendChatTarget(id, "An admin give to you a protection");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					pSelf->m_apPlayers[i]->GetCharacter()->m_Protect = -1;
+					pSelf->SendChatTarget(i, "An admin give to you a protection");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			pSelf->m_apPlayers[id]->GetCharacter()->m_Protect = -1;
+			pSelf->SendChatTarget(id, "An admin give to you a protection");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConGiveInvisibility(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    pSelf->m_apPlayers[i]->GetCharacter()->m_Invisibility = true;
-                    pSelf->SendChatTarget(i, "An admin give to you an invisibility");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            pSelf->m_apPlayers[id]->GetCharacter()->m_Invisibility = true;
-            pSelf->SendChatTarget(id, "An admin give to you an invisibility");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					pSelf->m_apPlayers[i]->GetCharacter()->m_Invisibility = true;
+					pSelf->SendChatTarget(i, "An admin give to you an invisibility");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			pSelf->m_apPlayers[id]->GetCharacter()->m_Invisibility = true;
+			pSelf->SendChatTarget(id, "An admin give to you an invisibility");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConRemoveShotgun(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_SHOTGUN))
-                        pSelf->SendChatTarget(i, "An admin remove your shotgun !");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_SHOTGUN))
-                pSelf->SendChatTarget(id, "An admin remove your shotgun !");
-        }
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_SHOTGUN))
+						pSelf->SendChatTarget(i, "An admin remove your shotgun !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_SHOTGUN))
+				pSelf->SendChatTarget(id, "An admin remove your shotgun !");
+		}
 
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConRemoveGrenade(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_GRENADE))
-                        pSelf->SendChatTarget(i, "An admin remove your launch-grenade !");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_GRENADE))
-                pSelf->SendChatTarget(id, "An admin remove your launch-grenade !");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_GRENADE))
+						pSelf->SendChatTarget(i, "An admin remove your launch-grenade !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_GRENADE))
+				pSelf->SendChatTarget(id, "An admin remove your launch-grenade !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConRemoveRifle(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_RIFLE))
-                        pSelf->SendChatTarget(i, "An admin remove your rifle !");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_RIFLE))
-                pSelf->SendChatTarget(id, "An admin remove your rifle !");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_RIFLE))
+						pSelf->SendChatTarget(i, "An admin remove your rifle !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_RIFLE))
+				pSelf->SendChatTarget(id, "An admin remove your rifle !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConRemoveKatana(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
-                {
-                    if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_NINJA))
-                        pSelf->SendChatTarget(i, "An admin remove your katana !");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
-        {
-            if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_NINJA))
-                pSelf->SendChatTarget(id, "An admin remove your katana !");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
+				{
+					if(pSelf->m_apPlayers[i]->GetCharacter()->RemoveWeapon(WEAPON_NINJA))
+						pSelf->SendChatTarget(i, "An admin remove your katana !");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
+		{
+			if(pSelf->m_apPlayers[id]->GetCharacter()->RemoveWeapon(WEAPON_NINJA))
+				pSelf->SendChatTarget(id, "An admin remove your katana !");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConRemoveProtect(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() && pSelf->m_apPlayers[i]->GetCharacter()->m_Protect != 0)
-                {
-                    pSelf->m_apPlayers[i]->GetCharacter()->m_Protect = 0;
-                    pSelf->SendChatTarget(i, "An admin remove your protection");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() && pSelf->m_apPlayers[id]->GetCharacter()->m_Protect != 0)
-        {
-            pSelf->m_apPlayers[id]->GetCharacter()->m_Protect = 0;
-            pSelf->SendChatTarget(id, "An admin remove your protection");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() && pSelf->m_apPlayers[i]->GetCharacter()->m_Protect != 0)
+				{
+					pSelf->m_apPlayers[i]->GetCharacter()->m_Protect = 0;
+					pSelf->SendChatTarget(i, "An admin remove your protection");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() && pSelf->m_apPlayers[id]->GetCharacter()->m_Protect != 0)
+		{
+			pSelf->m_apPlayers[id]->GetCharacter()->m_Protect = 0;
+			pSelf->SendChatTarget(id, "An admin remove your protection");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConRemoveInvisibility(IConsole::IResult *pResult, void *pUserData)
 {
-    CGameContext *pSelf = (CGameContext *)pUserData;
-        int id = pResult->GetInteger(0);
-        if ( id == -1 )
-        {
-            for (int i = 0; i < MAX_CLIENTS; i++ )
-            {
-                if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() && pSelf->m_apPlayers[i]->GetCharacter()->m_Invisibility == true)
-                {
-                    pSelf->m_apPlayers[i]->GetCharacter()->m_Invisibility = false;
-                    pSelf->SendChatTarget(i, "An admin remove your invisibility");
-                }
-            }
-        }
-        else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() && pSelf->m_apPlayers[id]->GetCharacter()->m_Invisibility == true)
-        {
-            pSelf->m_apPlayers[id]->GetCharacter()->m_Invisibility = false;
-            pSelf->SendChatTarget(id, "An admin remove your invisibility");
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
+	CGameContext *pSelf = (CGameContext *)pUserData;
+		int id = pResult->GetInteger(0);
+		if ( id == -1 )
+		{
+			for (int i = 0; i < MAX_CLIENTS; i++ )
+			{
+				if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() && pSelf->m_apPlayers[i]->GetCharacter()->m_Invisibility == true)
+				{
+					pSelf->m_apPlayers[i]->GetCharacter()->m_Invisibility = false;
+					pSelf->SendChatTarget(i, "An admin remove your invisibility");
+				}
+			}
+		}
+		else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() && pSelf->m_apPlayers[id]->GetCharacter()->m_Invisibility == true)
+		{
+			pSelf->m_apPlayers[id]->GetCharacter()->m_Invisibility = false;
+			pSelf->SendChatTarget(id, "An admin remove your invisibility");
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
 }
 
 void CGameContext::ConSetSid(IConsole::IResult *pResult, void *pUserData)
 {
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	int ClientID = pResult->GetInteger(1);
+	unsigned int StatID = pResult->GetInteger(0);
+	if ( ClientID >= 0 && ClientID < MAX_CLIENTS && pSelf->m_apPlayers[ClientID] )
+	{
+		if (StatID >= 0 && pSelf->m_apPlayers[ClientID]->SetSID(StatID))
+		{
+			/*BASIC IMPLANTATION*/
+		}
+		else
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Stat ID");
+	}
+	else
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Client ID");
+}
+
+void CGameContext::ConGiveXP(IConsole::IResult *pResult, void *pUserData)
+{
     CGameContext *pSelf = (CGameContext *)pUserData;
-    int ClientID = pResult->GetInteger(1);
-    unsigned int StatID = pResult->GetInteger(0);
-    if ( ClientID >= 0 && ClientID < MAX_CLIENTS && pSelf->m_apPlayers[ClientID] )
+    int ClientID = pResult->GetInteger(0);
+    int XP = pResult->GetInteger(1);
+    if (ClientID >= 0 && ClientID < MAX_CLIENTS && pSelf->m_apPlayers[ClientID])
     {
-        if (StatID >= 0 && pSelf->m_apPlayers[ClientID]->SetSID(StatID))
-        {
-            /*BASIC IMPLANTATION*/
-        }
-        else
-            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Stat ID");
+        pSelf->m_apPlayers[ClientID]->m_pStats->AddXP(XP);
+        pSelf->m_apPlayers[ClientID]->m_pStats->UpdateStat();
     }
     else
         pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Client ID");
@@ -2617,36 +2664,37 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("lock_teams", "", CFGFLAG_SERVER, ConLockTeams, this, "Lock/unlock teams");
 
 	Console()->Register("add_vote", "sr", CFGFLAG_SERVER, ConAddVote, this, "Add a voting option");
-    Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "Remove a voting option");
+	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "Remove a voting option");
 	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, ConForceVote, this, "Force a voting option");
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
 
-    Console()->Register("next_event", "", CFGFLAG_SERVER, ConNextEvent, this, "Next Event for the game.");
-    Console()->Register("next_random_event", "", CFGFLAG_SERVER, ConNextRandomEvent, this, "Next Random Event for the game.");
-    Console()->Register("set_event", "i", CFGFLAG_SERVER, ConSetEvent, this, "Set Event for the game.");
-    Console()->Register("add_time_event", "?i", CFGFLAG_SERVER, ConAddTimeEvent, this, "Add more time to the actual Event.");
+	Console()->Register("next_event", "", CFGFLAG_SERVER, ConNextEvent, this, "Next Event for the game.");
+	Console()->Register("next_random_event", "", CFGFLAG_SERVER, ConNextRandomEvent, this, "Next Random Event for the game.");
+	Console()->Register("set_event", "i", CFGFLAG_SERVER, ConSetEvent, this, "Set Event for the game.");
+	Console()->Register("add_time_event", "?i", CFGFLAG_SERVER, ConAddTimeEvent, this, "Add more time to the actual Event.");
 
-    Console()->Register("next_event_team", "", CFGFLAG_SERVER, ConNextEventTeam, this, "Next Event for the game.");
-    Console()->Register("next_random_event_team", "", CFGFLAG_SERVER, ConNextRandomEventTeam, this, "Next Random Event for the game.");
-    Console()->Register("set_event_team", "i", CFGFLAG_SERVER, ConSetEventTeam, this, "Set Event for the game.");
-    Console()->Register("add_time_event_team", "?i", CFGFLAG_SERVER, ConAddTimeEventTeam, this, "Add more time to the actual Event.");
+	Console()->Register("next_event_team", "", CFGFLAG_SERVER, ConNextEventTeam, this, "Next Event for the game.");
+	Console()->Register("next_random_event_team", "", CFGFLAG_SERVER, ConNextRandomEventTeam, this, "Next Random Event for the game.");
+	Console()->Register("set_event_team", "i", CFGFLAG_SERVER, ConSetEventTeam, this, "Set Event for the game.");
+	Console()->Register("add_time_event_team", "?i", CFGFLAG_SERVER, ConAddTimeEventTeam, this, "Add more time to the actual Event.");
 
-    Console()->Register("list_player", "", CFGFLAG_SERVER, ConListPlayer, this, "List name players, clients id and statistics id.");
-    Console()->Register("shotgun", "i", CFGFLAG_SERVER, ConGiveShotgun, this, "Give shotgun to the player with this client id.");
-    Console()->Register("grenade", "i", CFGFLAG_SERVER, ConGiveGrenade, this, "Give grenade to the player with this client id.");
-    Console()->Register("rifle", "i", CFGFLAG_SERVER, ConGiveRifle, this, "Give rifle to the player with this client id.");
-    Console()->Register("katana", "i", CFGFLAG_SERVER, ConGiveKatana, this, "Give katana to the player with this client id.");
-    Console()->Register("protect", "i", CFGFLAG_SERVER, ConGiveProtect, this, "Give protection to the player with this client id.");
-    Console()->Register("invisibility", "i", CFGFLAG_SERVER, ConGiveInvisibility, this, "Give invisibility to the player with this client id.");
-    Console()->Register("unshotgun", "i", CFGFLAG_SERVER, ConRemoveShotgun, this, "Remove shotgun from the player with this client id.");
-    Console()->Register("ungrenade", "i", CFGFLAG_SERVER, ConRemoveGrenade, this, "Remove grenade from the player with this client id.");
-    Console()->Register("unrifle", "i", CFGFLAG_SERVER, ConRemoveRifle, this, "Remove rifle from the player with this client id.");
-    Console()->Register("unkatana", "i", CFGFLAG_SERVER, ConRemoveKatana, this, "Remove katana from the player with this client id.");
-    Console()->Register("unprotect", "i", CFGFLAG_SERVER, ConRemoveProtect, this, "Remove protection from the player with this client id.");
-    Console()->Register("uninvisibility", "i", CFGFLAG_SERVER, ConRemoveInvisibility, this, "Remove invisibility from the player with this client id.");
+	Console()->Register("list_player", "", CFGFLAG_SERVER, ConListPlayer, this, "List name players, clients id and statistics id.");
+	Console()->Register("shotgun", "i", CFGFLAG_SERVER, ConGiveShotgun, this, "Give shotgun to the player with this client id.");
+	Console()->Register("grenade", "i", CFGFLAG_SERVER, ConGiveGrenade, this, "Give grenade to the player with this client id.");
+	Console()->Register("rifle", "i", CFGFLAG_SERVER, ConGiveRifle, this, "Give rifle to the player with this client id.");
+	Console()->Register("katana", "i", CFGFLAG_SERVER, ConGiveKatana, this, "Give katana to the player with this client id.");
+	Console()->Register("protect", "i", CFGFLAG_SERVER, ConGiveProtect, this, "Give protection to the player with this client id.");
+	Console()->Register("invisibility", "i", CFGFLAG_SERVER, ConGiveInvisibility, this, "Give invisibility to the player with this client id.");
+	Console()->Register("unshotgun", "i", CFGFLAG_SERVER, ConRemoveShotgun, this, "Remove shotgun from the player with this client id.");
+	Console()->Register("ungrenade", "i", CFGFLAG_SERVER, ConRemoveGrenade, this, "Remove grenade from the player with this client id.");
+	Console()->Register("unrifle", "i", CFGFLAG_SERVER, ConRemoveRifle, this, "Remove rifle from the player with this client id.");
+	Console()->Register("unkatana", "i", CFGFLAG_SERVER, ConRemoveKatana, this, "Remove katana from the player with this client id.");
+	Console()->Register("unprotect", "i", CFGFLAG_SERVER, ConRemoveProtect, this, "Remove protection from the player with this client id.");
+	Console()->Register("uninvisibility", "i", CFGFLAG_SERVER, ConRemoveInvisibility, this, "Remove invisibility from the player with this client id.");
 
-    Console()->Register("set_sid", "ii", CFGFLAG_SERVER, ConSetSid, this, "Set the stats_id to the ClientID.");
+	Console()->Register("set_sid", "ii", CFGFLAG_SERVER, ConSetSid, this, "Set the stats_id to the ClientID.");
+    Console()->Register("xp", "ii", CFGFLAG_SERVER, ConGiveXP, this, "Give some xp to the ClientID.");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 }
@@ -2712,8 +2760,9 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 		}
 	}
 
-    if (m_pStatsServer)
-        m_pStatsServer->OnInit();
+	#if defined(CONF_SQL)
+		m_pStatsServer->OnInit();
+	#endif
 
 #ifdef CONF_DEBUG
 	if(g_Config.m_DbgDummies)

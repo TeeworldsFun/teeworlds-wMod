@@ -1,5 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+/* If you are missing that file, acquire a complete release at teeworlds.com.				*/
 #ifndef GAME_SERVER_ENTITIES_CHARACTER_H
 #define GAME_SERVER_ENTITIES_CHARACTER_H
 
@@ -25,7 +25,7 @@ public:
 	static const int ms_PhysSize = 28;
 
 	CCharacter(CGameWorld *pWorld);
-    ~CCharacter();
+	~CCharacter();
 
 	virtual void Reset();
 	virtual void Destroy();
@@ -49,43 +49,43 @@ public:
 	void FireWeapon();
 
 	void Die(int Killer, int Weapon);
-    bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib);
+	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib);
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);
 	bool Remove();
 
 	bool IncreaseHealth(int Amount);
 	bool IncreaseArmor(int Amount);
-    int m_Protect;
-    bool m_Invisibility;
+	int m_Protect;
+	bool m_Invisibility;
 
 	bool GiveWeapon(int Weapon, int Ammo);
-    bool GiveNinja();
+	bool GiveNinja();
 
-    bool RemoveWeapon(int Weapon);
+	bool RemoveWeapon(int Weapon);
 
 	void SetEmote(int Emote, int Tick);
-    void SetPos(vec2 Pos) { m_Pos = Pos; m_Core.m_Pos = Pos; };
+	void SetPos(vec2 Pos) { m_Pos = Pos; m_Core.m_Pos = Pos; };
 
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 
-    int GetActiveWeapon()
-    {
-        return m_ActiveWeapon;
-    }
-    int GetAmmoActiveWeapon()
-    {
-        return m_aWeapons[m_ActiveWeapon].m_Ammo;
-    }
-    int GetPercentHealth()
-    {
-        return m_Health*10;
-    }
-    int GetPercentArmor()
-    {
-        return m_Armor*10;
-    }
+	int GetActiveWeapon()
+	{
+		return m_ActiveWeapon;
+	}
+	int GetAmmoActiveWeapon()
+	{
+		return m_aWeapons[m_ActiveWeapon].m_Ammo;
+	}
+	int GetPercentHealth()
+	{
+		return m_Health*10;
+	}
+	int GetPercentArmor()
+	{
+		return m_Armor*10;
+	}
 private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;
@@ -96,10 +96,10 @@ private:
 	CEntity *m_apHitObjects[10];
 	int m_NumObjectsHit;
 
-    struct StatWeapon *m_stat_weapon;
-    struct StatLife *m_stat_life;
-    struct StatMove *m_stat_move;
-    struct StatHook *m_stat_hook;
+	struct StatWeapon *m_stat_weapon;
+	struct StatLife *m_stat_life;
+	struct StatMove *m_stat_move;
+	struct StatHook *m_stat_hook;
 
 	struct WeaponStat
 	{
@@ -107,7 +107,7 @@ private:
 		int m_Ammo;
 		int m_Ammocost;
 		bool m_Got;
-        char m_Name[50];
+		char m_Name[50];
 	} m_aWeapons[NUM_WEAPONS];
 
 	int m_ActiveWeapon;
@@ -116,9 +116,9 @@ private:
 
 	int m_ReloadTimer;
 	int m_AttackTick;
-    int m_SoundReloadStart;
+	int m_SoundReloadStart;
 
-    int m_AttackHookTick;
+	int m_AttackHookTick;
 
 	int m_DamageTaken;
 
@@ -127,6 +127,7 @@ private:
 
 	// last tick that the player took any action ie some input
 	int m_LastAction;
+	int m_LastNoAmmoSound;
 
 	// these are non-heldback inputs
 	CNetObj_PlayerInput m_LatestPrevInput;
@@ -138,25 +139,25 @@ private:
 	int m_NumInputs;
 	int m_Jumped;
 
-    int m_NumJumped;
+	int m_NumJumped;
 
 	int m_DamageTakenTick;
 
 	int m_Health;
 	int m_Armor;
-    int m_HealthRegenStart;
-    bool m_HealthIncrase;
+	int m_HealthRegenStart;
+	bool m_HealthIncrase;
 
-    class CAura *m_AuraProtect[12];
-    class CAura *m_AuraCaptain[3];
-    class CLaserWall *m_LaserWall[3];
-    int m_NumLaserWall;
-    class CTurret *m_Turret[5];
-    class CTeleporter *m_Teleporter[10];
-    int m_NumExplodeWall;
-    class CExplodeWall *m_ExplodeWall[3];
+	class CAura *m_AuraProtect[12];
+	class CAura *m_AuraCaptain[3];
+	class CLaserWall *m_LaserWall[3];
+	int m_NumLaserWall;
+	class CTurret *m_Turret[5];
+	class CTeleporter *m_Teleporter[10];
+	int m_NumExplodeWall;
+	class CExplodeWall *m_ExplodeWall[3];
 
-    int m_JumpTick;
+	int m_JumpTick;
 
 	// ninja
 	struct
@@ -165,8 +166,8 @@ private:
 		int m_ActivationTick;
 		int m_CurrentMoveTime;
 		int m_OldVelAmount;
-        int m_Damage;
-        int m_Killed;
+		int m_Damage;
+		int m_Killed;
 	} m_Ninja;
 
 	// the player core for the physics

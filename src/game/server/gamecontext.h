@@ -1,5 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+/* If you are missing that file, acquire a complete release at teeworlds.com.				*/
 #ifndef GAME_SERVER_GAMECONTEXT_H
 #define GAME_SERVER_GAMECONTEXT_H
 
@@ -11,8 +11,8 @@
 #include <game/voting.h>
 
 #include "eventhandler.h"
-#include "gamecontroller.h"
 #include "gameworld.h"
+#include "gamecontroller.h"
 #include "player.h"
 
 /*
@@ -63,28 +63,29 @@ class CGameContext : public IGameServer
 	static void ConForceVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConClearVotes(IConsole::IResult *pResult, void *pUserData);
 	static void ConVote(IConsole::IResult *pResult, void *pUserData);
-    static void ConNextEvent(IConsole::IResult *pResult, void *pUserData);
-    static void ConNextRandomEvent(IConsole::IResult *pResult, void *pUserData);
-    static void ConSetEvent(IConsole::IResult *pResult, void *pUserData);
-    static void ConAddTimeEvent(IConsole::IResult *pResult, void *pUserData);
-    static void ConNextEventTeam(IConsole::IResult *pResult, void *pUserData);
-    static void ConNextRandomEventTeam(IConsole::IResult *pResult, void *pUserData);
-    static void ConSetEventTeam(IConsole::IResult *pResult, void *pUserData);
-    static void ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserData);
-    static void ConListPlayer(IConsole::IResult *pResult, void *pUserData);
-    static void ConGiveShotgun(IConsole::IResult *pResult, void *pUserData);
-    static void ConGiveGrenade(IConsole::IResult *pResult, void *pUserData);
-    static void ConGiveRifle(IConsole::IResult *pResult, void *pUserData);
-    static void ConGiveKatana(IConsole::IResult *pResult, void *pUserData);
-    static void ConGiveProtect(IConsole::IResult *pResult, void *pUserData);
-    static void ConGiveInvisibility(IConsole::IResult *pResult, void *pUserData);
-    static void ConRemoveShotgun(IConsole::IResult *pResult, void *pUserData);
-    static void ConRemoveGrenade(IConsole::IResult *pResult, void *pUserData);
-    static void ConRemoveRifle(IConsole::IResult *pResult, void *pUserData);
-    static void ConRemoveKatana(IConsole::IResult *pResult, void *pUserData);
-    static void ConRemoveProtect(IConsole::IResult *pResult, void *pUserData);
-    static void ConRemoveInvisibility(IConsole::IResult *pResult, void *pUserData);
-    static void ConSetSid(IConsole::IResult *pResult, void *pUserData);
+	static void ConNextEvent(IConsole::IResult *pResult, void *pUserData);
+	static void ConNextRandomEvent(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetEvent(IConsole::IResult *pResult, void *pUserData);
+	static void ConAddTimeEvent(IConsole::IResult *pResult, void *pUserData);
+	static void ConNextEventTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConNextRandomEventTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetEventTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConAddTimeEventTeam(IConsole::IResult *pResult, void *pUserData);
+	static void ConListPlayer(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveShotgun(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveGrenade(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveRifle(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveKatana(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveProtect(IConsole::IResult *pResult, void *pUserData);
+	static void ConGiveInvisibility(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveShotgun(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveGrenade(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveRifle(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveKatana(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveProtect(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveInvisibility(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetSid(IConsole::IResult *pResult, void *pUserData);
+    static void ConGiveXP(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	CGameContext(int Resetting);
@@ -101,8 +102,8 @@ public:
 	~CGameContext();
 
 	void Clear();
-    class IStatsServer *m_pStatsServer;
-    class CEvent *m_pEventsGame;
+	class IStatsServer *m_pStatsServer;
+	class CEvent *m_pEventsGame;
 
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
@@ -143,7 +144,7 @@ public:
 
 	// helper functions
 	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount);
-    void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke);
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke);
 	void CreateHammerHit(vec2 Pos);
 	void CreatePlayerSpawn(vec2 Pos);
 	void CreateDeath(vec2 Pos, int Who);
@@ -159,23 +160,23 @@ public:
 		CHAT_BLUE=1
 	};
 
-    enum
-    {
-        CHAT_INFO,
-        CHAT_INFO_HEAL_KILLER,
-        CHAT_INFO_XP,
-        CHAT_INFO_LEVELUP,
-        CHAT_INFO_KILLING_SPREE,
-        CHAT_INFO_RACE,
-        CHAT_INFO_AMMO,
-        CHAT_INFO_VOTER
-    };
+	enum
+	{
+		CHAT_INFO,
+		CHAT_INFO_HEAL_KILLER,
+		CHAT_INFO_XP,
+		CHAT_INFO_LEVELUP,
+		CHAT_INFO_KILLING_SPREE,
+		CHAT_INFO_RACE,
+		CHAT_INFO_AMMO,
+		CHAT_INFO_VOTER
+	};
 	// network
-    void SendChatTarget(int To, const char *pText, int Type = CHAT_INFO);
+	void SendChatTarget(int To, const char *pText, int Type = CHAT_INFO);
 	void SendChat(int ClientID, int Team, const char *pText);
 	void SendEmoticon(int ClientID, int Emoticon);
 	void SendWeaponPickup(int ClientID, int Weapon);
-	void SendBroadcast(const char *pText, int ClientID);
+	void SendBroadcast(const char *pText, int ClientID, int LifeTime = 3);
 
 
 	//
@@ -185,8 +186,8 @@ public:
 	//
 	void SwapTeams();
 
-    void ParseArguments(const char *Message, int nb_result, char Result[][256]);
-    void CommandOnChat(const char *Message, const int ClientID, const int Team);
+	void ParseArguments(const char *Message, int nb_result, char Result[][256]);
+	void CommandOnChat(const char *Message, const int ClientID, const int Team);
 
 	// engine events
 	virtual void OnInit();

@@ -1,5 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+/* If you are missing that file, acquire a complete release at teeworlds.com.				*/
 #ifndef GAME_SERVER_PLAYER_H
 #define GAME_SERVER_PLAYER_H
 
@@ -7,12 +7,12 @@
 #include "entities/character.h"
 #include "gamecontext.h"
 
-enum {WARRIOR, ENGINEER, ORC, MINER, CUSTOM};
+enum {HUMAN, GNOME, ORC, ELF, CUSTOM};
 
 // player object
 class CPlayer
 {
-    MACRO_ALLOC_POOL_ID()
+	MACRO_ALLOC_POOL_ID()
 
 public:
 	CPlayer(CGameContext *pGameServer, int ClientID, int Team);
@@ -23,11 +23,11 @@ public:
 	void TryRespawn();
 	void Respawn();
 	void SetTeam(int Team, bool DoChatMsg = true);
-    void SetCaptureTeam(int Team, int Killer = SPEC_FREEVIEW);
-    bool SetSID(long id);
+	void SetCaptureTeam(int Team, int Killer = SPEC_FREEVIEW);
+	bool SetSID(long id);
 	int GetTeam() const { return m_Team; };
 	int GetCID() const { return m_ClientID; };
-    int GetSID() const;
+	int GetSID() const;
 
 	void Tick();
 	void PostTick();
@@ -101,24 +101,24 @@ public:
 		int m_Max;
 	} m_Latency;
 
-    unsigned long m_level;
-    int m_BroadcastTick;
-    int m_Race;
-    int m_WeaponType[NUM_WEAPONS];
-    int m_Mine;
-    
-    class CStats *m_pStats;
+	unsigned long m_level;
+	int m_EndBroadcastTick;
+	int m_Race;
+	int m_WeaponType[NUM_WEAPONS];
+	int m_Mine;
+
+	class CStats *m_pStats;
 private:
-    CCharacter *m_pCharacter;
-    CGameContext *m_pGameServer;
+	CCharacter *m_pCharacter;
+	CGameContext *m_pGameServer;
 
 	CGameContext *GameServer() const { return m_pGameServer; }
-    IServer *Server() const;
+	IServer *Server() const;
 
-    //
-    bool m_Spawning;
-    int m_ClientID;
-    int m_Team;
+	//
+	bool m_Spawning;
+	int m_ClientID;
+	int m_Team;
 };
 
 #endif
