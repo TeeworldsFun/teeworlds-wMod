@@ -9,29 +9,29 @@
 class CImageInfo
 {
 public:
-    enum
-    {
-        FORMAT_AUTO=-1,
-        FORMAT_RGB=0,
-        FORMAT_RGBA=1,
-        FORMAT_ALPHA=2,
-    };
+	enum
+	{
+		FORMAT_AUTO=-1,
+		FORMAT_RGB=0,
+		FORMAT_RGBA=1,
+		FORMAT_ALPHA=2,
+	};
 
-    /* Variable: width
-    	Contains the width of the image */
-    int m_Width;
+	/* Variable: width
+		Contains the width of the image */
+	int m_Width;
 
-    /* Variable: height
-    	Contains the height of the image */
-    int m_Height;
+	/* Variable: height
+		Contains the height of the image */
+	int m_Height;
 
-    /* Variable: format
-    	Contains the format of the image. See <Image Formats> for more information. */
-    int m_Format;
+	/* Variable: format
+		Contains the format of the image. See <Image Formats> for more information. */
+	int m_Format;
 
-    /* Variable: data
-    	Pointer to the image data. */
-    void *m_pData;
+	/* Variable: data
+		Pointer to the image data. */
+	void *m_pData;
 };
 
 /*
@@ -40,16 +40,16 @@ public:
 class CVideoMode
 {
 public:
-    int m_Width, m_Height;
-    int m_Red, m_Green, m_Blue;
+	int m_Width, m_Height;
+	int m_Red, m_Green, m_Blue;
 };
 
 class IGraphics : public IInterface
 {
-    MACRO_INTERFACE("graphics", 0)
+	MACRO_INTERFACE("graphics", 0)
 protected:
-    int m_ScreenWidth;
-    int m_ScreenHeight;
+	int m_ScreenWidth;
+	int m_ScreenHeight;
 public:
 	/* Constants: Texture Loading Flags
 		TEXLOAD_NORESAMPLE - Prevents the texture from any resampling
@@ -120,7 +120,7 @@ public:
 			: m_X0(x0), m_Y0(y0), m_X1(x1), m_Y1(y1), m_X2(x2), m_Y2(y2), m_X3(x3), m_Y3(y3) {}
 	};
 	virtual void QuadsDrawFreeform(const CFreeformItem *pArray, int Num) = 0;
-	virtual void QuadsText(float x, float y, float Size, float r, float g, float b, float a, const char *pText) = 0;
+	virtual void QuadsText(float x, float y, float Size, const char *pText) = 0;
 
 	struct CColorVertex
 	{
@@ -145,16 +145,16 @@ public:
 
 class IEngineGraphics : public IGraphics
 {
-    MACRO_INTERFACE("enginegraphics", 0)
+	MACRO_INTERFACE("enginegraphics", 0)
 public:
 	virtual int Init() = 0;
 	virtual void Shutdown() = 0;
 
-    virtual void Minimize() = 0;
-    virtual void Maximize() = 0;
+	virtual void Minimize() = 0;
+	virtual void Maximize() = 0;
 
-    virtual int WindowActive() = 0;
-    virtual int WindowOpen() = 0;
+	virtual int WindowActive() = 0;
+	virtual int WindowOpen() = 0;
 
 };
 

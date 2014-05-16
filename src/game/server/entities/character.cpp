@@ -1,5 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.				*/
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <new>
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
@@ -113,12 +113,10 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 {
 	m_EmoteStop = -1;
 	m_LastAction = -1;
-
 	m_LastNoAmmoSound = -1;
 	m_ActiveWeapon = WEAPON_GUN;
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
-
 	m_HealthRegenStart = 0;
 	m_HealthIncrase = true;
 
@@ -160,11 +158,11 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	m_JumpTick = 0;
 	m_AttackHookTick = 0;
-
 	GameServer()->m_World.InsertEntity(this);
 	m_Alive = true;
 
 	GameServer()->m_pController->OnCharacterSpawn(this);
+
 	IncreaseArmor(m_stat_life->m_start_armor);
 	if ( GameServer()->m_pEventsGame->IsActualEvent(HAVE_ALL_WEAPON) || m_stat_weapon->m_all_weapon )
 	{
@@ -193,7 +191,6 @@ void CCharacter::SetWeapon(int W)
 
 	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
 		m_ActiveWeapon = 0;
-
 	if ( m_aWeapons[W].m_Ammo != -1 )
 	{
 		int Stockage = m_stat_weapon->m_stockage;
@@ -391,11 +388,11 @@ void CCharacter::FireWeapon()
 		Race = (rand() % ((ELF + 1) - HUMAN)) + HUMAN;
 	else
 		Race = m_pPlayer->m_WeaponType[m_ActiveWeapon];
-
 	bool FullAuto = false;
 	if((Race != GNOME || (m_ActiveWeapon == WEAPON_SHOTGUN || m_ActiveWeapon == WEAPON_NINJA)) &&
-		m_stat_weapon->m_auto[m_ActiveWeapon])
-			FullAuto = true;
+			m_stat_weapon->m_auto[m_ActiveWeapon])
+		FullAuto = true;
+
 
 	// check if we gonna fire
 	bool WillFire = false;
@@ -411,8 +408,8 @@ void CCharacter::FireWeapon()
 	bool Limit = false;
 
 	if(m_ActiveWeapon != WEAPON_HAMMER && m_ActiveWeapon != WEAPON_NINJA &&
-	  ((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && Race != GNOME) ||
-	  (Race == GNOME && m_ActiveWeapon == WEAPON_SHOTGUN)))
+			((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) && Race != GNOME) ||
+			 (Race == GNOME && m_ActiveWeapon == WEAPON_SHOTGUN)))
 		Limit = true;
 
 	int AdaptativeLimit = 0;
@@ -425,15 +422,14 @@ void CCharacter::FireWeapon()
 	}
 
 	AdaptativeLimit = ActivePlayer ? (2000 / ActivePlayer) : 2000;
-
 	// check for ammo
 	if(m_aWeapons[m_ActiveWeapon].m_Ammo != -1 && !Limit &&
-	   (!m_aWeapons[m_ActiveWeapon].m_Ammo ||
-	   (Race == GNOME && m_ActiveWeapon == WEAPON_GUN && m_aWeapons[m_ActiveWeapon].m_Ammo < 5) ||
-	   (Race == GNOME && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3) ||
-	   (Race == GNOME && m_ActiveWeapon == WEAPON_RIFLE && m_NumExplodeWall >= 3) ||
-	   (Race == ORC && m_ActiveWeapon != WEAPON_RIFLE && m_aWeapons[m_ActiveWeapon].m_Ammo < 2) ||
-	   (Limit && m_pPlayer->m_Mine >= AdaptativeLimit)))
+			(!m_aWeapons[m_ActiveWeapon].m_Ammo ||
+			 (Race == GNOME && m_ActiveWeapon == WEAPON_GUN && m_aWeapons[m_ActiveWeapon].m_Ammo < 5) ||
+			 (Race == GNOME && m_ActiveWeapon == WEAPON_HAMMER && m_NumLaserWall >= 3) ||
+			 (Race == GNOME && m_ActiveWeapon == WEAPON_RIFLE && m_NumExplodeWall >= 3) ||
+			 (Race == ORC && m_ActiveWeapon != WEAPON_RIFLE && m_aWeapons[m_ActiveWeapon].m_Ammo < 2) ||
+			 (Limit && m_pPlayer->m_Mine >= AdaptativeLimit)))
 	{
 		// 125ms is a magical limit of how fast a human can click
 		m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
@@ -442,7 +438,6 @@ void CCharacter::FireWeapon()
 			GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
 			m_LastNoAmmoSound = Server()->Tick();
 		}
-
 		return;
 	}
 
@@ -457,7 +452,6 @@ void CCharacter::FireWeapon()
 	vec2 ProjStartPos = m_Pos+Direction*m_ProximityRadius*0.75f;
 
 	const int Bounce = m_stat_weapon->m_bounce;
-
 	switch(m_ActiveWeapon)
 	{
 	case WEAPON_HAMMER:
@@ -536,15 +530,15 @@ void CCharacter::FireWeapon()
 
 		// if we Hit anything, we have to wait for the reload
 		if(Hits)
-				m_ReloadTimer = Server()->TickSpeed()/3; //333 ms
+			m_ReloadTimer = Server()->TickSpeed()/3; //333 ms
 
-			if (Race == HUMAN)
+		if (Race == HUMAN)
 		{
 			GameServer()->CreateExplosion(m_Pos, m_pPlayer->GetCID(), m_ActiveWeapon, true, false);
 			if (sound)
 				GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 		}
-			else if (Race == GNOME)
+		else if (Race == GNOME)
 		{
 			if ( m_NumLaserWall < 3 )
 			{
@@ -558,7 +552,7 @@ void CCharacter::FireWeapon()
 						m_NumLaserWall++;
 						break;
 					}
-						else if (!m_LaserWall[i])
+					else if (!m_LaserWall[i])
 					{
 						m_LaserWall[i] = new CLaserWall(GameWorld(), m_Pos, m_pPlayer->GetCID(), false);
 						break;
@@ -570,17 +564,17 @@ void CCharacter::FireWeapon()
 		{
 			GameServer()->CreateSound(m_Pos, SOUND_HIT);
 		}
-			else if (Race == ELF)
+		else if (Race == ELF)
 		{
 			GameServer()->CreateExplosion(m_Pos + (Direction * -1), m_pPlayer->GetCID(), m_ActiveWeapon, false, false);
 		}
 
 	}
-	break;
+		break;
 
 	case WEAPON_GUN:
 	{
-			if ( Race == HUMAN )
+		if ( Race == HUMAN )
 		{
 			CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GUN,
 												 m_pPlayer->GetCID(),
@@ -654,16 +648,16 @@ void CCharacter::FireWeapon()
 		}
 		else if ( Race == ELF )
 		{
-				int ShotSpread = 2;
+			int ShotSpread = 2;
 
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread*2+1);
 
 			for(int i = -ShotSpread; i <= ShotSpread; ++i)
 			{
-					float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+				float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
 				float a = GetAngle(Direction);
-					a += Spreading[i+2];
+				a += Spreading[i+2];
 				float v = 1-(absolute(i)/(float)ShotSpread);
 				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
 
@@ -688,11 +682,11 @@ void CCharacter::FireWeapon()
 		if (sound)
 			GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE);
 	}
-	break;
+		break;
 
 	case WEAPON_SHOTGUN:
 	{
-			if ( Race == HUMAN )
+		if ( Race == HUMAN )
 		{
 			int ShotSpread = 2;
 
@@ -711,7 +705,7 @@ void CCharacter::FireWeapon()
 													 ProjStartPos,
 													 vec2(cosf(a), sinf(a))*Speed,
 													 (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-														 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, Limit, true, false, Bounce);
+													 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, Limit, true, false, Bounce);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -762,7 +756,7 @@ void CCharacter::FireWeapon()
 													 ProjStartPos,
 													 vec2(cosf(a), sinf(a))*Speed,
 													 (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-														 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, Limit, false, true, Bounce);
+													 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_SHOTGUN, Limit, false, true, Bounce);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -783,7 +777,7 @@ void CCharacter::FireWeapon()
 
 			float Spreading[73] = {0};
 			for (int i = -ShotSpread; i <= ShotSpread; ++i)
-					Spreading[i+36] = (i * 5.f)*M_PIl/180;
+				Spreading[i+36] = (i * 5.f)*M_PIl/180;
 
 			for(int i = -ShotSpread; i <= ShotSpread; ++i)
 			{
@@ -793,10 +787,10 @@ void CCharacter::FireWeapon()
 				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
 				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
 													 m_pPlayer->GetCID(),
-														 m_Pos,
+													 m_Pos,
 													 vec2(cosf(a), sinf(a))*Speed,
 													 (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-														 3, false, 0, -1, WEAPON_SHOTGUN, Limit, false, false, Bounce);
+													 3, false, 0, -1, WEAPON_SHOTGUN, Limit, false, false, Bounce);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -811,13 +805,12 @@ void CCharacter::FireWeapon()
 
 		if (sound)
 			GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
-
 	}
-	break;
+		break;
 
 	case WEAPON_GRENADE:
 	{
-			if ( Race == HUMAN )
+		if ( Race == HUMAN )
 		{
 			int ShotSpread = 2;
 
@@ -831,7 +824,6 @@ void CCharacter::FireWeapon()
 				a += Spreading[i+2];
 				float v = 1-(absolute(i)/(float)ShotSpread);
 				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
-
 				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_GRENADE,
 													 m_pPlayer->GetCID(),
 													 ProjStartPos,
@@ -886,7 +878,6 @@ void CCharacter::FireWeapon()
 		else if ( Race == ORC )
 		{
 			int ShotSpread = 2;
-
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread*2+1);
 
@@ -908,11 +899,9 @@ void CCharacter::FireWeapon()
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
 				pProj->FillInfo(&p);
-
 				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
 					Msg.AddInt(((int *)&p)[i]);
 			}
-
 			Server()->SendMsg(&Msg, 0, m_pPlayer->GetCID());
 		}
 		else if ( Race == ELF )
@@ -950,13 +939,12 @@ void CCharacter::FireWeapon()
 
 		if (sound)
 			GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
-
 	}
-	break;
+		break;
 
 	case WEAPON_RIFLE:
 	{
-			if ( Race == HUMAN )
+		if ( Race == HUMAN )
 		{
 			int ShotSpread = 2;
 
@@ -970,8 +958,8 @@ void CCharacter::FireWeapon()
 
 				new CLaser(GameWorld(), m_Pos, vec2(cosf(a), sinf(a))*Speed, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
 			}
-				if (GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW))
-					m_ReloadTimer = ((Server()->TickSpeed()*GameServer()->Tuning()->m_LaserBounceDelay)/2)/1000.0f;
+			if (GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW))
+				m_ReloadTimer = ((Server()->TickSpeed()*GameServer()->Tuning()->m_LaserBounceDelay)/2)/1000.0f;
 		}
 		else if ( Race == GNOME )
 		{
@@ -1020,7 +1008,7 @@ void CCharacter::FireWeapon()
 		if (sound)
 			GameServer()->CreateSound(m_Pos, SOUND_RIFLE_FIRE);
 	}
-	break;
+		break;
 
 	case WEAPON_NINJA:
 	{
@@ -1034,14 +1022,14 @@ void CCharacter::FireWeapon()
 		if (sound)
 			GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
 	}
-	break;
+		break;
 
 	}
 
 	m_AttackTick = Server()->Tick();
 
 	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0 && (!GameServer()->m_pEventsGame->IsActualEvent(UNLIMITED_AMMO)
-	|| GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && ( Race != ORC || m_ActiveWeapon != WEAPON_RIFLE ) ) // -1 == unlimited
+												 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_BOUNCE)) && ( Race != ORC || m_ActiveWeapon != WEAPON_RIFLE ) ) // -1 == unlimited
 	{
 		m_aWeapons[m_ActiveWeapon].m_Ammo--;
 		if (Race == ORC)
@@ -1102,7 +1090,6 @@ void CCharacter::HandleWeapons()
 			m_ActiveWeapon = WEAPON_RIFLE;
 		}
 	}
-
 	//ninja
 	HandleNinja();
 
@@ -1143,6 +1130,7 @@ void CCharacter::HandleWeapons()
 			m_aWeapons[WEAPON_GUN].m_AmmoRegenStart = Server()->Tick();
 		}
 	}
+
 	return;
 }
 
@@ -1168,9 +1156,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 			m_aWeapons[Weapon].m_Ammo = min(Stockage, Ammo);
 		else
 			m_aWeapons[Weapon].m_Ammo += Ammo;
-
 		m_aWeapons[Weapon].m_Got = true;
-
 		if ( m_aWeapons[Weapon].m_Ammo > Stockage )
 			m_aWeapons[Weapon].m_Ammo = Stockage;
 
@@ -1284,6 +1270,7 @@ void CCharacter::Tick()
 		char Buf[128];
 		str_format(Buf, sizeof(Buf), "You were moved to %s due to team balancing", GameServer()->m_pController->GetTeamName(m_pPlayer->GetTeam()));
 		GameServer()->SendBroadcast(Buf, m_pPlayer->GetCID());
+
 		m_pPlayer->m_ForceBalanced = false;
 	}
 
@@ -1292,7 +1279,6 @@ void CCharacter::Tick()
 
 	if(m_Core.m_Jumped & 2 && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000 && (GameServer()->m_pEventsGame->IsActualEvent(JUMP_UNLIMITED) || m_NumJumped < m_stat_move->m_num_jump || m_stat_move->m_num_jump == -1 || m_pPlayer->m_pStats->GetActualKill() >= 5))
 		m_Core.m_Jumped &= ~2;
-
 	m_Core.m_Input = m_Input;
 	float RateSpeed = 1.0f;
 	float RateAccel = 1.0f;
@@ -1319,11 +1305,11 @@ void CCharacter::Tick()
 	m_Core.Tick(true, RateSpeed, RateAccel, RateHighJump, RateLengthHook, RateTimeHook, RateSpeedHook);
 
 	if(m_Input.m_Jump && Server()->Tick()-m_JumpTick >= 125 * Server()->TickSpeed()/1000)
-		 m_JumpTick = Server()->Tick();
+		m_JumpTick = Server()->Tick();
 
 	if (m_stat_hook->m_hook_damage && Server()->Tick()-m_AttackHookTick >= 350 * Server()->TickSpeed()/1000 &&
-		m_Core.m_HookedPlayer >= 0 && GameServer()->m_apPlayers[m_Core.m_HookedPlayer] && GameServer()->m_apPlayers[m_Core.m_HookedPlayer]->GetCharacter() &&
-		(!GameServer()->m_pController->IsTeamplay() || GameServer()->m_apPlayers[m_Core.m_HookedPlayer]->GetTeam() != m_pPlayer->GetTeam()))
+			m_Core.m_HookedPlayer >= 0 && GameServer()->m_apPlayers[m_Core.m_HookedPlayer] && GameServer()->m_apPlayers[m_Core.m_HookedPlayer]->GetCharacter() &&
+			(!GameServer()->m_pController->IsTeamplay() || GameServer()->m_apPlayers[m_Core.m_HookedPlayer]->GetTeam() != m_pPlayer->GetTeam()))
 	{
 		GameServer()->m_apPlayers[m_Core.m_HookedPlayer]->GetCharacter()->TakeDamage(vec2(0,0), 1, m_pPlayer->GetCID(), WEAPON_NINJA, false);
 		m_AttackHookTick = Server()->Tick();
@@ -1373,7 +1359,7 @@ void CCharacter::Tick()
 		for ( int i = 0; i < 12; i++ )
 			m_AuraProtect[i] = new CAura(&(GameServer()->m_World), m_pPlayer->GetCID(), i * 30, 60, i % 2 ? POWERUP_HEALTH : POWERUP_ARMOR);
 	}
-    else if (m_AuraProtect[0] && (m_Protect >= 0 && Server()->Tick() >= m_Protect))
+	else if (m_AuraProtect[0] && (m_Protect >= 0 && Server()->Tick() >= m_Protect))
 	{
 		for ( int i = 0; i < 12; i++ )
 			delete m_AuraProtect[i];
@@ -1396,7 +1382,7 @@ void CCharacter::Tick()
 		m_AuraCaptain[0] = 0;
 	}
 
-    if (m_ActiveWeapon == WEAPON_HAMMER && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) && m_LatestInput.m_Fire&1 && m_pPlayer->m_WeaponType[WEAPON_HAMMER] != GNOME && m_stat_weapon->m_auto[WEAPON_HAMMER])
+	if (m_ActiveWeapon == WEAPON_HAMMER && !GameServer()->m_pEventsGame->IsActualEvent(HAMMER) && m_LatestInput.m_Fire&1 && m_pPlayer->m_WeaponType[WEAPON_HAMMER] != GNOME && m_stat_weapon->m_auto[WEAPON_HAMMER])
 	{
 		if ((Server()->Tick() - m_HealthRegenStart) >= 350 * Server()->TickSpeed() / 1000)
 		{
@@ -1451,7 +1437,6 @@ void CCharacter::Tick()
 			m_HealthRegenStart = Server()->Tick();
 		}
 	}
-
 	// handle Weapons
 	HandleWeapons();
 
@@ -1489,7 +1474,7 @@ void CCharacter::TickDefered()
 		{
 			float f;
 			unsigned u;
-		} StartPosX, StartPosY, StartVelX, StartVelY;
+		}StartPosX, StartPosY, StartVelX, StartVelY;
 
 		StartPosX.f = StartPos.x;
 		StartPosY.f = StartPos.y;
@@ -1600,7 +1585,6 @@ void CCharacter::Die(int Killer, int Weapon)
 	m_pPlayer->m_DieTick = Server()->Tick();
 
 	m_Alive = false;
-
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
@@ -1643,7 +1627,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 			 (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE) ||
 			 (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_HEAL && Weapon == WEAPON_NINJA) ||
 			 GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL)
-	  )
+			)
 	{
 		if (m_Health == m_stat_life->m_stockage[0] && m_Armor == m_stat_life->m_stockage[1])
 			return false;
@@ -1676,7 +1660,6 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 
 	if ( m_Protect != 0 )
 		return false;
-
 	if(From == m_pPlayer->GetCID())
 		return false;
 
@@ -1699,7 +1682,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 		}
 	}
 	else if (Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && (m_pPlayer->m_WeaponType[WEAPON_HAMMER] == HUMAN || GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN)) &&
-			(!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || FromRace != HUMAN) && (FromRace != GNOME || Weapon != WEAPON_HAMMER))
+			 (!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || FromRace != HUMAN) && (FromRace != GNOME || Weapon != WEAPON_HAMMER))
 		return false;
 	else if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
 		Dmg = max(1, Dmg/2);
@@ -1858,7 +1841,6 @@ void CCharacter::Snap(int SnappingClient)
 	}
 
 	pCharacter->m_PlayerFlags = GetPlayer()->m_PlayerFlags;
-
 	if (pCharacter->m_HookTick > (SERVER_TICK_SPEED+SERVER_TICK_SPEED/5))
 		pCharacter->m_HookTick = SERVER_TICK_SPEED+SERVER_TICK_SPEED/10;
 }

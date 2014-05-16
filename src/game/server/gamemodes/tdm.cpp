@@ -1,5 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.				*/
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/shared/config.h>
 
 #include <game/server/entities/character.h>
@@ -17,7 +17,7 @@ int CGameControllerTDM::OnCharacterDeath(class CCharacter *pVictim, class CPlaye
 	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 
 
-	if(Weapon != WEAPON_GAME && pKiller)
+	if(pKiller && Weapon != WEAPON_GAME)
 	{
 		// do team scoring
 		if(pKiller == pVictim->GetPlayer() || pKiller->GetTeam() == pVictim->GetPlayer()->GetTeam())
