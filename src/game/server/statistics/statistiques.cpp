@@ -120,7 +120,7 @@ void CStats::UpdateUpgrade()
 	}
 	else if ( m_upgr.m_weapon > 36 )
 	{
-		m_upgr.m_stat_weapon.m_speed = 1.0f + ((int)(m_upgr.m_weapon/3) * 0.5f);
+		m_upgr.m_stat_weapon.m_speed = 1.0f + (static_cast<int>(m_upgr.m_weapon/3) * 0.5f);
 		m_upgr.m_stat_weapon.m_regeneration = -1;
 		m_upgr.m_stat_weapon.m_stockage = -1;
 	}

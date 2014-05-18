@@ -633,7 +633,7 @@ void CCharacter::FireWeapon()
 												 ProjStartPos,
 												 Direction,
 												 (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
-												 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN, Limit, true,  false, Bounce);
+												 1, true, 0, sound ? SOUND_GRENADE_EXPLODE : -1, WEAPON_GUN, Limit, true, false, Bounce);
 
 			// pack the Projectile and send it to the client Directly
 			CNetObj_Projectile p;
@@ -1558,21 +1558,31 @@ bool CCharacter::IncreaseArmor(int Amount)
 	return true;
 }
 
-void CCharacter::Die(int Killer, int Weapon)
+void CCharacter::Die(int Killer, int Weapon, bool FromMonster)
 {
 	// we got to wait 0.5 secs before respawning
 	m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
-	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
+	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, !FromMonster ? GameServer()->m_apPlayers[Killer] : 0, Weapon, FromMonster);
 
 	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
+	if (!FromMonster)
+	{
+		str_format(aBuf, sizeof(aBuf), "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
 			   Killer, Server()->ClientName(Killer),
 			   m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial);
+	}
+	else
+	{
+		str_format(aBuf, sizeof(aBuf), "kill killer='%d:monster' victim='%d:%s' weapon=%d special=%d",
+			   Killer,
+			   m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial);
+	}
+
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;
-	Msg.m_Killer = Killer;
+	Msg.m_Killer = !FromMonster ? Killer : m_pPlayer->GetCID();
 	Msg.m_Victim = m_pPlayer->GetCID();
 	Msg.m_Weapon = Weapon;
 	Msg.m_ModeSpecial = ModeSpecial;
@@ -1588,85 +1598,103 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
-	if ( GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && GameServer()->m_apPlayers[Killer] )
-		GetPlayer()->SetCaptureTeam(GameServer()->m_apPlayers[Killer]->GetTeam());
-	else if ( GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE )
-		GetPlayer()->SetCaptureTeam(TEAM_RED);
+	if (!FromMonster)
+	{
+		if (GameServer()->m_pEventsGame->GetActualEventTeam() == STEAL_TEE && GameServer()->m_apPlayers[Killer])
+			GetPlayer()->SetCaptureTeam(GameServer()->m_apPlayers[Killer]->GetTeam());
+		else if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE)
+			GetPlayer()->SetCaptureTeam(TEAM_RED);
+	}
 }
 
-bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib)
+bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster)
 {
 	if (!m_Alive)
 		return false;
 
-	int FromRace = 0;
-	if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN) )
-		FromRace = HUMAN;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_GNOME) )
-		FromRace = GNOME;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ORC) )
-		FromRace = ORC;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ELF) )
-		FromRace = ELF;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
-		FromRace = (rand() % ((ELF + 1) - HUMAN)) + HUMAN;
-	else if ( GameServer()->m_apPlayers[From] )
-		FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
+	if (m_Protect != 0)
+	{
+		if (From == m_pPlayer->GetCID())
+			m_Core.m_Vel += Force;
+
+		return false;
+	}
+
+	m_Core.m_Vel += Force;
 
 	if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB))
 		Instagib = true;
 
-	if ( m_Protect == 0 || From == m_pPlayer->GetCID() )
-		m_Core.m_Vel += Force;
-
-	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) &&
-			((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_HEAL && Weapon == WEAPON_HAMMER) ||
-			 (GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_HEAL && Weapon == WEAPON_GUN) ||
-			 (GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_HEAL && Weapon == WEAPON_SHOTGUN) ||
-			 (GameServer()->m_pEventsGame->GetActualEventTeam() == GRENADE_HEAL && Weapon == WEAPON_GRENADE) ||
-			 (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE) ||
-			 (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_HEAL && Weapon == WEAPON_NINJA) ||
-			 GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL)
-			)
+	if (!FromMonster)
 	{
-		if (m_Health == m_stat_life->m_stockage[0] && m_Armor == m_stat_life->m_stockage[1])
+		int FromRace = 0;
+		if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN) )
+			FromRace = HUMAN;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_GNOME) )
+			FromRace = GNOME;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ORC) )
+			FromRace = ORC;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ELF) )
+			FromRace = ELF;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
+			FromRace = (rand() % ((ELF + 1) - HUMAN)) + HUMAN;
+		else if ( GameServer()->m_apPlayers[From] )
+			FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
+
+		if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) &&
+				((GameServer()->m_pEventsGame->GetActualEventTeam() == HAMMER_HEAL && Weapon == WEAPON_HAMMER) ||
+				 (GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_HEAL && Weapon == WEAPON_GUN) ||
+				 (GameServer()->m_pEventsGame->GetActualEventTeam() == SHOTGUN_HEAL && Weapon == WEAPON_SHOTGUN) ||
+				 (GameServer()->m_pEventsGame->GetActualEventTeam() == GRENADE_HEAL && Weapon == WEAPON_GRENADE) ||
+				 (GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL && Weapon == WEAPON_RIFLE) ||
+				 (GameServer()->m_pEventsGame->GetActualEventTeam() == KATANA_HEAL && Weapon == WEAPON_NINJA) ||
+				 GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL)
+				)
+		{
+			if (m_Health == m_stat_life->m_stockage[0] && m_Armor == m_stat_life->m_stockage[1])
+				return false;
+
+			if(m_Health < m_stat_life->m_stockage[0])
+			{
+				m_Health++;
+			}
+			else if(m_Armor < m_stat_life->m_stockage[1])
+			{
+				m_Armor ++;
+			}
+
+			char Text[256] = "";
+			str_format(Text, 256, "Healing %s : %d%% health and %d%% armor.", Server()->ClientName(m_pPlayer->GetCID()), GetPercentHealth(), GetPercentArmor());
+			GameServer()->SendChatTarget(From, Text);
+
+			str_format(Text, 256, "%s heal you ! +1 health or armor !", Server()->ClientName(From));
+			GameServer()->SendChatTarget(m_pPlayer->GetCID(), Text);
+			return false;
+		}
+		else if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_pPlayer->GetTeam() == TEAM_RED)
+		{
+			m_Core.m_Vel += Force * 2;
+			return false;
+		}
+
+		if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) && !g_Config.m_SvTeamdamage)
 			return false;
 
-		if(m_Health < m_stat_life->m_stockage[0])
-		{
-			m_Health++;
-		}
-		else if(m_Armor < m_stat_life->m_stockage[1] )
-		{
-			m_Armor ++;
-		}
-
-		char Text[256] = "";
-		str_format(Text, 256, "Healing %s : %d%% health and %d%% armor.", Server()->ClientName(m_pPlayer->GetCID()), GetPercentHealth(), GetPercentArmor());
-		GameServer()->SendChatTarget(From, Text);
-
-		str_format(Text, 256, "%s heal you ! +1 health or armor !", Server()->ClientName(From));
-		GameServer()->SendChatTarget(m_pPlayer->GetCID(), Text);
-		return false;
+		if(From == m_pPlayer->GetCID())
+			return false;
+		if (Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) &&
+			(m_pPlayer->m_WeaponType[WEAPON_HAMMER] == HUMAN || GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN)) &&
+			(!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || FromRace != HUMAN) &&
+			(FromRace != GNOME || Weapon != WEAPON_HAMMER))
+				return false;
 	}
-	else if (GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_pPlayer->GetTeam() == TEAM_RED)
-	{
-		m_Core.m_Vel += Force * 2;
-		return false;
-	}
-
-	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From, Weapon) && !g_Config.m_SvTeamdamage)
+	else if (m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && (m_pPlayer->m_WeaponType[WEAPON_HAMMER] == HUMAN || GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN)))
 		return false;
 
-	if ( m_Protect != 0 )
-		return false;
-	if(From == m_pPlayer->GetCID())
-		return false;
-
-	if ( m_ActiveWeapon == WEAPON_NINJA && Weapon != WEAPON_NINJA )
+	if (m_ActiveWeapon == WEAPON_NINJA && (Weapon != WEAPON_NINJA || FromMonster))
 	{
 		m_Ninja.m_Damage += Dmg;
-		if ( m_Ninja.m_Damage >= 40 && !Instagib )
+		if (m_Ninja.m_Damage >= 40 && !Instagib)
 		{
 			Dmg = m_Ninja.m_Damage / 40;
 			m_Ninja.m_Damage = 0;
@@ -1677,14 +1705,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 			Instagib = false;
 		}
 		else
-		{
 			return false;
-		}
 	}
-	else if (Weapon != WEAPON_NINJA && m_ActiveWeapon == WEAPON_HAMMER && (m_LatestInput.m_Fire&1) && (m_pPlayer->m_WeaponType[WEAPON_HAMMER] == HUMAN || GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN)) &&
-			 (!GameServer()->m_pEventsGame->IsActualEvent(HAMMER) || FromRace != HUMAN) && (FromRace != GNOME || Weapon != WEAPON_HAMMER))
-		return false;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
+	else if (GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2))
 		Dmg = max(1, Dmg/2);
 
 	m_DamageTaken++;
@@ -1729,7 +1752,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 	m_DamageTakenTick = Server()->Tick();
 
 	// do damage Hit sound
-	if(From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
+	if(!FromMonster && From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
 	{
 		int Mask = CmaskOne(From);
 		for(int i = 0; i < MAX_CLIENTS; i++)
@@ -1743,17 +1766,14 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Inst
 	// check for death
 	if(m_Health <= 0 || Instagib)
 	{
-		Die(From, Weapon);
+		Die(From, Weapon, FromMonster);
 
 		// set attacker's face to happy (taunt!)
-		if (From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
+		if (!FromMonster && From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
 		{
 			CCharacter *pChr = GameServer()->m_apPlayers[From]->GetCharacter();
 			if (pChr)
-			{
-				pChr->m_EmoteType = EMOTE_HAPPY;
-				pChr->m_EmoteStop = Server()->Tick() + Server()->TickSpeed();
-			}
+				pChr->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
 		}
 
 		return true;

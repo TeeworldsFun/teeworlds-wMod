@@ -5,6 +5,7 @@
 #include <game/server/event.h>
 #include "laserwall.h"
 #include "turret.h"
+#include "monster.h"
 
 CLaserWall::CLaserWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner, bool Double)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER)
@@ -43,20 +44,22 @@ void CLaserWall::Tick()
 	vec2 At;
 	CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
 	CCharacter *pHit = GameServer()->m_World.IntersectCharacter(m_Pos, m_From, 0.f, At, pOwnerChar);
-	if(!pHit || GameServer()->m_pController->IsFriendlyFire(m_Owner, pHit->GetPlayer()->GetCID(), WEAPON_RIFLE) || pHit->m_Protect != 0)
-		return;
 
-	if (pHit->TakeDamage(vec2(0,0), 100, m_Owner, WEAPON_HAMMER, true))
+	if(pHit && !GameServer()->m_pController->IsFriendlyFire(m_Owner, pHit->GetPlayer()->GetCID(), WEAPON_RIFLE) && pHit->m_Protect != 0 && pHit->TakeDamage(vec2(0,0), 10, m_Owner, WEAPON_HAMMER, true))
 		m_Killed++;
+
+	CMonster *pHit2 = GameServer()->m_World.IntersectMonster(m_Pos, m_From, 0.f, At, 0);
+	if (pHit2)
+		pHit2->TakeDamage(vec2(0,0), 10, m_Owner, WEAPON_HAMMER, true);
 
 	CTurret *pHitTurret = (CTurret *)GameServer()->m_World.IntersectEntity(m_Pos, m_From, 0.f, At, CGameWorld::ENTTYPE_TURRET);
 	if (pHitTurret)
-		pHitTurret->TakeDamage(100, m_Owner, WEAPON_HAMMER, true);
+		pHitTurret->TakeDamage(10, m_Owner, WEAPON_HAMMER, true);
 }
 
 void CLaserWall::CreateDouble()
 {
-	if ( m_Double || m_pDouble )
+	if (m_Double || m_pDouble)
 		return;
 
 	m_pDouble = new CLaserWall(&GameServer()->m_World, m_Pos, m_Owner, true);

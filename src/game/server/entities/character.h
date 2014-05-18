@@ -48,8 +48,8 @@ public:
 	void ResetInput();
 	void FireWeapon();
 
-	void Die(int Killer, int Weapon);
-	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib);
+	void Die(int Killer, int Weapon, bool FromMonster = false);
+	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster = false);
 
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos);
 	bool Remove();
@@ -177,7 +177,7 @@ private:
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
-
+	friend class CMonster;
 };
 
 #endif

@@ -7,9 +7,10 @@
 #include "turret.h"
 #include "teleporter.h"
 #include "explodewall.h"
+#include "monster.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
-						 int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Limit, bool Smoke, bool Deploy, int Bounce)
+						 int Damage, bool Explosive, float Force, int SoundImpact, int Weapon, bool Limit, bool Smoke, bool Deploy, int Bounce, bool FromMonster)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE)
 {
 	m_Type = Type;
@@ -27,6 +28,14 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_Smoke = Smoke;
 	m_Deploy = Deploy;
 	m_Bounce = Bounce;
+	m_FromMonster = FromMonster;
+	if(m_FromMonster && GameServer()->GetValidMonster(m_Owner))
+	{
+		if(m_Weapon == WEAPON_GUN || m_Weapon == WEAPON_SHOTGUN)
+			m_Damage += GameServer()->GetValidMonster(m_Owner)->GetDifficulty() / 2;
+		else
+			m_Damage += GameServer()->GetValidMonster(m_Owner)->GetDifficulty() - 1;
+	}
 	GameWorld()->InsertEntity(this);
 	if (GameServer()->m_apPlayers[m_Owner] && m_Limit)
 		GameServer()->m_apPlayers[Owner]->m_Mine++;
@@ -83,8 +92,10 @@ void CProjectile::Tick()
 	if ((GameServer()->m_pEventsGame->IsActualEvent(WEAPON_SLOW) || !distance(CurPos, PrevPos)) && (Server()->Tick()-m_StartTick) % 2 != 0)
 		return;
 
-	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
+	CCharacter *OwnerChar = !m_FromMonster ? GameServer()->GetPlayerChar(m_Owner) : 0;
+	CMonster *OwnerMonster = m_FromMonster ? GameServer()->GetValidMonster(m_Owner) : 0;
 	CCharacter *TargetChr = 0;
+	CMonster *TargetMonster = 0;
 	CTurret *TargetTurret = 0;
 	CExplodeWall *TargetExplodeWall = 0;
 	int Collide = false;
@@ -106,6 +117,7 @@ void CProjectile::Tick()
 
 		Collide = GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0);
 		TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
+		TargetMonster = GameServer()->m_World.IntersectMonster(PrevPos, CurPos, 6.0f, CurPos, OwnerMonster);
 		TargetTurret = (CTurret *)GameServer()->m_World.IntersectEntity(PrevPos, CurPos, 6.0f, CurPos, CGameWorld::ENTTYPE_TURRET);
 
 		{
@@ -164,7 +176,7 @@ void CProjectile::Tick()
 													 CurPos,
 													 vec2(cosf(a), sinf(a))*Speed,
 													 (int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-													 1, m_Explosive, 0, m_SoundImpact, m_Weapon, m_Limit, m_Smoke);
+													 1, m_Explosive, 0, m_SoundImpact, m_Weapon, m_Limit, m_Smoke, false, 0);
 
 				// pack the Projectile and send it to the client Directly
 				CNetObj_Projectile p;
@@ -178,7 +190,7 @@ void CProjectile::Tick()
 		}
 
 		if (m_Smoke && !Collide && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false) && (m_Weapon == WEAPON_GUN || (Server()->Tick()-m_StartTick) % 2 == 0))
-			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
+			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true, m_FromMonster);
 	}
 	else
 	{
@@ -187,7 +199,7 @@ void CProjectile::Tick()
 		int Num = GameServer()->m_World.FindEntities(CurPos, 6.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 		for(int i = 0; i < Num; i++)
 		{
-			if ( OwnerChar != apEnts[i] )
+			if (OwnerChar != apEnts[i])
 			{
 				if (m_Type != WEAPON_RIFLE || !GameServer()->m_pController->IsTeamplay() ||
 				!GameServer()->m_apPlayers[m_Owner] || GameServer()->m_apPlayers[m_Owner]->GetTeam() != apEnts[i]->GetPlayer()->GetTeam()
@@ -197,11 +209,22 @@ void CProjectile::Tick()
 			}
 		}
 
+		CMonster *apMonsts[MAX_MONSTERS] = {0};
+		Num = GameServer()->m_World.FindEntities(CurPos, 6.0f, (CEntity**)apMonsts, MAX_MONSTERS, CGameWorld::ENTTYPE_MONSTER);
+		for(int i = 0; i < Num; i++)
+		{
+			if (OwnerMonster != apMonsts[i])
+			{
+				TargetMonster = apMonsts[i];
+				break;
+			}
+		}
+
 		if (!Collide && m_Smoke)
-			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true);
+			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, true, m_FromMonster);
 	}
 
-	if(TargetChr || TargetTurret || TargetExplodeWall || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
+	if(TargetChr || TargetMonster || TargetTurret || TargetExplodeWall || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
 	{
 		if(GameLayerClipped(CurPos))
 			m_LifeSpan = -1;
@@ -210,7 +233,7 @@ void CProjectile::Tick()
 			GameServer()->CreateSound(CurPos, m_SoundImpact);
 
 		if(m_Explosive && (!GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING) || GameServer()->Collision()->CheckPoint(PrevPos) == false))
-			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, false);
+			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, false, false, m_FromMonster);
 
 		if(TargetChr)
 		{
@@ -248,8 +271,11 @@ void CProjectile::Tick()
 				Server()->SendMsg(&Msg, 0, m_Owner);
 			}
 			else*/ if (TargetChr->IsAlive())
-			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon, false);
+			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon, false, m_FromMonster);
 		}
+
+		if(TargetMonster)
+			TargetMonster->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon, false, m_FromMonster);
 
 		if(TargetTurret)
 			TargetTurret->TakeDamage(m_Damage, m_Owner, m_Weapon, false);

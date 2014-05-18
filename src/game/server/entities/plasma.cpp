@@ -7,6 +7,7 @@
 #include "turret.h"
 #include "teleporter.h"
 #include "explodewall.h"
+#include "monster.h"
 
 CPlasma::CPlasma(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER)
@@ -40,12 +41,24 @@ bool CPlasma::HitCharacter(vec2 From, vec2 To)
 		At = TempPos;
 	}
 
-	CTurret *pHitTurret = (CTurret*) GameServer()->m_World.IntersectEntity(From, To, 0.0f, TempPos, CGameWorld::ENTTYPE_TURRET);
-	if (pHitTurret && pHitTurret->GetOwner() != m_Owner && (ClosestLen > distance(From, TempPos) || ClosestLen == -1))
+	CMonster *pHit2 = GameServer()->m_World.IntersectMonster(From, To, 0.f, TempPos, 0);
+	float Len = 0;
+	if (pHit2 && (ClosestLen > (Len = distance(From, TempPos)) || ClosestLen == -1))
 	{
-		ClosestLen = distance(From, TempPos);
+		ClosestLen = Len;
 		At = TempPos;
 		pHit = 0;
+	}
+	else
+		pHit2 = 0;
+
+	CTurret *pHitTurret = (CTurret*) GameServer()->m_World.IntersectEntity(From, To, 0.0f, TempPos, CGameWorld::ENTTYPE_TURRET);
+	if (pHitTurret && pHitTurret->GetOwner() != m_Owner && (ClosestLen > (Len = distance(From, TempPos)) || ClosestLen == -1))
+	{
+		ClosestLen = Len;
+		At = TempPos;
+		pHit = 0;
+		pHit2 = 0;
 	}
 	else if (pHitTurret)
 		pHitTurret = 0;
@@ -77,30 +90,36 @@ bool CPlasma::HitCharacter(vec2 From, vec2 To)
 			if ( y < min(y1, y2) || y > max(y1, y2) || y < min(y3, y4) || y > max(y3, y4) )
 				continue;
 
-			if ( ClosestLen > distance(From, vec2(x, y)) || ClosestLen == -1 )
+			if ( ClosestLen > (Len = distance(From, vec2(x, y))) || ClosestLen == -1 )
 			{
-				ClosestLen = distance(From, vec2(x, y));
+				ClosestLen = Len;
 				At.x = x;
 				At.y = y;
 				pHit = 0;
+				pHit2 = 0;
 				pHitTurret = 0;
 				pHitExplodeWall = p;
 			}
 		}
 	}
 
-	if(!pHit && !pHitTurret && !pHitExplodeWall)
+	if(!pHit && !pHit2 && !pHitTurret && !pHitExplodeWall)
 		return false;
 
 	m_Pos = At;
 	m_Energy = -1;
 
-	if ( pHit && (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
-		pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
-	else if ( pHitTurret && (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
-		pHitTurret->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
-	else if ( pHitExplodeWall && (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) )
-		pHitExplodeWall->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+	if (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING))
+	{
+		if (pHit)
+			pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+		else if (pHit2)
+			pHit2->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+		else if (pHitTurret)
+			pHitTurret->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+		else if (pHitExplodeWall)
+			pHitExplodeWall->TakeDamage(GameServer()->Tuning()->m_LaserDamage, m_Owner, WEAPON_RIFLE, false);
+	}
 
 	return true;
 }

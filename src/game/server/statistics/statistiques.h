@@ -247,9 +247,11 @@ public:
 	void ResetAllStats();
 	void ResetUpgr();
 
-	inline void AddKill(unsigned int level_victim)
+	inline void AddKill(unsigned int level_victim = 0, bool Monster = false)
 	{
-		m_stats.m_actual_kill++;
+		if (!Monster)
+			m_stats.m_actual_kill++;
+
 		if (m_conf.m_Lock)
 			return;
 		m_stats.m_kill++;

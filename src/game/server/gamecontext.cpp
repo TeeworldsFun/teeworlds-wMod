@@ -16,6 +16,7 @@
 #include "entities/projectile.h"
 #include "entities/turret.h"
 #include "entities/explodewall.h"
+#include "entities/monster.h"
 #include "statistics/statistiques.h"
 #include "statistics/mysqlserver.h"
 #include "event.h"
@@ -33,6 +34,9 @@ void CGameContext::Construct(int Resetting)
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		m_apPlayers[i] = 0;
+
+	for(int i = 0; i < MAX_MONSTERS; i++)
+		m_apMonsters[i] = 0;
 
 	m_pController = 0;
 	m_VoteCloseTime = 0;
@@ -67,6 +71,8 @@ CGameContext::~CGameContext()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		delete m_apPlayers[i];
+	for(int i = 0; i < MAX_MONSTERS; i++)
+		delete m_apMonsters[i];
 	delete m_pEventsGame;
 	if(!m_Resetting)
 	{
@@ -138,7 +144,7 @@ void CGameContext::CreateHammerHit(vec2 Pos)
 }
 
 
-void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke)
+void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke, bool FromMonster)
 {
 	// create the event
 	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
@@ -157,7 +163,7 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 		int Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 		for(int i = 0; i < Num; i++)
 		{
-			if (Smoke && apEnts[i]->GetPlayer()->GetCID() == Owner)
+			if (!FromMonster && Smoke && apEnts[i]->GetPlayer()->GetCID() == Owner)
 				continue;
 			vec2 Diff = apEnts[i]->m_Pos - Pos;
 			vec2 ForceDir(0,1);
@@ -167,7 +173,31 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 			l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
 			float Dmg = 6 * l;
 			if((int)Dmg)
-				apEnts[i]->TakeDamage(ForceDir*Dmg*2, m_pEventsGame->IsActualEvent(WALLSHOT) ? 0 : (int)Dmg, Owner, Weapon, false);
+				apEnts[i]->TakeDamage(ForceDir*Dmg*2, m_pEventsGame->IsActualEvent(WALLSHOT) ? 0 : (int)Dmg, Owner, Weapon, false, FromMonster);
+		}
+
+		CMonster *apMonsts[MAX_MONSTERS];
+		Num = m_World.FindEntities(Pos, Radius, (CEntity**)apMonsts, MAX_MONSTERS, CGameWorld::ENTTYPE_MONSTER);
+		for(int i = 0; i < Num; i++)
+		{
+			if (FromMonster && Smoke && apMonsts[i] == GetValidMonster(Owner))
+				continue;
+
+			vec2 Diff = apMonsts[i]->GetPos() - Pos;
+			vec2 ForceDir(0,1);
+			float l = length(Diff);
+			if(l)
+				ForceDir = normalize(Diff);
+			l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
+			int ExtraDmg = 0;
+			if(FromMonster)
+			{
+				if(GetValidMonster(Owner)) // Security
+					ExtraDmg += GetValidMonster(Owner)->GetDifficulty() - 1;
+			}
+			float Dmg = (6 + ExtraDmg) * l;
+			if((int)Dmg)
+				apMonsts[i]->TakeDamage(ForceDir*Dmg*2, m_pEventsGame->IsActualEvent(WALLSHOT) ? 0 : (int)Dmg, Owner, Weapon, false, FromMonster);
 		}
 
 		CTurret *apEntsTurret[MAX_CLIENTS * 5];
@@ -592,9 +622,9 @@ void CGameContext::OnTick()
 	m_World.m_Core.m_Tuning = m_Tuning;
 	m_World.Tick();
 
+	m_pEventsGame->Tick();
 	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();
-	m_pEventsGame->Tick();
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -602,6 +632,14 @@ void CGameContext::OnTick()
 		{
 			m_apPlayers[i]->Tick();
 			m_apPlayers[i]->PostTick();
+		}
+	}
+
+	for(int i = 0; i < MAX_MONSTERS; i++)
+	{
+		if (GetValidMonster(i) && !m_apMonsters[i]->IsAlive())
+		{
+			OnMonsterDeath(i);
 		}
 	}
 
@@ -2643,6 +2681,24 @@ void CGameContext::ConGiveXP(IConsole::IResult *pResult, void *pUserData)
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Client ID");
 }
 
+void CGameContext::ConSpawnMonster(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	int MonsterID = pResult->GetInteger(0);
+	if (MonsterID < 0 || MonsterID > MAX_MONSTERS)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid Monster ID");
+		return;
+	}
+	else if (pSelf->m_apMonsters[MonsterID])
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Monster ID already used !");
+		return;
+	}
+
+	pSelf->m_apMonsters[MonsterID] = new CMonster(&pSelf->m_World, TYPE_HAMMER, MonsterID, -1, 0, 1);
+}
+
 void CGameContext::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
@@ -2709,6 +2765,7 @@ void CGameContext::OnConsoleInit()
 
 	Console()->Register("set_sid", "ii", CFGFLAG_SERVER, ConSetSid, this, "Set the stats_id to the ClientID.");
 	Console()->Register("xp", "ii", CFGFLAG_SERVER, ConGiveXP, this, "Give some xp to the ClientID.");
+	Console()->Register("spawn", "i", CFGFLAG_SERVER, ConSpawnMonster, this, "Spawn a monster.");
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 }
 
@@ -2777,6 +2834,9 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pStatsServer->OnInit();
 #endif
 
+	for (int i = 0; i < 3; i++)
+		NewMonster();
+
 #ifdef CONF_DEBUG
 	if(g_Config.m_DbgDummies)
 	{
@@ -2832,6 +2892,53 @@ bool CGameContext::IsClientReady(int ClientID)
 bool CGameContext::IsClientPlayer(int ClientID)
 {
 	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() != TEAM_SPECTATORS ? true : false;
+}
+
+bool CGameContext::IsValidPlayer(int ClientID)
+{
+	if(ClientID >= MAX_CLIENTS || ClientID < 0)
+		return false;
+
+	if(!m_apPlayers[ClientID])
+		return false;
+
+	return true;
+}
+
+CMonster *CGameContext::GetValidMonster(int MonsterID) const
+{
+	if(MonsterID >= MAX_MONSTERS || MonsterID < 0)
+		return 0;
+
+	if(!m_apMonsters[MonsterID])
+		return 0;
+
+	return m_apMonsters[MonsterID];
+}
+
+void CGameContext::NewMonster()
+{
+	for(int i = 0; i < MAX_MONSTERS; i++)
+	{
+		if(!GetValidMonster(i))
+		{
+			m_apMonsters[i] = new CMonster(&m_World, rand()%(NUM_WEAPONS-2) + 2, i, 10, 10, 1);
+			break;
+		}
+	}
+}
+
+void CGameContext::OnMonsterDeath(int MonsterID)
+{
+	if(!GetValidMonster(MonsterID))
+		return;
+
+	m_apMonsters[MonsterID]->Destroy();
+
+	delete m_apMonsters[MonsterID];
+	m_apMonsters[MonsterID] = 0;
+
+	NewMonster();
 }
 
 const char *CGameContext::GameType() { return m_pController && m_pController->m_pGameType ? m_pController->m_pGameType : ""; }

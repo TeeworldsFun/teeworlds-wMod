@@ -36,6 +36,9 @@
 			All players (CPlayer::snap)
 
 */
+
+static const int MAX_MONSTERS = 16;
+
 class CGameContext : public IGameServer
 {
 	IServer *m_pServer;
@@ -86,6 +89,7 @@ class CGameContext : public IGameServer
 	static void ConRemoveInvisibility(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetSid(IConsole::IResult *pResult, void *pUserData);
     static void ConGiveXP(IConsole::IResult *pResult, void *pUserData);
+	static void ConSpawnMonster(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	CGameContext(int Resetting);
@@ -144,7 +148,7 @@ public:
 
 	// helper functions
 	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke);
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, bool Smoke, bool FromMonster = false);
 	void CreateHammerHit(vec2 Pos);
 	void CreatePlayerSpawn(vec2 Pos);
 	void CreateDeath(vec2 Pos, int Who);
@@ -209,6 +213,13 @@ public:
 
 	virtual bool IsClientReady(int ClientID);
 	virtual bool IsClientPlayer(int ClientID);
+	virtual bool IsValidPlayer(int ClientID);
+
+	// Monster
+	class CMonster *m_apMonsters[MAX_MONSTERS];
+	class CMonster *GetValidMonster(int MonsterID) const;
+	void NewMonster();
+	void OnMonsterDeath(int MonsterID);
 
 	virtual const char *GameType();
 	virtual const char *Version();

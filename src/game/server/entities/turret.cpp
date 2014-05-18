@@ -25,80 +25,79 @@ CTurret::CTurret(CGameWorld *pGameWorld, vec2 Pos, int Owner)
 
 void CTurret::Tick()
 {
-	if (!GameServer()->m_apPlayers[m_Owner] || (Server()->Tick()-m_LastTick) < 750 * Server()->TickSpeed() / (1000.f * GameServer()->m_apPlayers[m_Owner]->m_pStats->GetStatWeapon().m_speed))
+	if (!GameServer()->m_apPlayers[m_Owner] || (Server()->Tick()-m_LastTick) < 1125 * Server()->TickSpeed() / (1000.f * max(1.875f, GameServer()->m_apPlayers[m_Owner]->m_pStats->GetStatWeapon().m_speed)))
 		return;
 
 	m_LastTick = Server()->Tick();
 
+	bool IgnoreTeam = !GameServer()->m_pController->IsTeamplay() ||
+					  GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_HEAL ||
+					  GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL ||
+					  GameServer()->m_pEventsGame->GetActualEventTeam() == GUN_KILL ||
+					  GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_KILL;
+
+	float ClosestLen = -1;
+	float Len = 0;
+	vec2 TargetPos;
+
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
-
-	CCharacter *TargetChr = 0;
 	CCharacter *apEnts[MAX_CLIENTS] = {0};
-
-	CTurret *TargetTurret = 0;
-	CTurret *apEntsTurret[MAX_CLIENTS] = {0};
-
-	bool TargetExplodeWall = false;
-	vec2 PosExplodeWall(0,0);
-
 	int Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 	for(int i = 0; i < Num; i++)
 	{
  		if (OwnerChar != apEnts[i] &&
-			(!GameServer()->m_pController->IsTeamplay() || GameServer()->m_apPlayers[m_Owner]->GetTeam() != apEnts[i]->GetPlayer()->GetTeam() ||
-			 GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_HEAL ||
-			 GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_HEAL ||
-			 GameServer()->m_pEventsGame->GetActualEventTeam() == RIFLE_KILL || 
-			 GameServer()->m_pEventsGame->GetActualEventTeam() == CAN_KILL)
-			&& !GameServer()->Collision()->IntersectLine(m_Pos, apEnts[i]->m_Pos, 0, 0) )
+			(IgnoreTeam || GameServer()->m_apPlayers[m_Owner]->GetTeam() != apEnts[i]->GetPlayer()->GetTeam())
+			&& (ClosestLen > (Len = distance(m_Pos, apEnts[i]->m_Pos)) || ClosestLen == -1)
+			&& !GameServer()->Collision()->IntersectLine(m_Pos, apEnts[i]->m_Pos, 0, 0))
 		{
-			TargetChr = apEnts[i];
-			break;
+			ClosestLen = Len;
+			TargetPos = apEnts[i]->m_Pos;
 		}
 	}
 
-	if (!TargetChr)
+	CTurret *apMonsts[MAX_MONSTERS] = {0};
+	Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apMonsts, MAX_MONSTERS, CGameWorld::ENTTYPE_MONSTER);
+	for(int i = 0; i < Num; i++)
 	{
-		Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apEntsTurret, MAX_CLIENTS * 5, CGameWorld::ENTTYPE_TURRET);
-		for(int i = 0; i < Num; i++)
+		if ((ClosestLen > (Len = distance(m_Pos, apMonsts[i]->m_Pos)) || ClosestLen == -1) && !GameServer()->Collision()->IntersectLine(m_Pos, apMonsts[i]->m_Pos, 0, 0))
 		{
-			if ( m_Owner != apEntsTurret[i]->GetOwner() && (!GameServer()->m_pController->IsTeamplay() || GameServer()->m_apPlayers[m_Owner]->GetTeam() != GameServer()->m_apPlayers[apEntsTurret[i]->GetOwner()]->GetTeam())
-				&& !GameServer()->Collision()->IntersectLine(m_Pos, apEntsTurret[i]->m_Pos, 0, 0) )
-			{
-				TargetTurret = apEntsTurret[i];
-				break;
-			}
+			ClosestLen = Len;
+			TargetPos = apMonsts[i]->m_Pos;
 		}
+	}
 
-		if(!TargetTurret)
+	CTurret *apEntsTurret[MAX_CLIENTS*5] = {0};
+	Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apEntsTurret, MAX_CLIENTS * 5, CGameWorld::ENTTYPE_TURRET);
+	for(int i = 0; i < Num; i++)
+	{
+		if (m_Owner != apEntsTurret[i]->GetOwner() && (IgnoreTeam || GameServer()->m_apPlayers[m_Owner]->GetTeam() != GameServer()->m_apPlayers[apEntsTurret[i]->GetOwner()]->GetTeam())
+			&& (ClosestLen > (Len = distance(m_Pos, apEntsTurret[i]->m_Pos)) || ClosestLen == -1) && !GameServer()->Collision()->IntersectLine(m_Pos, apEntsTurret[i]->m_Pos, 0, 0))
 		{
-			float ClosestLen = -1;
-			CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
-			for(; p; p = (CExplodeWall *)p->TypeNext())
+			ClosestLen = Len;
+			TargetPos = apEntsTurret[i]->m_Pos;
+		}
+	}
+
+	CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
+	for(; p; p = (CExplodeWall *)p->TypeNext())
+	{
+		vec2 IntersectPos = closest_point_on_line(p->m_From, p->m_Pos, m_Pos);
+		Len = distance(m_Pos, IntersectPos);
+		if(Len < p->m_ProximityRadius+450.0f && p->GetOwner() != m_Owner &&
+		  (IgnoreTeam || GameServer()->m_apPlayers[m_Owner]->GetTeam() != GameServer()->m_apPlayers[p->GetOwner()]->GetTeam()) &&
+		  !GameServer()->Collision()->IntersectLine(m_Pos, IntersectPos, 0, 0))
+		{
+			if(ClosestLen > Len || ClosestLen == -1)
 			{
-				vec2 IntersectPos = closest_point_on_line(p->m_From, p->m_Pos, m_Pos);
-				float Len = distance(m_Pos, IntersectPos);
-				if(Len < p->m_ProximityRadius+450.0f && !GameServer()->Collision()->IntersectLine(m_Pos, IntersectPos, 0, 0) && p->GetOwner() != m_Owner
-				   && (!GameServer()->m_pController->IsTeamplay() || GameServer()->m_apPlayers[m_Owner]->GetTeam() != GameServer()->m_apPlayers[p->GetOwner()]->GetTeam()))
-				{
-					if(Len < ClosestLen || ClosestLen == -1)
-					{
-						ClosestLen = Len;
-						TargetExplodeWall = true;
-						PosExplodeWall = IntersectPos;
-					}
-				}
+				ClosestLen = Len;
+				TargetPos = IntersectPos;
 			}
 		}
 	}
 
 	vec2 Direction(0,0);
-	if (TargetChr)
-		Direction = normalize(TargetChr->m_Pos - m_Pos);
-	else if (TargetTurret)
-		Direction = normalize(TargetTurret->m_Pos - m_Pos);
-	else if (TargetExplodeWall)
-		Direction = normalize(PosExplodeWall - m_Pos);
+	if (ClosestLen != -1)
+		Direction = normalize(TargetPos - m_Pos);
 	else
 		return;
 
@@ -176,9 +175,7 @@ bool CTurret::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
 		{
 			CCharacter *pChr = GameServer()->m_apPlayers[From]->GetCharacter();
 			if (pChr)
-			{
 				pChr->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
-			}
 		}
 
 		return true;
