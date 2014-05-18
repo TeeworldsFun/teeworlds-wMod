@@ -961,8 +961,9 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 	else if(str_comp_nocase(Arguments[0], "/credits") == 0)
 	{
 		SendChat(ClientID, Team, Arguments[0]);
-		SendChatTarget(-1, "*** Extreme Weapon Mod v2.3 ***");
-		SendChatTarget(-1, "** Wrote by PJK **");
+		SendChatTarget(-1, "*** Extreme Weapon Mod v2.5 ***");
+		SendChatTarget(-1, "** Written by [FR] PJK **");
+		SendChatTarget(-1, "* IA by Neox *");
 	}
 	else if(m_apPlayers[ClientID]->GetSID() < 0)
 	{
