@@ -6,7 +6,10 @@
 #include <game/gamecore.h>
 
 class CEntity;
+class IEntityDamageable;
 class CCharacter;
+
+const int MAX_MONSTERS = 16;
 
 /*
 	Class: Game World
@@ -23,10 +26,10 @@ public:
 		ENTTYPE_PICKUP,
 		ENTTYPE_FLAG,
 		ENTTYPE_CHARACTER,
-		ENTTYPE_TURRET,
-		ENTTYPE_TELEPORTER,
-		ENTTYPE_EXPLODEWALL,
 		ENTTYPE_MONSTER,
+		ENTTYPE_TURRET,
+		ENTTYPE_EXPLODEWALL,
+		ENTTYPE_TELEPORTER,
 		NUM_ENTTYPES
 	};
 
@@ -77,6 +80,22 @@ public:
 			Number of entities found and added to the ents array.
 	*/
 	int FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, int Type);
+
+	/*
+		Function: find_entities_damageable
+			Finds entities damageable close to a position and returns them in a list.
+
+		Arguments:
+			pos - Position.
+			radius - How close the entities have to be.
+			ents - Pointer to a list that should be filled with the pointers
+				to the entities.
+			max - Number of entities that fits into the ents array.
+
+		Returns:
+			Number of entities found and added to the ents array.
+	*/
+	int FindEntitiesDamageable(vec2 Pos, float Radius, IEntityDamageable **ppEnts, int Max);
 
 	/*
 		Function: intersect_CCharacter

@@ -3,7 +3,7 @@
 #ifndef GAME_SERVER_ENTITIES_CHARACTER_H
 #define GAME_SERVER_ENTITIES_CHARACTER_H
 
-#include <game/server/entity.h>
+#include <game/server/entity_damageable.h>
 #include <game/generated/server_data.h>
 #include <game/generated/protocol.h>
 
@@ -16,7 +16,7 @@ enum
 	WEAPON_WORLD = -1, // death tiles etc
 };
 
-class CCharacter : public CEntity
+class CCharacter : public IEntityDamageable
 {
 	MACRO_ALLOC_POOL_ID()
 

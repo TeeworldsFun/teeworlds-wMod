@@ -278,10 +278,10 @@ void CProjectile::Tick()
 			TargetMonster->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon, false, m_FromMonster);
 
 		if(TargetTurret)
-			TargetTurret->TakeDamage(m_Damage, m_Owner, m_Weapon, false);
+			TargetTurret->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon, false, m_FromMonster);
 
 		if(TargetExplodeWall)
-			TargetExplodeWall->TakeDamage(m_Damage, m_Owner, m_Weapon, false);
+			TargetExplodeWall->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon, false);
 
 		if (m_LifeSpan < 0 || TargetExplodeWall || GameLayerClipped(CurPos))
 		{

@@ -157,38 +157,25 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 	if (!NoDamage)
 	{
 		// deal damage
-		CCharacter *apEnts[MAX_CLIENTS];
+		IEntityDamageable *apEnts[MAX_ENTITIES_DAMAGEABLE];
 		float Radius = 135.0f;
 		float InnerRadius = 48.0f;
-		int Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		int Num = m_World.FindEntitiesDamageable(Pos, Radius, apEnts, MAX_ENTITIES_DAMAGEABLE);
 		for(int i = 0; i < Num; i++)
 		{
-			if (!FromMonster && Smoke && apEnts[i]->GetPlayer()->GetCID() == Owner)
+			if (!FromMonster && Smoke && apEnts[i]->GetType() == CGameWorld::ENTTYPE_CHARACTER && reinterpret_cast<CCharacter*>(apEnts[i])->GetPlayer()->GetCID() == Owner)
 				continue;
+
 			vec2 Diff = apEnts[i]->m_Pos - Pos;
+			if (apEnts[i]->GetType() == CGameWorld::ENTTYPE_EXPLODEWALL)
+				Diff = closest_point_on_line(reinterpret_cast<CExplodeWall*>(apEnts[i])->m_From, apEnts[i]->m_Pos, Pos) - Pos;
+
 			vec2 ForceDir(0,1);
 			float l = length(Diff);
 			if(l)
 				ForceDir = normalize(Diff);
 			l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
-			float Dmg = 6 * l;
-			if((int)Dmg)
-				apEnts[i]->TakeDamage(ForceDir*Dmg*2, m_pEventsGame->IsActualEvent(WALLSHOT) ? 0 : (int)Dmg, Owner, Weapon, false, FromMonster);
-		}
 
-		CMonster *apMonsts[MAX_MONSTERS];
-		Num = m_World.FindEntities(Pos, Radius, (CEntity**)apMonsts, MAX_MONSTERS, CGameWorld::ENTTYPE_MONSTER);
-		for(int i = 0; i < Num; i++)
-		{
-			if (FromMonster && Smoke && apMonsts[i] == GetValidMonster(Owner))
-				continue;
-
-			vec2 Diff = apMonsts[i]->GetPos() - Pos;
-			vec2 ForceDir(0,1);
-			float l = length(Diff);
-			if(l)
-				ForceDir = normalize(Diff);
-			l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
 			int ExtraDmg = 0;
 			if(FromMonster)
 			{
@@ -196,35 +183,9 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 					ExtraDmg += GetValidMonster(Owner)->GetDifficulty() - 1;
 			}
 			float Dmg = (6 + ExtraDmg) * l;
-			if((int)Dmg)
-				apMonsts[i]->TakeDamage(ForceDir*Dmg*2, m_pEventsGame->IsActualEvent(WALLSHOT) ? 0 : (int)Dmg, Owner, Weapon, false, FromMonster);
-		}
 
-		CTurret *apEntsTurret[MAX_CLIENTS * 5];
-		Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEntsTurret, MAX_CLIENTS * 5, CGameWorld::ENTTYPE_TURRET);
-		for(int i = 0; i < Num; i++)
-		{
-			vec2 Diff = apEntsTurret[i]->m_Pos - Pos;
-			float l = length(Diff);
-			l = 1-clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
-			float Dmg = 6 * l;
 			if((int)Dmg)
-				apEntsTurret[i]->TakeDamage((int)Dmg, Owner, Weapon, false);
-		}
-
-		CExplodeWall *p = (CExplodeWall *)m_World.FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
-		for(; p; p = (CExplodeWall *)p->TypeNext())
-		{
-			vec2 IntersectPos = closest_point_on_line(p->m_From, p->m_Pos, Pos);
-			float Len = distance(Pos, IntersectPos);
-			if(Len < p->m_ProximityRadius+Radius)
-			{
-				Len = distance(Pos, IntersectPos);
-				float l = 1-clamp((Len-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
-				float Dmg = 6 * l;
-				if((int)Dmg)
-					p->TakeDamage((int)Dmg, Owner, Weapon, false);
-			}
+				apEnts[i]->TakeDamage(ForceDir*Dmg*2, m_pEventsGame->IsActualEvent(WALLSHOT) ? 0 : (int)Dmg, Owner, Weapon, false, FromMonster);
 		}
 	}
 }

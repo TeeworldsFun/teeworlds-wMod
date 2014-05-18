@@ -9,7 +9,7 @@
 #ifndef GAME_SERVER_ENTITIES_MONSTER_H
 #define GAME_SERVER_ENTITIES_MONSTER_H
 
-#include <game/server/entity.h>
+#include <game/server/entity_damageable.h>
 #include <game/generated/protocol.h>
 
 enum
@@ -22,7 +22,7 @@ enum
     TYPE_NINJA = WEAPON_NINJA,
 };
 
-class CMonster : public CEntity
+class CMonster : public IEntityDamageable
 {
     enum
     {
@@ -48,7 +48,7 @@ public:
 
 	bool IsAlive() const { return m_Alive; }
 	void Die(int Killer);
-	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster = false, bool Drain = true, bool FromReflect = false);
+	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster = false);
 
 	bool IncreaseHealth(int Amount);
 	bool IncreaseArmor(int Amount);

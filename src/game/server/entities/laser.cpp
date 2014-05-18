@@ -31,6 +31,8 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 
 	float ClosestLen = -1;
 
+	IEntityDamageable *pTarget = 0;
+
 	CCharacter *pOwnerChar = !m_FromMonster ? GameServer()->GetPlayerChar(m_Owner) : 0;
 	CCharacter *pHit = GameServer()->m_World.IntersectCharacter(From, To, 0.0f, TempPos, pOwnerChar);
 
@@ -38,6 +40,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	{
 		ClosestLen = distance(From, TempPos);
 		At = TempPos;
+		pTarget = pHit;
 	}
 
 	CMonster *pOwnerMonst = m_FromMonster ? GameServer()->GetValidMonster(m_Owner) : 0;
@@ -49,23 +52,16 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	{
 		ClosestLen = Len;
 		At = TempPos;
-		pHit = 0;
+		pTarget = pHit2;
 	}
-	else
-		pHit2 = 0;
 
 	CTurret *pHitTurret = (CTurret*) GameServer()->m_World.IntersectEntity(From, To, 0.0f, TempPos, CGameWorld::ENTTYPE_TURRET);
 	if (pHitTurret && (ClosestLen > (Len = distance(From, TempPos)) || ClosestLen == -1))
 	{
 		ClosestLen = Len;
 		At = TempPos;
-		pHit = 0;
-		pHit2 = 0;
+		pTarget = pHitTurret;
 	}
-	else if (pHitTurret)
-		pHitTurret = 0;
-
-	CExplodeWall *pHitExplodeWall = 0;
 
 	{
 		CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
@@ -97,15 +93,12 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 				ClosestLen = Len;
 				At.x = x;
 				At.y = y;
-				pHit = 0;
-				pHit2 = 0;
-				pHitTurret = 0;
-				pHitExplodeWall = p;
+				pTarget = p;
 			}
 		}
 	}
 
-	if(!pHit && !pHit2 && !pHitTurret && !pHitExplodeWall)
+	if(!pTarget)
 		return false;
 
 	m_From = From;
@@ -117,16 +110,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 		Damage += GameServer()->GetValidMonster(m_Owner)->GetDifficulty() - 1;
 
 	if (!GameServer()->m_pEventsGame->IsActualEvent(WALLSHOT) || m_Bounces > 0 || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING))
-	{
-		if (pHit)
-			pHit->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage + Damage, m_Owner, WEAPON_RIFLE, false, m_FromMonster);
-		else if (pHit2)
-			pHit2->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage + Damage, m_Owner, WEAPON_RIFLE, false, m_FromMonster);
-		else if (pHitTurret)
-			pHitTurret->TakeDamage(GameServer()->Tuning()->m_LaserDamage + Damage, m_Owner, WEAPON_RIFLE, false);
-		else if (pHitExplodeWall)
-			pHitExplodeWall->TakeDamage(GameServer()->Tuning()->m_LaserDamage + Damage, m_Owner, WEAPON_RIFLE, false);
-	}
+		pTarget->TakeDamage(vec2(0.f, 0.f), GameServer()->Tuning()->m_LaserDamage + Damage, m_Owner, WEAPON_RIFLE, false, m_FromMonster);
 
 	return true;
 }

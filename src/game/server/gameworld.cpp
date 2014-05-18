@@ -3,6 +3,7 @@
 
 #include "gameworld.h"
 #include "entity.h"
+#include "entity_damageable.h"
 #include "gamecontext.h"
 #include "entities/explodewall.h"
 #include "entities/monster.h"
@@ -46,16 +47,52 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, 
 		return 0;
 
 	int Num = 0;
-	for(CEntity *pEnt = m_apFirstEntityTypes[Type];	pEnt; pEnt = pEnt->m_pNextTypeEntity)
+	if (Type != ENTTYPE_EXPLODEWALL)
 	{
-		if((Type != ENTTYPE_EXPLODEWALL && distance(pEnt->m_Pos, Pos) < Radius+pEnt->m_ProximityRadius) ||
-		   (Type == ENTTYPE_EXPLODEWALL && distance(closest_point_on_line(reinterpret_cast<CExplodeWall*>(pEnt)->m_From, pEnt->m_Pos, Pos), Pos) < Radius+pEnt->m_ProximityRadius))
+		for(CEntity *pEnt = m_apFirstEntityTypes[Type];	pEnt; pEnt = pEnt->m_pNextTypeEntity)
 		{
-			if(ppEnts)
-				ppEnts[Num] = pEnt;
+			if(distance(pEnt->m_Pos, Pos) < Radius+pEnt->m_ProximityRadius)
+			{
+				if(ppEnts)
+					ppEnts[Num] = pEnt;
+				Num++;
+				if(Num == Max)
+					break;
+			}
+		}
+	}
+	else
+	{
+		for(CEntity *pEnt = m_apFirstEntityTypes[Type];	pEnt; pEnt = pEnt->m_pNextTypeEntity)
+		{
+			if(distance(closest_point_on_line(reinterpret_cast<CExplodeWall*>(pEnt)->m_From, pEnt->m_Pos, Pos), Pos) < Radius+pEnt->m_ProximityRadius)
+			{
+				if(ppEnts)
+					ppEnts[Num] = pEnt;
+				Num++;
+				if(Num == Max)
+					break;
+			}
+		}
+	}
+
+	return Num;
+}
+
+int CGameWorld::FindEntitiesDamageable(vec2 Pos, float Radius, IEntityDamageable **ppEnts, int Max)
+{
+	int Num = 0;
+	for (int i = ENTTYPE_CHARACTER; i < ENTTYPE_TELEPORTER; i++)
+	{
+		CEntity *ppEntsTemp[Max];
+		int NumTemp = FindEntities(Pos, Radius, ppEntsTemp, Max, i);
+		for (int j = 0; j < NumTemp; j++)
+		{
+			if (Num == Max)
+				return Num;
+
+			ppEnts[Num] = reinterpret_cast<IEntityDamageable*>(ppEntsTemp[j]);
 			Num++;
-			if(Num == Max)
-				break;
 		}
 	}
 

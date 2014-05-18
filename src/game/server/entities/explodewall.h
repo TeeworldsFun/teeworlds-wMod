@@ -3,9 +3,9 @@
 #ifndef GAME_SERVER_ENTITIES_EXPLODEWALL_H
 #define GAME_SERVER_ENTITIES_EXPLODEWALL_H
 
-#include <game/server/entity.h>
+#include <game/server/entity_damageable.h>
 
-class CExplodeWall : public CEntity
+class CExplodeWall : public IEntityDamageable
 {
 public:
 	CExplodeWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner);
@@ -14,7 +14,7 @@ public:
 	virtual void Snap(int SnappingClient);
 
 	int GetOwner() { return m_Owner; };
-	bool TakeDamage(int Dmg, int From, int Weapon, bool Instagib);
+	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster = false);
 
 	int m_StartTick;
 	vec2 m_From;

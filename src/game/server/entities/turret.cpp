@@ -9,7 +9,7 @@
 #include "explodewall.h"
 
 CTurret::CTurret(CGameWorld *pGameWorld, vec2 Pos, int Owner)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_TURRET)
+	: IEntityDamageable(pGameWorld, CGameWorld::ENTTYPE_TURRET)
 {
 	m_Pos = Pos;
 	m_Owner = Owner;
@@ -41,56 +41,32 @@ void CTurret::Tick()
 	vec2 TargetPos;
 
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
-	CCharacter *apEnts[MAX_CLIENTS] = {0};
-	int Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+	IEntityDamageable *apEnts[MAX_ENTITIES_DAMAGEABLE];
+	int Num = GameServer()->m_World.FindEntitiesDamageable(m_Pos, 450.0f, apEnts, MAX_ENTITIES_DAMAGEABLE);
 	for(int i = 0; i < Num; i++)
 	{
- 		if (OwnerChar != apEnts[i] &&
-			(IgnoreTeam || GameServer()->m_apPlayers[m_Owner]->GetTeam() != apEnts[i]->GetPlayer()->GetTeam())
-			&& (ClosestLen > (Len = distance(m_Pos, apEnts[i]->m_Pos)) || ClosestLen == -1)
-			&& !GameServer()->Collision()->IntersectLine(m_Pos, apEnts[i]->m_Pos, 0, 0))
-		{
-			ClosestLen = Len;
-			TargetPos = apEnts[i]->m_Pos;
-		}
-	}
+		if (OwnerChar == apEnts[i])
+			continue;
 
-	CTurret *apMonsts[MAX_MONSTERS] = {0};
-	Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apMonsts, MAX_MONSTERS, CGameWorld::ENTTYPE_MONSTER);
-	for(int i = 0; i < Num; i++)
-	{
-		if ((ClosestLen > (Len = distance(m_Pos, apMonsts[i]->m_Pos)) || ClosestLen == -1) && !GameServer()->Collision()->IntersectLine(m_Pos, apMonsts[i]->m_Pos, 0, 0))
-		{
-			ClosestLen = Len;
-			TargetPos = apMonsts[i]->m_Pos;
-		}
-	}
+		if (apEnts[i]->GetType() == CGameWorld::ENTTYPE_TURRET && reinterpret_cast<CTurret*>(apEnts[i])->GetOwner() == m_Owner)
+			continue;
 
-	CTurret *apEntsTurret[MAX_CLIENTS*5] = {0};
-	Num = GameServer()->m_World.FindEntities(m_Pos, 450.0f, (CEntity**)apEntsTurret, MAX_CLIENTS * 5, CGameWorld::ENTTYPE_TURRET);
-	for(int i = 0; i < Num; i++)
-	{
-		if (m_Owner != apEntsTurret[i]->GetOwner() && (IgnoreTeam || GameServer()->m_apPlayers[m_Owner]->GetTeam() != GameServer()->m_apPlayers[apEntsTurret[i]->GetOwner()]->GetTeam())
-			&& (ClosestLen > (Len = distance(m_Pos, apEntsTurret[i]->m_Pos)) || ClosestLen == -1) && !GameServer()->Collision()->IntersectLine(m_Pos, apEntsTurret[i]->m_Pos, 0, 0))
-		{
-			ClosestLen = Len;
-			TargetPos = apEntsTurret[i]->m_Pos;
-		}
-	}
+		if (apEnts[i]->GetType() == CGameWorld::ENTTYPE_EXPLODEWALL && reinterpret_cast<CExplodeWall*>(apEnts[i])->GetOwner() == m_Owner)
+			continue;
 
-	CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
-	for(; p; p = (CExplodeWall *)p->TypeNext())
-	{
-		vec2 IntersectPos = closest_point_on_line(p->m_From, p->m_Pos, m_Pos);
-		Len = distance(m_Pos, IntersectPos);
-		if(Len < p->m_ProximityRadius+450.0f && p->GetOwner() != m_Owner &&
-		  (IgnoreTeam || GameServer()->m_apPlayers[m_Owner]->GetTeam() != GameServer()->m_apPlayers[p->GetOwner()]->GetTeam()) &&
-		  !GameServer()->Collision()->IntersectLine(m_Pos, IntersectPos, 0, 0))
+		if (apEnts[i]->GetType() == CGameWorld::ENTTYPE_MONSTER || IgnoreTeam ||
+		   (apEnts[i]->GetType() == CGameWorld::ENTTYPE_CHARACTER &&
+			GameServer()->m_apPlayers[m_Owner]->GetTeam() != reinterpret_cast<CCharacter*>(apEnts[i])->GetPlayer()->GetTeam()))
 		{
-			if(ClosestLen > Len || ClosestLen == -1)
+			vec2 EntPos = apEnts[i]->m_Pos;
+			if (apEnts[i]->GetType() == CGameWorld::ENTTYPE_EXPLODEWALL)
+				EntPos = closest_point_on_line(reinterpret_cast<CExplodeWall*>(apEnts[i])->m_From, apEnts[i]->m_Pos, m_Pos);
+
+			if ((ClosestLen > (Len = distance(m_Pos, EntPos)) || ClosestLen == -1)
+					&& !GameServer()->Collision()->IntersectLine(m_Pos, EntPos, 0, 0))
 			{
 				ClosestLen = Len;
-				TargetPos = IntersectPos;
+				TargetPos = EntPos;
 			}
 		}
 	}
@@ -104,32 +80,38 @@ void CTurret::Tick()
 	new CPlasma(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_Owner);
 }
 
-bool CTurret::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
+bool CTurret::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster)
 {
-	int FromRace = 0;
-	if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN) )
-		FromRace = HUMAN;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_GNOME) )
-		FromRace = GNOME;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ORC) )
-		FromRace = ORC;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ELF) )
-		FromRace = ELF;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
-		FromRace = (rand() % ((ELF + 1) - HUMAN)) + HUMAN;
-	else if ( GameServer()->m_apPlayers[From] )
-		FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
-
-	if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || (FromRace == ORC && Weapon == WEAPON_RIFLE))
+	if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB))
 		Instagib = true;
 
-	if(GameServer()->m_pController->IsFriendlyFire(m_Owner, From, Weapon) && !g_Config.m_SvTeamdamage)
+	if (!FromMonster)
+	{
+		int FromRace = 0;
+		if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN) )
+			FromRace = HUMAN;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_GNOME) )
+			FromRace = GNOME;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ORC) )
+			FromRace = ORC;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ELF) )
+			FromRace = ELF;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
+			FromRace = (rand() % ((ELF + 1) - HUMAN)) + HUMAN;
+		else if ( GameServer()->m_apPlayers[From] )
+			FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
+
+		if (FromRace == ORC && Weapon == WEAPON_RIFLE)
+			Instagib = true;
+	}
+
+	if(!FromMonster && GameServer()->m_pController->IsFriendlyFire(m_Owner, From, Weapon) && !g_Config.m_SvTeamdamage)
 		return false;
 
-	if(From == m_Owner)
+	if(!FromMonster && From == m_Owner)
 		return false;
 
-	if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
+	if (GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2))
 		Dmg = max(1, Dmg/2);
 
 	if (!Instagib)
@@ -154,7 +136,7 @@ bool CTurret::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
 	m_DamageTakenTick = Server()->Tick();
 
 	// do damage Hit sound
-	if(From >= 0 && From != m_Owner && GameServer()->m_apPlayers[From])
+	if(!FromMonster && From >= 0 && From != m_Owner && GameServer()->m_apPlayers[From])
 	{
 		int Mask = CmaskOne(From);
 		for(int i = 0; i < MAX_CLIENTS; i++)
@@ -171,7 +153,7 @@ bool CTurret::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
 		m_Destroy = true;
 
 		// set attacker's face to happy (taunt!)
-		if (From >= 0 && From != m_Owner && GameServer()->m_apPlayers[From])
+		if (!FromMonster && From >= 0 && From != m_Owner && GameServer()->m_apPlayers[From])
 		{
 			CCharacter *pChr = GameServer()->m_apPlayers[From]->GetCharacter();
 			if (pChr)

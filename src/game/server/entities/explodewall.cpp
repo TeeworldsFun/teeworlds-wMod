@@ -7,7 +7,7 @@
 #include "explodewall.h"
 
 CExplodeWall::CExplodeWall(CGameWorld *pGameWorld, vec2 StartPos, int Owner)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_EXPLODEWALL)
+	: IEntityDamageable(pGameWorld, CGameWorld::ENTTYPE_EXPLODEWALL)
 {
 	m_From = StartPos;
 	m_Pos = m_From;
@@ -41,32 +41,38 @@ void CExplodeWall::Tick()
 	}
 }
 
-bool CExplodeWall::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
+bool CExplodeWall::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster)
 {
-	int FromRace = 0;
-	if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN) )
-		FromRace = HUMAN;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_GNOME) )
-		FromRace = GNOME;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ORC) )
-		FromRace = ORC;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ELF) )
-		FromRace = ELF;
-	else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
-		FromRace = (rand() % ((ELF + 1) - HUMAN)) + HUMAN;
-	else if ( GameServer()->m_apPlayers[From] )
-		FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
-
-	if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB) || (FromRace == ORC && Weapon == WEAPON_RIFLE))
+	if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB))
 		Instagib = true;
 
-	if(GameServer()->m_pController->IsFriendlyFire(m_Owner, From, Weapon) && !g_Config.m_SvTeamdamage)
+	if (!FromMonster)
+	{
+		int FromRace = 0;
+		if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_HUMAN) )
+			FromRace = HUMAN;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_GNOME) )
+			FromRace = GNOME;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ORC) )
+			FromRace = ORC;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_ELF) )
+			FromRace = ELF;
+		else if ( GameServer()->m_pEventsGame->IsActualEvent(RACE_RANDOM) )
+			FromRace = (rand() % ((ELF + 1) - HUMAN)) + HUMAN;
+		else if ( GameServer()->m_apPlayers[From] )
+			FromRace = GameServer()->m_apPlayers[From]->m_WeaponType[Weapon];
+
+		if (FromRace == ORC && Weapon == WEAPON_RIFLE)
+			Instagib = true;
+	}
+
+	if(!FromMonster && GameServer()->m_pController->IsFriendlyFire(m_Owner, From, Weapon) && !g_Config.m_SvTeamdamage)
 		return false;
 
-	if(From == m_Owner)
+	if(!FromMonster && From == m_Owner)
 		return false;
 
-	if ( GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2) )
+	if (GameServer()->m_pEventsGame->IsActualEvent(PROTECT_X2))
 		Dmg = max(1, Dmg/2);
 
 	if (!Instagib)
@@ -92,7 +98,7 @@ bool CExplodeWall::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
 	m_DamageTakenTick = Server()->Tick();
 
 	// do damage Hit sound
-	if(From >= 0 && From != m_Owner && GameServer()->m_apPlayers[From])
+	if(!FromMonster && From >= 0 && From != m_Owner && GameServer()->m_apPlayers[From])
 	{
 		int Mask = CmaskOne(From);
 		for(int i = 0; i < MAX_CLIENTS; i++)
@@ -110,13 +116,11 @@ bool CExplodeWall::TakeDamage(int Dmg, int From, int Weapon, bool Instagib)
 		m_Destroy = true;
 
 		// set attacker's face to happy (taunt!)
-		if (From >= 0 && From != m_Owner && GameServer()->m_apPlayers[From])
+		if (!FromMonster && From >= 0 && From != m_Owner && GameServer()->m_apPlayers[From])
 		{
 			CCharacter *pChr = GameServer()->m_apPlayers[From]->GetCharacter();
 			if (pChr)
-			{
 				pChr->SetEmote(EMOTE_HAPPY, Server()->Tick() + Server()->TickSpeed());
-			}
 		}
 
 		return true;

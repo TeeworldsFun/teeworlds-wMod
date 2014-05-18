@@ -37,8 +37,6 @@
 
 */
 
-static const int MAX_MONSTERS = 16;
-
 class CGameContext : public IGameServer
 {
 	IServer *m_pServer;

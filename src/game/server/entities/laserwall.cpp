@@ -54,7 +54,7 @@ void CLaserWall::Tick()
 
 	CTurret *pHitTurret = (CTurret *)GameServer()->m_World.IntersectEntity(m_Pos, m_From, 0.f, At, CGameWorld::ENTTYPE_TURRET);
 	if (pHitTurret)
-		pHitTurret->TakeDamage(10, m_Owner, WEAPON_HAMMER, true);
+		pHitTurret->TakeDamage(vec2(0,0), 10, m_Owner, WEAPON_HAMMER, true);
 }
 
 void CLaserWall::CreateDouble()

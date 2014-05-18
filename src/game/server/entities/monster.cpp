@@ -17,7 +17,7 @@
 #include "monster.h"
 
 CMonster::CMonster(CGameWorld *pWorld, int Type, int MonsterID, int Health, int Armor, int Difficulty)
-: CEntity(pWorld, CGameWorld::ENTTYPE_MONSTER)
+: IEntityDamageable(pWorld, CGameWorld::ENTTYPE_MONSTER)
 {
     m_MonsterID = MonsterID;
     m_Type = Type;
@@ -1341,7 +1341,7 @@ const char *CMonster::MonsterName()
     }
 }
 
-bool CMonster::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster, bool Drain, bool FromReflect)
+bool CMonster::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster)
 {
 	if (!m_Alive)
 		return false;
@@ -1353,17 +1353,6 @@ bool CMonster::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instag
 
 	if (GameServer()->m_pEventsGame->IsActualEvent(INSTAGIB))
 		Instagib = true;
-
-	/*if(FromReflect && m_Health == 1 && !m_Armor)
-        return false;
-
-    int DrainedAmount = 0;
-
-	if(GameServer()->IsValidPlayer(From) && Drain && Dmg)
-    {
-        if(GameServer()->m_apPlayers[From]->m_Upgrades.m_Vampirism)
-            DrainedAmount = Dmg/2;
-	}*/
 
 	m_DamageTaken++;
 
@@ -1418,27 +1407,9 @@ bool CMonster::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instag
 		GameServer()->CreateSound(GameServer()->m_apPlayers[From]->m_ViewPos, SOUND_HIT, Mask);
 	}
 
-	/*if(DrainedAmount && Drain && GameServer()->GetPlayerChar(From))
-    {
-        if(DrainedAmount + GameServer()->GetPlayerChar(From)->GetHealth() > GameServer()->m_apPlayers[From]->TotalHP())
-        {
-            int ArmorToGive = DrainedAmount;
-            ArmorToGive -= GameServer()->m_apPlayers[From]->TotalHP() - GameServer()->GetPlayerChar(From)->GetHealth();
-            GameServer()->GetPlayerChar(From)->IncreaseHealth(DrainedAmount);
-            GameServer()->GetPlayerChar(From)->IncreaseArmor(ArmorToGive);
-        }
-        else
-            GameServer()->GetPlayerChar(From)->IncreaseHealth(DrainedAmount);
-	}*/
-
 	// check for death
 	if(m_Health <= 0 || Instagib)
 	{
-		/*if(FromReflect)
-        {
-            m_Health = 1;
-            goto here;
-		}*/
 		// set attacker's face to happy (taunt!)
 		if (From >= 0 && From < MAX_CLIENTS && GameServer()->m_apPlayers[From])
 		{
@@ -1449,10 +1420,8 @@ bool CMonster::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instag
 
 		Die(From);
 
-		return false;
+		return true;
 	}
-
-	//here:
 
 	if (Dmg > 2)
 		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG);
