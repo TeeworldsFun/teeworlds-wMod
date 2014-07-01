@@ -156,7 +156,7 @@ void CProjectile::Tick()
 			}
 		}
 
-		if ( m_Deploy && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0 )
+		if (m_Deploy && (!Collide || GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING)) && m_LifeSpan < 0)
 		{
 			int ShotSpread = 2;
 

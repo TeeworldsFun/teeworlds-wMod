@@ -77,8 +77,8 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type)
 	for(int i = 0; i < m_aNumSpawnPoints[Type]; i++)
 	{
 		// check if the position is occupado
-		CCharacter *aEnts[MAX_CLIENTS];
-		int Num = GameServer()->m_World.FindEntities(m_aaSpawnPoints[Type][i], 64, (CEntity**)aEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		IEntityDamageable *aEnts[MAX_ENTITIES_DAMAGEABLE];
+		int Num = GameServer()->m_World.FindEntitiesDamageable(m_aaSpawnPoints[Type][i], 64, aEnts, MAX_ENTITIES_DAMAGEABLE);
 		vec2 Positions[5] = { vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f) };	// start, left, up, right, down
 		int Result = -1;
 		for(int Index = 0; Index < 5 && Result == -1; ++Index)

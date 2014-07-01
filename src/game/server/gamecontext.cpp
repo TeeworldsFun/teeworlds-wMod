@@ -368,15 +368,7 @@ void CGameContext::SendBroadcast(const char *pText, int ClientID, int LifeTime)
 	else
 	{
 		for(int i = 0; i < MAX_CLIENTS; i++)
-		{
-			if(m_apPlayers[i] && m_apPlayers[i]->m_EndBroadcastTick <= Server()->Tick())
-			{
-				CNetMsg_Sv_Broadcast Msg;
-				Msg.m_pMessage = pText;
-				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
-				m_apPlayers[i]->m_EndBroadcastTick = Server()->Tick() + Server()->TickSpeed()*LifeTime;
-			}
-		}
+			SendBroadcast(pText, i, LifeTime);
 	}
 }
 
@@ -465,9 +457,10 @@ void CGameContext::SendTuningParams(int ClientID)
 {
 	CheckPureTuning();
 
-	CTuningParams User = m_Tuning;
-	if ( ClientID >= 0 )
+	if (ClientID >= 0)
 	{
+		CTuningParams User = m_Tuning;
+
 		if (m_apPlayers[ClientID]->GetSID() >= 0)
 		{
 			float RateSpeed = 1.0f;
@@ -516,44 +509,7 @@ void CGameContext::SendTuningParams(int ClientID)
 			if(!m_apPlayers[i])
 				continue;
 
-			if (m_apPlayers[i]->GetSID() >= 0)
-			{
-				float RateSpeed = 1.0f;
-				float RateAccel = 1.0f;
-				float RateHighJump = 1.0f;
-				float RateLengthHook = 1.0f;
-				float RateSpeedHook = 1.0f;
-				if (!m_pEventsGame->IsActualEvent(SPEED_X10))
-				{
-					RateSpeed = m_apPlayers[i]->m_pStats->GetStatMove().m_rate_speed;
-					RateAccel =  m_apPlayers[i]->m_pStats->GetStatMove().m_rate_accel;
-					RateSpeedHook = m_apPlayers[i]->m_pStats->GetStatHook().m_rate_speed;
-				}
-				if (m_apPlayers[i]->m_pStats->GetActualKill() >= 5)
-				{
-					RateSpeed *= 1.5f;
-					RateAccel *= 1.5f;
-				}
-				if (!m_pEventsGame->IsActualEvent(JUMP_X1_5))
-					RateHighJump = m_apPlayers[i]->m_pStats->GetStatMove().m_rate_high_jump;
-				if (!m_pEventsGame->IsActualEvent(HOOK_VERY_LONG))
-					RateLengthHook = m_apPlayers[i]->m_pStats->GetStatHook().m_rate_length;
-
-				User.Set("ground_control_speed", m_Tuning.m_GroundControlSpeed * RateSpeed);
-				User.Set("air_control_speed", m_Tuning.m_AirControlSpeed * RateSpeed);
-				User.Set("ground_control_accel", m_Tuning.m_GroundControlAccel * RateAccel);
-				User.Set("air_control_accel", m_Tuning.m_AirControlAccel * RateAccel);
-				User.Set("ground_jump_impulse", m_Tuning.m_GroundJumpImpulse * RateHighJump);
-				User.Set("air_jump_impulse", m_Tuning.m_AirJumpImpulse * RateHighJump);
-				User.Set("hook_length", m_Tuning.m_HookLength * RateLengthHook);
-				User.Set("hook_fire_speed", m_Tuning.m_HookFireSpeed * RateSpeedHook);
-				User.Set("hook_drag_speed", m_Tuning.m_HookDragSpeed * RateSpeedHook);
-			}
-			CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-			int *pParams = (int *)&User;
-			for(unsigned j = 0; j < sizeof(User)/sizeof(int); j++)
-				Msg.AddInt(pParams[j]);
-			Server()->SendMsg(&Msg, MSGFLAG_VITAL, i);
+			SendTuningParams(i);
 		}
 	}
 }
@@ -599,9 +555,25 @@ void CGameContext::OnTick()
 	for(int i = 0; i < MAX_MONSTERS; i++)
 	{
 		if (GetValidMonster(i) && !m_apMonsters[i]->IsAlive())
-		{
 			OnMonsterDeath(i);
+	}
+
+	int AliveMonsters = 0;
+	for(int i = 0; i < MAX_MONSTERS; i++)
+	{
+		if (GetValidMonster(i))
+		{
+			if (AliveMonsters == g_Config.m_SvNumMonster)
+				OnMonsterDeath(i);
+			else
+				AliveMonsters++;
 		}
+	}
+
+	while (AliveMonsters < g_Config.m_SvNumMonster && AliveMonsters <= MAX_MONSTERS)
+	{
+		NewMonster();
+		AliveMonsters++;
 	}
 
 	//m_pStatsServer->Tick();
@@ -726,8 +698,9 @@ void CGameContext::OnClientEnter(int ClientID)
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	m_VoteUpdate = true;
-	SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod v2.3***");
-	SendChatTarget(ClientID, "** Wrote by PJK **");
+	SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod v2.5***");
+	SendChatTarget(ClientID, "** Written by PJK **");
+	SendChatTarget(ClientID, "* IA by Neox *");
 	SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
 	SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /upgr , /race , /stats and /ranks **");
 	SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
@@ -832,8 +805,9 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 	}
 	else if(str_comp_nocase(Arguments[0], "/info") == 0)
 	{
-		SendChatTarget(ClientID, "*** Extreme Weapon Mod v2.3 ***");
-		SendChatTarget(ClientID, "** Wrote by PJK **");
+		SendChatTarget(ClientID, "*** Extreme Weapon Mod v2.5 ***");
+		SendChatTarget(ClientID, "** Written by PJK **");
+		SendChatTarget(ClientID, "* IA by Neox *");
 		SendChatTarget(ClientID, "It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
 		SendChatTarget(ClientID, "You can choose a race, see your statistics and upgrade your gameplay !");
 		SendChatTarget(ClientID, "Say /cmdlist to get all commands available !");
@@ -2796,7 +2770,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 	m_pStatsServer->OnInit();
 #endif
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < g_Config.m_SvNumMonster; i++)
 		NewMonster();
 
 #ifdef CONF_DEBUG
@@ -2884,7 +2858,7 @@ void CGameContext::NewMonster()
 	{
 		if(!GetValidMonster(i))
 		{
-			m_apMonsters[i] = new CMonster(&m_World, rand()%(NUM_WEAPONS-2) + 2, i, 10, 10, 1);
+			m_apMonsters[i] = new CMonster(&m_World, rand()%(NUM_WEAPONS-2) + 2, i, 10, 10, g_Config.m_SvDifficulty);
 			break;
 		}
 	}
@@ -2896,11 +2870,8 @@ void CGameContext::OnMonsterDeath(int MonsterID)
 		return;
 
 	m_apMonsters[MonsterID]->Destroy();
-
 	delete m_apMonsters[MonsterID];
 	m_apMonsters[MonsterID] = 0;
-
-	NewMonster();
 }
 
 const char *CGameContext::GameType() { return m_pController && m_pController->m_pGameType ? m_pController->m_pGameType : ""; }

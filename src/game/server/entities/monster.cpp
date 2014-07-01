@@ -24,8 +24,8 @@ CMonster::CMonster(CGameWorld *pWorld, int Type, int MonsterID, int Health, int 
 	m_ProximityRadius = ms_PhysSize;
     m_MaxArmor = Armor;
 	m_Armor = Armor;
-    m_Health = 10 + Health;
-	m_MaxHealth = 10 + Health;
+	m_Health = Health;
+	m_MaxHealth = Health;
 	m_Difficulty = Difficulty;
 
 	Spawn();
@@ -40,12 +40,11 @@ CMonster::CMonster(CGameWorld *pWorld, int Type, int MonsterID, int Health, int 
 
 void CMonster::Reset()
 {
-	Destroy();
+	m_Alive = false;
 }
 
 void CMonster::Destroy()
 {
-    GameWorld()->DestroyEntity(this);
 	m_Alive = false;
     for(int i = 0; i < ENTITY_NUM; i ++)
         Server()->SnapFreeID(m_aIDs[i]);
@@ -207,7 +206,7 @@ void CMonster::HandleNinja(bool IsPredicted)
 
                 int Damage = g_pData->m_Weapons.m_Ninja.m_pBase->m_Damage;
 
-                Damage += (m_Difficulty - 1) * 3; // + 3 damage every 3 difficulty
+				Damage += (m_Difficulty - 1) * 3; // + 3 damage every 3 difficulty
 
 				aEnts[i]->TakeDamage(vec2(0, -10.0f), Damage, m_MonsterID, m_ActiveWeapon, false, true);
 			}
@@ -529,7 +528,7 @@ void CMonster::HandleWeapons()
         else
         {
             m_Dir = vec2(0, 0);
-            if(m_Type == TYPE_NINJA && g_Config.m_HardNinja)
+			if(m_Type == TYPE_NINJA && g_Config.m_SvHardNinja)
                 OnPredictedNinja();
         }
     }
@@ -1120,7 +1119,7 @@ void CMonster::HandleActions() // This is the monsters AI, it has been decreased
 
         if(distance(pVict->m_Pos, m_Pos) < 800)
         {
-            if(m_Difficulty >= 3 || m_Type == TYPE_HAMMER)
+			if(m_Difficulty >= 3 || m_Type == TYPE_HAMMER)
                 m_WillHook = true;
             bool WillJump = CanJump();
             if(WillJump) // Here we check if when the monster will jump, it will still see the victim or not. If not, make like it doesn't jump

@@ -391,13 +391,13 @@ bool CPlayer::SetSID(long id)
 	delete m_pStats;
 	m_pStats = new CStats(this, m_pGameServer);
 
-	if ( id > 0 )
+	if (id > 0)
 	{
 		m_pStats->Set(GameServer()->m_pStatsServer->GetAll(id));
 		if (m_pStats->GetId() < 0)
 			return false;
 	}
-	else if ( id == 0 )
+	else if (id == 0)
 		m_pStats->ConnectAnonymous();
 	else
 		return false;

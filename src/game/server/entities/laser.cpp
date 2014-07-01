@@ -167,7 +167,7 @@ void CLaser::DoBounce()
 				m_Energy = -1;
 
 			GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
-			GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
+			GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false, m_FromMonster);
 		}
 	}
 	else if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_PIERCING))
@@ -179,7 +179,7 @@ void CLaser::DoBounce()
 			m_Energy = -1;
 
 			GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
-			GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
+			GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false, m_FromMonster);
 		}
 	}
 	else if (GameServer()->m_pEventsGame->IsActualEvent(BULLET_GLUE) && GameServer()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
@@ -190,7 +190,7 @@ void CLaser::DoBounce()
 			m_Pos = To;
 			m_Energy -= (m_Energy / 2) + 2;
 			GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
-			GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
+			GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false, m_FromMonster);
 		}
 	}
 	else
@@ -201,7 +201,7 @@ void CLaser::DoBounce()
 			m_Pos = To;
 			m_Energy = -1;
 			GameServer()->CreateSound(m_Pos, SOUND_RIFLE_BOUNCE);
-			GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false);
+			GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_RIFLE, false, false, m_FromMonster);
 		}
 	}
 }

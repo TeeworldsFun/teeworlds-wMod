@@ -149,7 +149,7 @@ function build(settings)
 	if config.compiler.driver == "cl" then
 		settings.cc.flags:Add("/wd4244")
 	else
-		settings.cc.flags:Add("-Wall", "-fno-exceptions")
+		settings.cc.flags:Add("-Wall")
 		if family == "windows" then
 			-- disable visibility attribute support for gcc on windows
 			settings.cc.defines:Add("NO_VIZ")
@@ -168,7 +168,7 @@ function build(settings)
 
 	-- set some platform specific settings
 	settings.cc.includes:Add("src")
-    settings.cc.includes:Add("other/mysql/include")
+	settings.cc.includes:Add("other/mysql/include")
 
 	if family == "unix" then
 		if platform == "macosx" then
@@ -328,6 +328,7 @@ debug_settings.config_ext = "_d"
 debug_settings.debug = 1
 debug_settings.optimize = 0
 debug_settings.cc.defines:Add("CONF_DEBUG")
+debug_settings.cc.flags:Add("-Og")
 
 debug_sql_settings = NewSettings()
 debug_sql_settings.config_name = "sql_debug"
@@ -335,6 +336,8 @@ debug_sql_settings.config_ext = "_sql_d"
 debug_sql_settings.debug = 1
 debug_sql_settings.optimize = 0
 debug_sql_settings.cc.defines:Add("CONF_DEBUG", "CONF_SQL")
+debug_sql_settings.cc.flags:Add("-Og")
+
 release_settings = NewSettings()
 release_settings.config_name = "release"
 release_settings.config_ext = ""
