@@ -12,9 +12,10 @@
 #include <game/server/event.h>
 #include <game/mapitems.h>
 
-#include "laser.h"
-#include "projectile.h"
 #include "monster.h"
+#include "projectile.h"
+#include "laser.h"
+#include "explodewall.h"
 
 CMonster::CMonster(CGameWorld *pWorld, int Type, int MonsterID, int Health, int Armor, int Difficulty)
 : IEntityDamageable(pWorld, CGameWorld::ENTTYPE_MONSTER)
@@ -176,70 +177,44 @@ void CMonster::HandleNinja(bool IsPredicted)
 
 		// check if we Hit anything along the way
 		{
-			CCharacter *aEnts[MAX_CLIENTS];
+			IEntityDamageable *apEnts[MAX_ENTITIES_DAMAGEABLE];
 			vec2 Dir = m_Pos - OldPos;
 			float Radius = m_ProximityRadius * 2.0f;
 			vec2 Center = OldPos + Dir * 0.5f;
-			int Num = GameServer()->m_World.FindEntities(Center, Radius, (CEntity**)aEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+			int Num = GameServer()->m_World.FindEntitiesDamageable(Center, Radius, apEnts, MAX_ENTITIES_DAMAGEABLE);
 
 			for (int i = 0; i < Num; ++i)
 			{
+				if (apEnts[i] == this)
+					continue;
 				// make sure we haven't Hit this object before
 				bool bAlreadyHit = false;
 				for (int j = 0; j < m_NumObjectsHit; j++)
 				{
-					if (m_apHitObjects[j] == aEnts[i])
+					if (m_apHitObjects[j] == apEnts[i])
 						bAlreadyHit = true;
 				}
 				if (bAlreadyHit)
 					continue;
 
+				vec2 TargetPos = apEnts[i]->m_Pos;
+				if (apEnts[i]->GetType() == CGameWorld::ENTTYPE_EXPLODEWALL)
+					TargetPos = closest_point_on_line(reinterpret_cast<CExplodeWall*>(apEnts[i])->m_From, apEnts[i]->m_Pos, m_Pos);
 				// check so we are sufficiently close
-				if (distance(aEnts[i]->m_Pos, m_Pos) > (m_ProximityRadius * 2.0f))
+				if (distance(TargetPos, m_Pos) > (m_ProximityRadius * 2.0f))
 					continue;
 
 				// Hit a player, give him damage and stuffs...
-				GameServer()->CreateSound(aEnts[i]->m_Pos, SOUND_NINJA_HIT);
+				GameServer()->CreateSound(TargetPos, SOUND_NINJA_HIT);
 				// set his velocity to fast upward (for now)
 				if(m_NumObjectsHit < 10)
-					m_apHitObjects[m_NumObjectsHit++] = aEnts[i];
+					m_apHitObjects[m_NumObjectsHit++] = apEnts[i];
 
-                int Damage = g_pData->m_Weapons.m_Ninja.m_pBase->m_Damage;
+				int Damage = g_pData->m_Weapons.m_Ninja.m_pBase->m_Damage;
 
 				Damage += (m_Difficulty - 1) * 3; // + 3 damage every 3 difficulty
 
-				aEnts[i]->TakeDamage(vec2(0, -10.0f), Damage, m_MonsterID, m_ActiveWeapon, false, true);
-			}
-
-			CMonster *aMonsts[MAX_MONSTERS];
-			int Num2 = GameServer()->m_World.FindEntities(Center, Radius, (CEntity**)aMonsts, MAX_MONSTERS, CGameWorld::ENTTYPE_MONSTER);
-
-			for (int i = 0; i < Num2; ++i)
-			{
-			    if(aMonsts[i]->m_MonsterID == m_MonsterID)
-                    continue;
-
-				// make sure we haven't Hit this object before
-				bool bAlreadyHit = false;
-				for (int j = 0; j < m_NumObjectsHit; j++)
-				{
-					if (m_apHitObjects[j] == aMonsts[i])
-						bAlreadyHit = true;
-				}
-				if (bAlreadyHit)
-					continue;
-
-				// check so we are sufficiently close
-				if (distance(aMonsts[i]->m_Pos, m_Pos) > (m_ProximityRadius * 2.0f))
-					continue;
-
-				// Hit a player, give him damage and stuffs...
-				GameServer()->CreateSound(aMonsts[i]->m_Pos, SOUND_NINJA_HIT);
-				// set his velocity to fast upward (for now)
-				if(m_NumObjectsHit < 10)
-					m_apHitObjects[m_NumObjectsHit++] = aMonsts[i];
-
-				aMonsts[i]->TakeDamage(vec2(0, -10.0f), g_pData->m_Weapons.m_Ninja.m_pBase->m_Damage, m_MonsterID, m_ActiveWeapon, false, true);
+				apEnts[i]->TakeDamage(vec2(0, -10.0f), Damage, m_MonsterID, m_ActiveWeapon, false, true);
 			}
 		}
 	}
@@ -641,71 +616,35 @@ void CMonster::FireWeapon()
 			m_NumObjectsHit = 0;
 			GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
 
-			CCharacter *apEnts[MAX_CLIENTS];
-			int Hits = 0;
-			int Num = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius*0.5f, (CEntity**)apEnts,
-														MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+			IEntityDamageable *apEnts[MAX_ENTITIES_DAMAGEABLE];
+			int Num = GameServer()->m_World.FindEntitiesDamageable(ProjStartPos, m_ProximityRadius*0.5f, apEnts, MAX_ENTITIES_DAMAGEABLE);
 
+			int Hits = 0;
 			for (int i = 0; i < Num; ++i)
 			{
-				CCharacter *pTarget = apEnts[i];
+				IEntityDamageable *pTarget = apEnts[i];
+				vec2 TargetPos = pTarget->m_Pos;
+				if (pTarget->GetType() == CGameWorld::ENTTYPE_EXPLODEWALL)
+					TargetPos = closest_point_on_line(reinterpret_cast<CExplodeWall*>(pTarget)->m_From, pTarget->m_Pos, ProjStartPos);
 
-				if (GameServer()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
+				if ((pTarget == this) || GameServer()->Collision()->IntersectLine(ProjStartPos, TargetPos, NULL, NULL))
 					continue;
 
 				// set his velocity to fast upward (for now)
-				if(length(pTarget->m_Pos-ProjStartPos) > 0.0f)
-					GameServer()->CreateHammerHit(pTarget->m_Pos-normalize(pTarget->m_Pos-ProjStartPos)*m_ProximityRadius*0.5f);
+				if(length(TargetPos-ProjStartPos) > 0.0f)
+					GameServer()->CreateHammerHit(TargetPos-normalize(TargetPos-ProjStartPos)*m_ProximityRadius*0.5f);
 				else
 					GameServer()->CreateHammerHit(ProjStartPos);
 
 				vec2 Dir;
-				if (length(pTarget->m_Pos - m_Pos) > 0.0f)
-					Dir = normalize(pTarget->m_Pos - m_Pos);
+				if (length(TargetPos - m_Pos) > 0.0f)
+					Dir = normalize(TargetPos - m_Pos);
 				else
 					Dir = vec2(0.f, -1.f);
 
 				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_MonsterID, m_ActiveWeapon, false, true);
 				Hits++;
 			}
-
-			CMonster *apMonsts[MAX_MONSTERS];
-			int Num2 = GameServer()->m_World.FindEntities(ProjStartPos, m_ProximityRadius*0.5f, (CEntity**)apMonsts,
-														MAX_MONSTERS, CGameWorld::ENTTYPE_MONSTER);
-
-			for (int i = 0; i < Num2; ++i)
-			{
-				CMonster *pTarget = apMonsts[i];
-
-				if(!pTarget)
-					continue;
-
-				if(pTarget == this)
-                    continue;
-
-				if(GameServer()->Collision()->IntersectLine(ProjStartPos, pTarget->m_Pos, NULL, NULL))
-					continue;
-
-				// set his velocity to fast upward (for now)
-				if(length(pTarget->m_Pos-ProjStartPos) > 0.0f)
-					GameServer()->CreateHammerHit(pTarget->m_Pos-normalize(pTarget->m_Pos-ProjStartPos)*m_ProximityRadius*0.5f);
-				else
-					GameServer()->CreateHammerHit(ProjStartPos);
-
-				vec2 Dir;
-				if (length(pTarget->m_Pos - m_Pos) > 0.0f)
-					Dir = normalize(pTarget->m_Pos - m_Pos);
-				else
-					Dir = vec2(0.f, -1.f);
-
-				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_MonsterID, m_ActiveWeapon, false, true);
-				Hits++;
-			}
-
-			// if we Hit anything, we have to wait for the reload
-			if(Hits)
-				m_ReloadTimer = Server()->TickSpeed()/3;
-
 		} break;
 
 		case WEAPON_GUN:

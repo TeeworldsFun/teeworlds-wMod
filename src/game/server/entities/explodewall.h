@@ -15,7 +15,6 @@ public:
 
 	int GetOwner() { return m_Owner; };
 	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, bool Instagib, bool FromMonster = false);
-
 	int m_StartTick;
 	vec2 m_From;
 	bool m_Destroy;

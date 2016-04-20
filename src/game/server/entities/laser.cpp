@@ -26,77 +26,10 @@ CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEner
 
 bool CLaser::HitCharacter(vec2 From, vec2 To)
 {
-	vec2 At;
-	vec2 TempPos;
+    vec2 At;
 
-	float ClosestLen = -1;
-
-	IEntityDamageable *pTarget = 0;
-
-	CCharacter *pOwnerChar = !m_FromMonster ? GameServer()->GetPlayerChar(m_Owner) : 0;
-	CCharacter *pHit = GameServer()->m_World.IntersectCharacter(From, To, 0.0f, TempPos, pOwnerChar);
-
-	if (pHit)
-	{
-		ClosestLen = distance(From, TempPos);
-		At = TempPos;
-		pTarget = pHit;
-	}
-
-	CMonster *pOwnerMonst = m_FromMonster ? GameServer()->GetValidMonster(m_Owner) : 0;
-	CMonster *pHit2 = GameServer()->m_World.IntersectMonster(From, To, 0.f, TempPos, pOwnerMonst);
-
-	float Len = 0;
-
-	if (pHit2 && (ClosestLen > (Len = distance(From, TempPos)) || ClosestLen == -1))
-	{
-		ClosestLen = Len;
-		At = TempPos;
-		pTarget = pHit2;
-	}
-
-	CTurret *pHitTurret = (CTurret*) GameServer()->m_World.IntersectEntity(From, To, 0.0f, TempPos, CGameWorld::ENTTYPE_TURRET);
-	if (pHitTurret && (ClosestLen > (Len = distance(From, TempPos)) || ClosestLen == -1))
-	{
-		ClosestLen = Len;
-		At = TempPos;
-		pTarget = pHitTurret;
-	}
-
-	{
-		CExplodeWall *p = (CExplodeWall *)GameWorld()->FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
-		for(; p; p = (CExplodeWall *)p->TypeNext())
-		{
-			// Store the values for fast access and easy
-			// equations-to-code conversion
-			float x1 = From.x, x2 = To.x, x3 = p->m_From.x, x4 = p->m_Pos.x;
-			float y1 = From.y, y2 = To.y, y3 = p->m_From.y, y4 = p->m_Pos.y;
-
-			float d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-			// If d is zero, there is no intersection
-			if (d == 0)
-				continue;
-
-			// Get the x and y
-			float pre = (x1*y2 - y1*x2), post = (x3*y4 - y3*x4);
-			float x = ( pre * (x3 - x4) - (x1 - x2) * post ) / d;
-			float y = ( pre * (y3 - y4) - (y1 - y2) * post ) / d;
-
-			// Check if the x and y coordinates are within both lines
-			if ( x < min(x1, x2) || x > max(x1, x2) || x < min(x3, x4) || x > max(x3, x4) )
-				continue;
-			if ( y < min(y1, y2) || y > max(y1, y2) || y < min(y3, y4) || y > max(y3, y4) )
-				continue;
-
-			if (ClosestLen > (Len = distance(From, vec2(x, y))) || ClosestLen == -1)
-			{
-				ClosestLen = Len;
-				At.x = x;
-				At.y = y;
-				pTarget = p;
-			}
-		}
-	}
+    CEntity *pOwnerChar = !m_FromMonster ? (CEntity*)GameServer()->GetPlayerChar(m_Owner) : (CEntity*)GameServer()->GetValidMonster(m_Owner);
+    IEntityDamageable *pTarget = GameServer()->m_World.IntersectEntityDamageable(From, To, 0.0f, At, pOwnerChar);
 
 	if(!pTarget)
 		return false;

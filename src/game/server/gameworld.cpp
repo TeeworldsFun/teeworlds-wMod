@@ -65,7 +65,7 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, 
 	{
 		for(CEntity *pEnt = m_apFirstEntityTypes[Type];	pEnt; pEnt = pEnt->m_pNextTypeEntity)
 		{
-			if(distance(closest_point_on_line(reinterpret_cast<CExplodeWall*>(pEnt)->m_From, pEnt->m_Pos, Pos), Pos) < Radius+pEnt->m_ProximityRadius)
+            if(distance(closest_point_on_line(reinterpret_cast<CExplodeWall*>(pEnt)->m_From, pEnt->m_Pos, Pos), Pos) < Radius+pEnt->m_ProximityRadius)
 			{
 				if(ppEnts)
 					ppEnts[Num] = pEnt;
@@ -82,7 +82,7 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, 
 int CGameWorld::FindEntitiesDamageable(vec2 Pos, float Radius, IEntityDamageable **ppEnts, int Max)
 {
 	int Num = 0;
-	for (int i = ENTTYPE_CHARACTER; i < ENTTYPE_TELEPORTER; i++)
+	for (int i = ENTTYPE_CHARACTER; i <= ENTTYPE_EXPLODEWALL; i++)
 	{
 		CEntity *ppEntsTemp[Max];
 		int NumTemp = FindEntities(Pos, Radius, ppEntsTemp, Max, i);
@@ -261,7 +261,7 @@ CCharacter *CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 
 CMonster *CGameWorld::IntersectMonster(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos, CEntity *pNotThis)
 {
-	// Find other players
+	// Find other monsters
 	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
 	CMonster *pClosest = 0;
 
@@ -288,10 +288,96 @@ CMonster *CGameWorld::IntersectMonster(vec2 Pos0, vec2 Pos1, float Radius, vec2&
 	return pClosest;
 }
 
+bool intersectionBetweenTwoSegments(vec2 From1, vec2 To1, vec2 From2, vec2 To2, vec2& At)
+{
+    // Store the values for fast access and easy
+    // equations-to-code conversion
+    float x1 = From1.x, x2 = To1.x, x3 = From2.x, x4 = To2.x;
+    float y1 = From1.y, y2 = To1.y, y3 = From2.y, y4 = To2.y;
+
+    float d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    // If d is zero, there is no intersection
+    if (d == 0)
+        return false;
+
+    // Get the x and y
+    float pre = (x1*y2 - y1*x2), post = (x3*y4 - y3*x4);
+    float x = ( pre * (x3 - x4) - (x1 - x2) * post ) / d;
+    float y = ( pre * (y3 - y4) - (y1 - y2) * post ) / d;
+
+    // Check if the x and y coordinates are within both lines
+    if ( x < min(x1, x2) || x > max(x1, x2) || x < min(x3, x4) || x > max(x3, x4) )
+        return false;
+    if ( y < min(y1, y2) || y > max(y1, y2) || y < min(y3, y4) || y > max(y3, y4) )
+        return false;
+
+    At.x = x;
+    At.y = y;
+    return true;
+}
+
+CExplodeWall *CGameWorld::IntersectExplodeWall(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos, CEntity *pNotThis)
+{
+	// Find other explodewalls
+	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+    CExplodeWall *pClosest = 0;
+    bool Intersect = false;
+
+    CExplodeWall *p = (CExplodeWall *)FindFirst(CGameWorld::ENTTYPE_EXPLODEWALL);
+	for(; p; p = (CExplodeWall *)p->TypeNext())
+	{
+		if(p == pNotThis)
+			continue;
+
+        vec2 IntersectPos;
+        if (!intersectionBetweenTwoSegments(Pos0, Pos1, p->m_From, p->m_Pos, IntersectPos) && !Intersect)
+        {
+            vec2 At[4] = {closest_point_on_line(p->m_From, p->m_Pos, Pos0),
+                         closest_point_on_line(p->m_From, p->m_Pos, Pos1),
+                         closest_point_on_line(Pos0, Pos1, p->m_From),
+                         closest_point_on_line(Pos0, Pos1, p->m_Pos)};
+
+            float Len[4] = {distance(Pos0, At[0]),
+                            distance(Pos1, At[1]),
+                            distance(p->m_From, At[2]),
+                            distance(p->m_Pos, At[3])};
+
+            for (int i = 0; i < 4; i++)
+            {
+                if(Len[i] < p->m_ProximityRadius+Radius)
+                {
+                    if (Len[i] < ClosestLen)
+                    {
+                        NewPos = At[i];
+                        ClosestLen = Len[i];
+                        pClosest = p;
+                    }
+                }
+            }
+        }
+        else
+        {
+            float Len = distance(Pos0, IntersectPos);
+            if (!Intersect || Len < ClosestLen)
+            {
+                NewPos = IntersectPos;
+                ClosestLen = Len;
+                pClosest = p;
+                Intersect = true;
+            }
+        }
+	}
+
+	return pClosest;
+}
+
 CEntity *CGameWorld::IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos, int Type, CEntity *pNotThis)
 {
 	if(Type < 0 || Type >= NUM_ENTTYPES)
 		return 0;
+
+	if(Type == ENTTYPE_EXPLODEWALL)
+		return IntersectExplodeWall(Pos0, Pos1, Radius, NewPos, pNotThis);
 
 	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
 	CEntity *pClosest = 0;
@@ -315,6 +401,32 @@ CEntity *CGameWorld::IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, vec2& N
 			}
 		}
 	}
+
+	return pClosest;
+}
+
+IEntityDamageable *CGameWorld::IntersectEntityDamageable(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos, CEntity *pNotThis)
+{
+	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+    IEntityDamageable *pClosest = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        vec2 At;
+        IEntityDamageable *p = (IEntityDamageable*)IntersectEntity(Pos0, Pos1, Radius, At, ENTTYPE_CHARACTER + i, pNotThis);
+        if (!p)
+            continue;
+
+        float Len = distance(p->m_Pos, At);
+        if (i == 3)
+            Len = distance(closest_point_on_line(((CExplodeWall*)p)->m_From, p->m_Pos, At), At);
+
+        if (Len < ClosestLen)
+        {
+            NewPos = At;
+            ClosestLen = Len;
+            pClosest = p;
+        }
+    }
 
 	return pClosest;
 }

@@ -115,6 +115,8 @@ public:
 
 	class CMonster *IntersectMonster(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, class CEntity *pNotThis = 0);
 
+    class CExplodeWall *IntersectExplodeWall(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, class CEntity *pNotThis = 0);
+
 	/*
 		Function: intersect_CEntities
 			Finds the closest CEntity that intersects the line.
@@ -131,6 +133,8 @@ public:
 			Returns a pointer to the closest hit or NULL of there is no intersection.
 	*/
 	class CEntity *IntersectEntity(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, int Type, class CEntity *pNotThis = 0);
+
+    class IEntityDamageable *IntersectEntityDamageable(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, class CEntity *pNotThis = 0);
 
 	/*
 		Function: closest_CCharacter

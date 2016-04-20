@@ -5,13 +5,15 @@
 
 #include <game/generated/protocol.h>
 
-#include "entities/pickup.h"
-#include "entities/loot.h"
+#include <game/gamecore.h>
+
 #include "gamecontroller.h"
 #include "gamecontext.h"
+#include "entities/pickup.h"
+#include "entities/loot.h"
+#include "entities/explodewall.h"
 #include "statistics/statistiques.h"
 #include "event.h"
-
 
 IGameController::IGameController(class CGameContext *pGameServer)
 {
@@ -85,12 +87,19 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type)
 		{
 			Result = Index;
 			for(int c = 0; c < Num; ++c)
+			{
+				vec2 SpawnPos = m_aaSpawnPoints[Type][i]+Positions[Index];
+				vec2 EntPos = aEnts[c]->m_Pos;
+				if (aEnts[c]->GetType() == CGameWorld::ENTTYPE_EXPLODEWALL)
+					EntPos = closest_point_on_line(reinterpret_cast<CExplodeWall*>(aEnts[c])->m_From, aEnts[c]->m_Pos, SpawnPos);
+
 				if(GameServer()->Collision()->CheckPoint(m_aaSpawnPoints[Type][i]+Positions[Index]) ||
-					distance(aEnts[c]->m_Pos, m_aaSpawnPoints[Type][i]+Positions[Index]) <= aEnts[c]->m_ProximityRadius)
+					distance(EntPos, SpawnPos) <= aEnts[c]->m_ProximityRadius)
 				{
 					Result = -1;
 					break;
 				}
+			}
 		}
 		if(Result == -1)
 			continue;	// try next spawn point

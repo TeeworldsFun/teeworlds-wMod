@@ -13,6 +13,7 @@ public:
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
 
+	void Teleport(CEntity *pEnt, bool isCharacter);
 	CTeleporter* GetNext() { return m_Next; };
 	void SetNext(CTeleporter *Next) { m_Next = Next; };
 	int GetStartTick() { return m_StartTick; };
