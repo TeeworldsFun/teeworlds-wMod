@@ -23,5 +23,7 @@ wDM/wTDM/wCTF Mod
 =================
 
 A fun-mod with a lot of explosions and extra-weapons !
-Written and maintained by [FR] PJK (PJK136)
-IA written by Neox : https://www.teeworlds.com/forum/viewtopic.php?id=10413
+
+Written by [FR] PJK (PJK136) except for the AI
+
+AI written by Neox : https://www.teeworlds.com/forum/viewtopic.php?id=10413
