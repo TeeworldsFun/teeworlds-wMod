@@ -583,7 +583,7 @@ void CGameContext::OnTick()
 		// abort the kick-vote on player-leave
 		if(m_VoteCloseTime == -1)
 		{
-			SendChat(-1, CGameContext::CHAT_ALL, "Vote aborted");
+			SendChat(-1, CGameContext::CHAT_ALL, "投票通过：平票");
 			EndVote();
 		}
 		else
@@ -638,7 +638,7 @@ void CGameContext::OnTick()
 				Console()->ExecuteLine(m_aVoteCommand);
 				Server()->SetRconCID(IServer::RCON_CID_SERV);
 				EndVote();
-				SendChat(-1, CGameContext::CHAT_ALL, "Vote passed");
+				SendChat(-1, CGameContext::CHAT_ALL, "投票结果：通过");
 
 				if(m_apPlayers[m_VoteCreator])
 					m_apPlayers[m_VoteCreator]->m_LastVoteCall = 0;
@@ -646,7 +646,7 @@ void CGameContext::OnTick()
 			else if(m_VoteEnforce == VOTE_ENFORCE_NO || time_get() > m_VoteCloseTime)
 			{
 				EndVote();
-				SendChat(-1, CGameContext::CHAT_ALL, "Vote failed");
+				SendChat(-1, CGameContext::CHAT_ALL, "投票结果：不通过");
 			}
 			else if(m_VoteUpdate)
 			{
@@ -698,12 +698,12 @@ void CGameContext::OnClientEnter(int ClientID)
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	m_VoteUpdate = true;
-	SendChatTarget(ClientID, "*** Welcome to the Extreme Weapon Mod v2.5***");
-	SendChatTarget(ClientID, "** Written by PJK **");
-	SendChatTarget(ClientID, "* IA by Neox *");
-	SendChatTarget(ClientID, "* It is a fun-mod where there is a lot of explosive and a lot of modification-funny ! *");
-	SendChatTarget(ClientID, "** For More Information : /info , /cmdlist , /upgr , /race , /stats and /ranks **");
-	SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
+	SendChatTarget(ClientID, "*** 欢迎来到极端武器怪物猎人模组 2.5版本***");
+	SendChatTarget(ClientID, "** 作者 PJK **");
+	SendChatTarget(ClientID, "* AI作者 Neox76 *");
+	SendChatTarget(ClientID, "* 这是一个有趣的mod，有很多爆炸性的东西和很多有趣的修改！ *");
+	SendChatTarget(ClientID, "** 获取更多帮助(聊天栏输入) : /info , /cmdlist , /upgr , /race , /stats and /ranks **");
+	SendChatTarget(ClientID, "*** 感谢你选择这个服务器来玩， 玩的开心~ ;D ! ***");
 }
 
 void CGameContext::OnClientConnected(int ClientID)
@@ -793,42 +793,41 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 	ParseArguments(Message, 3, Arguments);
 	if (str_comp_nocase(Arguments[0], "/cmdlist") == 0 || str_comp_nocase(Arguments[0], "/help") == 0 )
 	{
-		SendChatTarget(ClientID, "*** Commands available are : ***");
-		SendChatTarget(ClientID, "/cmdlist or /help : To get commands available.");
-		SendChatTarget(ClientID, "/info or /credits : To get informations of this mod.");
-		SendChatTarget(ClientID, "/ammo : To get ammo of your actual weapon.");
-		SendChatTarget(ClientID, "/race : To choose a race");
-		SendChatTarget(ClientID, "/stats or /ranks : To get your statistics or your rank.");
-		SendChatTarget(ClientID, "/player or /upgr : To get or to add your upgrades.");
-		SendChatTarget(ClientID, "/conf : To change yours settings.");
-		SendChatTarget(ClientID, "/reset_stats or /reset_all_stats or /reset_upgr: To reset partially or all your statistics.");
+		SendChatTarget(ClientID, "*** 指令列表 : ***");
+		SendChatTarget(ClientID, "/cmdlist 或 /help : 获取指令列表（废话）.");
+		SendChatTarget(ClientID, "/info 或 /credits : 获取关于这个模式的信息.");
+		SendChatTarget(ClientID, "/ammo : 获取你当前武器的子弹.");
+		SendChatTarget(ClientID, "/race : 选择一个种族.");
+		SendChatTarget(ClientID, "/stats 或 /ranks : 获取你的成绩，或排名.");
+		SendChatTarget(ClientID, "/player 或 /upgr : 获取你的等级，或升级你的等级.");
+		SendChatTarget(ClientID, "/conf : 修改你的账号设定.");
+		SendChatTarget(ClientID, "/reset_stats 或 /reset_all_stats 又或 /reset_upgr: 重置你的成绩，或重置你的所有成绩，又或重置你的等级");
 	}
 	else if(str_comp_nocase(Arguments[0], "/info") == 0)
 	{
-		SendChatTarget(ClientID, "*** Extreme Weapon Mod v2.5 ***");
-		SendChatTarget(ClientID, "** Written by PJK **");
-		SendChatTarget(ClientID, "* IA by Neox *");
-		SendChatTarget(ClientID, "It is a fun-mod where there is a lot of explosive and a lot of modifications-funny.");
-		SendChatTarget(ClientID, "You can choose a race, see your statistics and upgrade your gameplay !");
-		SendChatTarget(ClientID, "Say /cmdlist to get all commands available !");
-		SendChatTarget(ClientID, "*** Thank you for choosing this server and Have Fun ;D ! ***");
+		SendChatTarget(ClientID, "*** 欢迎来到极端武器怪物猎人模组 2.5版本***");
+		SendChatTarget(ClientID, "** 作者 PJK **");
+		SendChatTarget(ClientID, "* AI作者 Neox76 *");
+		SendChatTarget(ClientID, "* 这是一个有趣的mod，有很多爆炸性的东西和很多有趣的修改！ *");
+		SendChatTarget(ClientID, "** 获取更多帮助(聊天栏输入) : /info , /cmdlist , /upgr , /race , /stats and /ranks **");
+		SendChatTarget(ClientID, "*** 感谢你选择这个服务器来玩， 玩的开心~ ;D ! ***");
 	}
-	else if(str_comp_nocase(Arguments[0], "/register") == 0)
+	else if(str_comp_nocase(Arguments[0], "/reg") == 0)
 	{
 		if(Arguments[1][0] == 0)
 		{
-			SendChatTarget(ClientID, "Usage : /register <name> <password>");
-			SendChatTarget(ClientID, "Desc : Use this command to create an account on this server. (Multi-account Allowed :D)");
+			SendChatTarget(ClientID, "使用方式 : /reg <用户名> <密码>");
+			SendChatTarget(ClientID, "描述 : 使用这个指令来在这个服务器里创建账号. (允许多个账号 :D)");
 			return;
 		}
 		else if(str_length(Arguments[1]) >= MAX_NAME_LENGTH)
 		{
-			SendChatTarget(ClientID, "Your account name is too long !");
+			SendChatTarget(ClientID, "你的用户名太长了. (中文按拼音数量计算字数)");
 			return;
 		}
 		else if(Arguments[2][0] == 0)
 		{
-			SendChatTarget(ClientID, "You must give a password !");
+			SendChatTarget(ClientID, "你必须要给出一个密码 !");
 			return;
 		}
 
@@ -836,22 +835,22 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 		int Error = m_pStatsServer->CreateId(ClientID, Arguments[1], Arguments[2]);
 		if (Error == -1)
 		{
-			SendChatTarget(ClientID, "This account name is already used !");
+			SendChatTarget(ClientID, "这个用户名已经被使用了 !");
 			return;
 		}
 		else if (Error == -2)
 		{
-			SendChatTarget(ClientID, "Error : Can't connect to the database ! Try again.");
+			SendChatTarget(ClientID, "错误 ：无法连接至数据库 ！请再次尝试（如果多次尝试不成功请咨询管理员 管理员QQ：1421709710）.");
 			return;
 		}
 		else if (Error >= 0)
 		{
-			SendChatTarget(ClientID, "Your account is successfully created ! You can use /login !");
+			SendChatTarget(ClientID, "您成功注册了一个账号！ 请使用 /login 登录账号!");
 			return;
 		}
 		else
 		{
-			SendChatTarget(ClientID, "Error : Unknown ! Try again and if it failed, tell an admin or moder.");
+			SendChatTarget(ClientID, "错误 : 未知 ! 请咨询管理员（管理员QQ：1421709710）.");
 			return;
 		}
 #else
@@ -862,33 +861,33 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 	{
 		if(Arguments[1][0] == 0)
 		{
-			SendChatTarget(ClientID, "Usage : /login <name> <password>");
-			SendChatTarget(ClientID, "Desc : Use this command login on this server.");
-			SendChatTarget(ClientID, "Info : You can use the name \"anonymous\" to play without saving.");
+			SendChatTarget(ClientID, "使用方式 : /login <用户名> <密码>");
+			SendChatTarget(ClientID, "描述 : 使用这个指令登录你的账号.");
+			SendChatTarget(ClientID, "信息 : 你可以使用用户名 \"陌生人\" 来脱离存档游玩.");
 			return;
 		}
-		else if(str_comp(Arguments[1], "anonymous") == 0)
+		else if(str_comp(Arguments[1], "陌生人") == 0)
 		{
 			//Connection Anonymous
 			if (m_apPlayers[ClientID]->GetSID() == 0)
 			{
-				SendChatTarget(ClientID, "You are already connected in anonymous !!");
+				SendChatTarget(ClientID, "你已经在作为陌生人游玩了!!");
 				return;
 			}
 
 			m_apPlayers[ClientID]->SetSID(0);
 			if(m_pController->IsTeamplay())
-				SendChatTarget(ClientID, "You are now connected anonymously ! You can join the game !");
+				SendChatTarget(ClientID, "你作为一个陌生人连接进了TWS ! 你可以现在加入游戏 !");
 			else
 			{
-				SendChatTarget(ClientID, "You are now connected anonymously ! Have fun !");
+				SendChatTarget(ClientID, "你作为一个陌生人加入了游戏 ! 玩的开心 !");
 				m_apPlayers[ClientID]->SetTeam(0);
 			}
 			return;
 		}
 		else if(Arguments[2][0] == 0)
 		{
-			SendChatTarget(ClientID, "You must give a password !");
+			SendChatTarget(ClientID, "兄嘚，密码捏？");
 			return;
 		}
 
@@ -896,36 +895,36 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 		int Id = m_pStatsServer->GetId(Arguments[1], Arguments[2]);
 		if (Id == -1)
 		{
-			SendChatTarget(ClientID, "This account doesn't exist or username/password are wrong !");
+			SendChatTarget(ClientID, "账户用户名/密码错误 !");
 			return;
 		}
 		else if (Id == -2)
 		{
-			SendChatTarget(ClientID, "Error : Can't connect to the database ! Try again.");
+			SendChatTarget(ClientID, "数据库错误.");
 			return;
 		}
 		else if (Id > 0)
 		{
 			if(m_apPlayers[ClientID]->GetSID() == Id)
 			{
-				SendChatTarget(ClientID, "You are already connected with this account !!");
+				SendChatTarget(ClientID, "您已经登录了账户了 !!");
 				return;
 			}
 
 			if(!m_apPlayers[ClientID]->SetSID(Id))
-				SendChatTarget(ClientID, "Error while loading stats ! Please try again !");
+				SendChatTarget(ClientID, "错误");
 			else if(m_pController->IsTeamplay())
-				SendChatTarget(ClientID, "You are now connected ! You can join the game !");
+				SendChatTarget(ClientID, "连接成功！你可以现在加入游戏！");
 			else
 			{
-				SendChatTarget(ClientID, "You are now connected !");
+				SendChatTarget(ClientID, "连接成功");
 				m_apPlayers[ClientID]->SetTeam(0);
 			}
 			return;
 		}
 		else
 		{
-			SendChatTarget(ClientID, "Error : Unknown ! Try again and if it failed, tell an admin or moder.");
+			SendChatTarget(ClientID, "错误 : 未知 ! 请联系管理员 管理员QQ：1421709710.");
 			return;
 		}
 #else
@@ -935,14 +934,14 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 	else if(str_comp_nocase(Arguments[0], "/credits") == 0)
 	{
 		SendChat(ClientID, Team, Arguments[0]);
-		SendChatTarget(-1, "*** Extreme Weapon Mod v2.5 ***");
-		SendChatTarget(-1, "** Written by [FR] PJK **");
-		SendChatTarget(-1, "* IA by Neox *");
+		SendChatTarget(-1, "*** 怪物猎人模式 v2.5 ***");
+		SendChatTarget(-1, "** 作者 [FR] PJK **");
+		SendChatTarget(-1, "* AI作者 Neox76 *");
 	}
 	else if(m_apPlayers[ClientID]->GetSID() < 0)
 	{
 		char error[256] = "";
-		str_format(error, 256, "Unrecognized command : %s. To have more commands, please log-in !", Arguments[0]);
+		str_format(error, 256, "未被识别的指令 : %s. 为了获取更多指令的使用全, 请登录账号！", Arguments[0]);
 		SendChatTarget(ClientID, error);
 		return;
 	}
@@ -952,11 +951,11 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 		if ( pChr )
 		{
 			char aBuf[256] = "";
-			str_format(aBuf, 256, "Ammo of the actual weapon is : %d/%d.", pChr->GetAmmoActiveWeapon(), g_pData->m_Weapons.m_aId[pChr->GetActiveWeapon()].m_Maxammo);
+			str_format(aBuf, 256, "您当前武器的剩余子弹量 : %d/%d.", pChr->GetAmmoActiveWeapon(), g_pData->m_Weapons.m_aId[pChr->GetActiveWeapon()].m_Maxammo);
 			SendChatTarget(ClientID, aBuf);
 		}
 		else
-			SendChatTarget(ClientID, "You are dead or you are only a spectator");
+			SendChatTarget(ClientID, "你死去了 或 你是一个旁观者");
 	}
 	else if(str_comp_nocase(Arguments[0], "/race") == 0)
 	{
@@ -965,7 +964,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 			if(m_apPlayers[ClientID]->m_Race == HUMAN)
 				return;
 			char aBuf[256] = "";
-			str_format(aBuf, 256, "%s is now a human !", Server()->ClientName(ClientID));
+			str_format(aBuf, 256, "%s 的血脉溅起一层层波纹！人类的赞歌就是勇气的赞歌！汤姆逊波纹疾走！", Server()->ClientName(ClientID));
 			SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
 			m_apPlayers[ClientID]->KillCharacter();
 			m_apPlayers[ClientID]->m_Race = HUMAN;
@@ -977,7 +976,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 			if(m_apPlayers[ClientID]->m_Race == GNOME)
 				return;
 			char aBuf[256] = "";
-			str_format(aBuf, 256, "%s is now an gnome !", Server()->ClientName(ClientID));
+			str_format(aBuf, 256, "%s 成为了一名日本人(侏儒)", Server()->ClientName(ClientID));
 			SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
 			m_apPlayers[ClientID]->KillCharacter();
 			m_apPlayers[ClientID]->m_Race = GNOME;
@@ -989,7 +988,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 			if(m_apPlayers[ClientID]->m_Race == ORC)
 				return;
 			char aBuf[256] = "";
-			str_format(aBuf, 256, "%s is now an orc !", Server()->ClientName(ClientID));
+			str_format(aBuf, 256, "%s 的野性爆发了出来！是兽人的血脉！", Server()->ClientName(ClientID));
 			SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
 			m_apPlayers[ClientID]->KillCharacter();
 			m_apPlayers[ClientID]->m_Race = ORC;
@@ -1001,7 +1000,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 			if(m_apPlayers[ClientID]->m_Race == ELF)
 				return;
 			char aBuf[256] = "";
-			str_format(aBuf, 256, "%s is now an elf !", Server()->ClientName(ClientID));
+			str_format(aBuf, 256, "米西米西，滑不垃圾，如果你不拉稀，我就不能米西。 %s 继承了灰太狼(精灵密咒)的血脉 !", Server()->ClientName(ClientID));
 			SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
 			m_apPlayers[ClientID]->KillCharacter();
 			m_apPlayers[ClientID]->m_Race = ELF;
@@ -1013,22 +1012,23 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 			if(m_apPlayers[ClientID]->m_Race != CUSTOM)
 			{
 				char aBuf[256] = "";
-				str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
+				str_format(aBuf, 256, "孤独的游行者，%s", Server()->ClientName(ClientID));
 				SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
 				m_apPlayers[ClientID]->KillCharacter();
 			}
 
-			SendChatTarget(ClientID, "Use /hammer | /gun | /shotgun | /grenade | /rifle to customize !");
+			SendChatTarget(ClientID, "使用指令 /hammer | /gun | /shotgun | /grenade | /rifle 来自定义你的武器 !");
 			m_apPlayers[ClientID]->m_Race = CUSTOM;
 		}
 		else if(Arguments[1][0] == 0 || Arguments[1][0] == ' ')
 		{
-			SendChatTarget(ClientID, "Usage : /race <race>");
-			SendChatTarget(ClientID, "Race : Human or Gnome or Orc or Elf or Custom");
+			SendChatTarget(ClientID, "使用方式 : /race <race>");
+			SendChatTarget(ClientID, "种族列表 : Human(人类)， Gnome(日本人)，Orc(兽人)， Elf(灰太狼)，Custom(游行者)");
+			SendChatTarget(ClientID, "描述：请替换种族为种族列表内的英文，示例: '/race Human'");
 		}
 		else
 		{
-			SendChatTarget(ClientID, "This race doesn't exist !");
+			SendChatTarget(ClientID, "不存在这个种族 !");
 		}
 	}
 	else if (str_comp_nocase(Arguments[0], "/hammer") == 0 ||
@@ -1045,7 +1045,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 			if (m_apPlayers[ClientID]->m_Race != CUSTOM)
 			{
 				char aBuf[256] = "";
-				str_format(aBuf, 256, "The race of %s is custom !", Server()->ClientName(ClientID));
+				str_format(aBuf, 256, "孤独的游行者，%s", Server()->ClientName(ClientID));
 				SendChatTarget(-1, aBuf, CHAT_INFO_RACE);
 				m_apPlayers[ClientID]->m_Race = CUSTOM;
 			}
@@ -1055,13 +1055,13 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 		else if (Arguments[1][0] == 0 || Arguments[1][0] == ' ')
 		{
 			char aBuf[256] = "";
-			str_format(aBuf, 256, "Usage : %s <race>", Arguments[0]);
+			str_format(aBuf, 256, "使用方式 : %s <种族>", Arguments[0]);
 			SendChatTarget(ClientID, aBuf);
-			SendChatTarget(ClientID, "Race : Human or Gnome or Orc or Elf");
+			SendChatTarget(ClientID, "种族 : Human or Gnome or Orc or Elf");
 		}
 		else
 		{
-			SendChatTarget(ClientID, "This race doesn't exist !");
+			SendChatTarget(ClientID, "Human(人类)， Gnome(日本人)，Orc(兽人)， Elf(灰太狼)，Custom(游行者)");
 			return;
 		}
 
@@ -1125,8 +1125,8 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 		int Code = 4;
 		if (Arguments[1][0] == 0 || Arguments[1][0] == ' ')
 		{
-			SendChatTarget(ClientID, "Usage : /upgr <type> [count]");
-			SendChatTarget(ClientID, "Type : Weapon or Life or Move or Hook");
+			SendChatTarget(ClientID, "使用方式 : /upgr <type> [count]");
+			SendChatTarget(ClientID, "类型 : Weapon(武器)， Life(血量)， Move(移动)， Hook(钩子)");
 			return;
 		}
 		else if (str_comp_nocase(Arguments[1], "weapon") != 0 &&
@@ -1151,22 +1151,22 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 		switch (Code)
 		{
 		case 0:
-			SendChatTarget(ClientID, "Your account has been upgraded !");
+			SendChatTarget(ClientID, "你的账号升级了 !");
 			break;
 
 		case 1:
-			SendChatTarget(ClientID, "You haven't got enough money");
+			SendChatTarget(ClientID, "你没有足够的钱");
 			break;
 
 		case 2:
-			SendChatTarget(ClientID, "You have locked your account !");
+			SendChatTarget(ClientID, "你锁定了你的账号 !");
 			break;
 
 		case 3:
-			SendChatTarget(ClientID, "You can't upgrade more ! Max : 40");
+			SendChatTarget(ClientID, "你无法继续升级了 ! 最高级别 : 40");
 			break;
 		default:
-			SendChatTarget(ClientID, "An unknown error is occurred !");
+			SendChatTarget(ClientID, "呃呃呃，未知错误 !");
 			break;
 		}
 	}
@@ -1176,60 +1176,60 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 		{
 			bool statut = m_apPlayers[ClientID]->m_pStats->InfoHealKiller();
 			char a[256] = "";
-			str_format(a, 256, "Information of Heal of Killer is now : %s. ", statut ? "Enabled" : "Disabled");
+			str_format(a, 256, "显示杀手信息 : %s. ", statut ? "开启" : "关闭");
 			SendChatTarget(ClientID, a);
 		}
 		else if(str_comp_nocase(Arguments[1], "InfoXP") == 0)
 		{
 			bool statut = m_apPlayers[ClientID]->m_pStats->InfoXP();
 			char a[256] = "";
-			str_format(a, 256, "Information of XP is now : %s. ", statut ? "Enabled" : "Disabled");
+			str_format(a, 256, "显示XP信息 : %s. ", statut ? "开启" : "关闭");
 			SendChatTarget(ClientID, a);
 		}
 		else if(str_comp_nocase(Arguments[1], "InfoLevelUp") == 0)
 		{
 			bool statut = m_apPlayers[ClientID]->m_pStats->InfoLevelUp();
 			char a[256] = "";
-			str_format(a, 256, "Information of Level Up is now : %s. ", statut ? "Enabled" : "Disabled");
+			str_format(a, 256, "显示升级信息 : %s. ", statut ? "开启" : "关闭");
 			SendChatTarget(ClientID, a);
 		}
 		else if(str_comp_nocase(Arguments[1], "InfoKillingSpree") == 0)
 		{
 			bool statut = m_apPlayers[ClientID]->m_pStats->InfoKillingSpree();
 			char a[256] = "";
-			str_format(a, 256, "Information of Killing Spree is now : %s. ", statut ? "Enabled" : "Disabled");
+			str_format(a, 256, "连续击杀信息 : %s. ", statut ? "开启" : "关闭");
 			SendChatTarget(ClientID, a);
 		}
 		else if(str_comp_nocase(Arguments[1], "InfoRace") == 0)
 		{
 			bool statut = m_apPlayers[ClientID]->m_pStats->InfoRace();
 			char a[256] = "";
-			str_format(a, 256, "Information of Race is now : %s. ", statut ? "Enabled" : "Disabled");
+			str_format(a, 256, "种族信息 : %s. ", statut ? "开启" : "关闭");
 			SendChatTarget(ClientID, a);
 		}
 		else if(str_comp_nocase(Arguments[1], "InfoAmmo") == 0)
 		{
 			bool statut = m_apPlayers[ClientID]->m_pStats->InfoAmmo();
 			char a[256] = "";
-			str_format(a, 256, "Information of Ammo is now : %s. ", statut ? "Enabled" : "Disabled");
+			str_format(a, 256, "子弹信息 : %s. ", statut ? "开启" : "关闭");
 			SendChatTarget(ClientID, a);
 		}
 		else if(str_comp_nocase(Arguments[1], "InfoVoter") == 0)
 		{
 			bool statut = m_apPlayers[ClientID]->m_pStats->ShowVoter();
 			char a[256] = "";
-			str_format(a, 256, "Information of Voter is now : %s. ", statut ? "Enabled" : "Disabled");
+			str_format(a, 256, "投票者信息 : %s. ", statut ? "开启" : "关闭");
 			SendChatTarget(ClientID, a);
 		}
 		else if(str_comp_nocase(Arguments[1], "EnableAllInfo") == 0)
 		{
 			m_apPlayers[ClientID]->m_pStats->EnableAllInfo();
-			SendChatTarget(ClientID, "All information are enabled");
+			SendChatTarget(ClientID, "已开启所有提示信息");
 		}
 		else if(str_comp_nocase(Arguments[1], "DisableAllInfo") == 0)
 		{
 			m_apPlayers[ClientID]->m_pStats->DisableAllInfo();
-			SendChatTarget(ClientID, "All information are disabled");
+			SendChatTarget(ClientID, "已关闭所有提示信息");
 		}
 		else if(str_comp_nocase(Arguments[1], "AmmoAbsolute") == 0)
 		{
@@ -1249,35 +1249,35 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 		{
 			bool lock = m_apPlayers[ClientID]->m_pStats->Lock();
 			char a[256] = "";
-			str_format(a, 256, "Your statistics are now : %s. ", lock ? "Locked" : "Unlocked");
+			str_format(a, 256, "你的所有等级 : %s. ", lock ? "锁定" : "取消锁定");
 			SendChatTarget(ClientID, a);
 		}
 		else
 		{
-			SendChatTarget(ClientID, "Usage : /conf <type>");
-			SendChatTarget(ClientID, "Type : InfoHealKiller or InfoXP or InfoLevelUp or InfoKillingSpree or InfoRace or InfoAmmo or InfoVoter or EnableAllInfo or DisableAllInfo or AmmoAbsolute or LifeAbsolute or Lock");
-			SendChatTarget(ClientID, "Description : Enable or disable functionnality.");
+			SendChatTarget(ClientID, "使用方式 : /conf <选项>");
+			SendChatTarget(ClientID, "选项 : InfoHealKiller（显示杀手信息），InfoXP（XP信息），InfoLevelUp（等级提升信息）， InfoKillingSpree（击杀信息），InfoRace（种族信息），InfoAmmo（子弹信息）， InfoVoter（投票者信息）， EnableAllInfo（开启所有信息）， DisableAllInfo（关闭所有信息） or AmmoAbsolute or LifeAbsolute or Lock");
+			SendChatTarget(ClientID, "细节 : 开启或关闭.");
 		}
 	}
 	else if(str_comp_nocase(Arguments[0], "/reset_stats") == 0)
 	{
 		m_apPlayers[ClientID]->m_pStats->ResetPartialStats();
-		SendChatTarget(ClientID, "Your statistics have been partially resetted !");
+		SendChatTarget(ClientID, "您成功重置了等级 !");
 	}
 	else if(str_comp_nocase(Arguments[0], "/reset_all_stats") == 0)
 	{
 		m_apPlayers[ClientID]->m_pStats->ResetAllStats();
-		SendChatTarget(ClientID, "Your statistics have been resetted !");
+		SendChatTarget(ClientID, "您，您成功重置了所有等级 !");
 	}
 	else if(str_comp_nocase(Arguments[0], "/reset_upgr") == 0)
 	{
 		m_apPlayers[ClientID]->m_pStats->ResetUpgr();
-		SendChatTarget(ClientID, "Your upgrades have been resetted !");
+		SendChatTarget(ClientID, "您成功重置了所有技能 !");
 	}
 	else
 	{
 		char error[256] = "";
-		str_format(error, 256, "Unrecognized command : %s. To get commands available, say /cmdlist", Arguments[0]);
+		str_format(error, 256, "无法识别: %s. 为了获取可使用的指令, 聊天框输入 /cmdlist", Arguments[0]);
 		SendChatTarget(ClientID, error);
 	}
 }
@@ -1496,9 +1496,15 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 							str_comp_nocase(pReason, "noob") == 0 ||
 							str_comp_nocase(pReason, "pro") == 0 ||
 							str_comp_nocase(pReason, "gay") == 0 ||
+							str_comp_nocase(pReason, "菜" =0 ||
+							str_comp_nocase(pReason, "gay") == 0 ||
+							str_comp_nocase(pReason, "gay") == 0 ||
+							str_comp_nocase(pReason, "gay") == 0 ||
+							str_comp_nocase(pReason, "gay") == 0 ||
+							str_comp_nocase(pReason, "gay") == 0 ||
 							str_comp_nocase(pReason, "cheat") == 0))
 				{
-					SendChatTarget(ClientID, "Server does not allow voting to move players to spectators without REAL reason !");
+					SendChatTarget(ClientID, "傻逼 !");
 					return;
 				}
 				int SpectateID = str_toint(pMsg->m_Value);
