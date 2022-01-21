@@ -1496,15 +1496,15 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 							str_comp_nocase(pReason, "noob") == 0 ||
 							str_comp_nocase(pReason, "pro") == 0 ||
 							str_comp_nocase(pReason, "gay") == 0 ||
-							str_comp_nocase(pReason, "菜" =0 ||
-							str_comp_nocase(pReason, "gay") == 0 ||
-							str_comp_nocase(pReason, "gay") == 0 ||
-							str_comp_nocase(pReason, "gay") == 0 ||
+							str_comp_nocase(pReason, "菜") ==0 ||
+							str_comp_nocase(pReason, "太强") == 0 ||
+							str_comp_nocase(pReason, "傻逼") == 0 ||
+							str_comp_nocase(pReason, "开挂") == 0 ||
 							str_comp_nocase(pReason, "gay") == 0 ||
 							str_comp_nocase(pReason, "gay") == 0 ||
 							str_comp_nocase(pReason, "cheat") == 0))
 				{
-					SendChatTarget(ClientID, "傻逼 !");
+					SendChatTarget(ClientID, "人不行，别怪路不平 !");
 					return;
 				}
 				int SpectateID = str_toint(pMsg->m_Value);
@@ -1605,8 +1605,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				{
 					if(m_apPlayers[ClientID]->GetSID() < 0)
 					{
-						SendBroadcast("You are logged anonymously, nothing is save !", ClientID);
-						SendChatTarget(ClientID, "You are logged anonymously, nothing is save ! If you want keep your level and statistics, please /register or login ! Have fun ;)", ClientID);
+						SendBroadcast("你作为陌生人登录，不会保存你的任何记录 !", ClientID);
+						SendChatTarget(ClientID, "你作为陌生人登录，不会保存你的任何记录 ! 如果你想保持你的账号数据, 请输入/register注册一个账号，或使用/login登录你的账号 ! 玩的开心 ;)", ClientID);
 						m_apPlayers[ClientID]->SetSID(0);
 					}
 					pPlayer->m_LastSetTeam = Server()->Tick();
@@ -2313,14 +2313,14 @@ void CGameContext::ConGiveShotgun(IConsole::IResult *pResult, void *pUserData)
 			if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
 			{
 				pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 10);
-				pSelf->SendChatTarget(i, "An admin give to you a shotgun !");
+				pSelf->SendChatTarget(i, "管理员给了你一把散弹枪 !");
 			}
 		}
 	}
 	else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
 	{
 		pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_SHOTGUN, 10);
-		pSelf->SendChatTarget(id, "An admin give to you a shotgun !");
+		pSelf->SendChatTarget(id, "管理员给了你一把散弹枪 !");
 	}
 	else
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
@@ -2337,14 +2337,14 @@ void CGameContext::ConGiveGrenade(IConsole::IResult *pResult, void *pUserData)
 			if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
 			{
 				if(pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 10))
-					pSelf->SendChatTarget(i, "An admin give to you a launch-grenade !");
+					pSelf->SendChatTarget(i, "管理员给了你一把榴弹枪 !");
 			}
 		}
 	}
 	else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
 	{
 		if(pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_GRENADE, 10))
-			pSelf->SendChatTarget(id, "An admin give to you a launch-grenade !");
+			pSelf->SendChatTarget(id, "管理员给了你一把榴弹枪 !");
 	}
 	else
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
@@ -2361,14 +2361,14 @@ void CGameContext::ConGiveRifle(IConsole::IResult *pResult, void *pUserData)
 			if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
 			{
 				if (pSelf->m_apPlayers[i]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 10))
-					pSelf->SendChatTarget(i, "An admin give to you  a rifle !");
+					pSelf->SendChatTarget(i, "管理员给了你一把激光枪 !");
 			}
 		}
 	}
 	else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
 	{
 		if (pSelf->m_apPlayers[id]->GetCharacter()->GiveWeapon(WEAPON_RIFLE, 10))
-			pSelf->SendChatTarget(id, "An admin give to you a rifle !");
+			pSelf->SendChatTarget(id, "管理员给了你一把激光枪 !");
 	}
 	else
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
@@ -2385,14 +2385,14 @@ void CGameContext::ConGiveKatana(IConsole::IResult *pResult, void *pUserData)
 			if ( pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter() )
 			{
 				if (pSelf->m_apPlayers[i]->GetCharacter()->GiveNinja())
-					pSelf->SendChatTarget(i, "An admin give to you a katana !");
+					pSelf->SendChatTarget(i, "管理员给了你忍者 !");
 			}
 		}
 	}
 	else if ( pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->GetCharacter() )
 	{
 		if (pSelf->m_apPlayers[id]->GetCharacter()->GiveNinja())
-			pSelf->SendChatTarget(id, "An admin give to you a katana !");
+			pSelf->SendChatTarget(id, "管理员给了你忍者 !");
 	}
 	else
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Invalid ID");
