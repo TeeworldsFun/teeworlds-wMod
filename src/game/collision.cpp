@@ -92,6 +92,50 @@ int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *p
     return 0;
 }
 
+bool CCollision::IntersectLine2(vec2 Pos0, vec2 Pos1) // Done to avoid lags (checks every tiles instead of every single pos, going 32 by 32 instead of 1 by 1)
+{
+	vec2 Dir = normalize(Pos1 - Pos0) * 32;
+
+	float Distance = distance(Pos0, Pos1);
+
+	while(Distance > 32)
+	{
+		Pos0 += Dir;
+		if(CheckPoint(Pos0))
+			return true;
+		Distance = distance(Pos0, Pos1);
+	}
+
+	return false;
+}
+
+bool CCollision::EmptyOnLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision)
+{
+	float Distance = distance(Pos0, Pos1);
+	int End(Distance+1);
+	vec2 Last = Pos0;
+
+	for(int i = 0; i < End; i++)
+	{
+		float a = i/Distance;
+		vec2 Pos = mix(Pos0, Pos1, a);
+		if(!CheckPoint(Pos.x, Pos.y))
+		{
+			if(pOutCollision)
+				*pOutCollision = Pos;
+			if(pOutBeforeCollision)
+				*pOutBeforeCollision = Last;
+			return true;
+		}
+		Last = Pos;
+	}
+	if(pOutCollision)
+		*pOutCollision = Pos1;
+	if(pOutBeforeCollision)
+		*pOutBeforeCollision = Pos1;
+	return false;
+}
+
 // TODO: OPT: rewrite this smarter!
 void CCollision::MovePoint(vec2 *pInoutPos, vec2 *pInoutVel, float Elasticity, int *pBounces)
 {

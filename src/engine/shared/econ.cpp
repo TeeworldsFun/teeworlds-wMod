@@ -7,7 +7,7 @@
 
 int CEcon::NewClientCallback(int ClientID, void *pUser)
 {
-    CEcon *pThis = (CEcon *)pUser;
+	CEcon *pThis = (CEcon *)pUser;
 
 	char aAddrStr[NETADDR_MAXSTRSIZE];
 	net_addr_str(pThis->m_NetConsole.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
@@ -15,17 +15,17 @@ int CEcon::NewClientCallback(int ClientID, void *pUser)
 	str_format(aBuf, sizeof(aBuf), "client accepted. cid=%d addr=%s'", ClientID, aAddrStr);
 	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "econ", aBuf);
 
-    pThis->m_aClients[ClientID].m_State = CClient::STATE_CONNECTED;
-    pThis->m_aClients[ClientID].m_TimeConnected = time_get();
-    pThis->m_aClients[ClientID].m_AuthTries = 0;
+	pThis->m_aClients[ClientID].m_State = CClient::STATE_CONNECTED;
+	pThis->m_aClients[ClientID].m_TimeConnected = time_get();
+	pThis->m_aClients[ClientID].m_AuthTries = 0;
 
-    pThis->m_NetConsole.Send(ClientID, "Enter password:");
-    return 0;
+	pThis->m_NetConsole.Send(ClientID, "Enter password:");
+	return 0;
 }
 
 int CEcon::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 {
-    CEcon *pThis = (CEcon *)pUser;
+	CEcon *pThis = (CEcon *)pUser;
 
 	char aAddrStr[NETADDR_MAXSTRSIZE];
 	net_addr_str(pThis->m_NetConsole.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
@@ -33,23 +33,23 @@ int CEcon::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	str_format(aBuf, sizeof(aBuf), "client dropped. cid=%d addr=%s reason='%s'", ClientID, aAddrStr, pReason);
 	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "econ", aBuf);
 
-    pThis->m_aClients[ClientID].m_State = CClient::STATE_EMPTY;
-    return 0;
+	pThis->m_aClients[ClientID].m_State = CClient::STATE_EMPTY;
+	return 0;
 }
 
 void CEcon::SendLineCB(const char *pLine, void *pUserData)
 {
-    static_cast<CEcon *>(pUserData)->Send(-1, pLine);
+	static_cast<CEcon *>(pUserData)->Send(-1, pLine);
 }
 
 void CEcon::ConchainEconOutputLevelUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
-    pfnCallback(pResult, pCallbackUserData);
-    if(pResult->NumArguments() == 1)
-    {
-        CEcon *pThis = static_cast<CEcon *>(pUserData);
-        pThis->Console()->SetPrintOutputLevel(pThis->m_PrintCBIndex, pResult->GetInteger(0));
-    }
+	pfnCallback(pResult, pCallbackUserData);
+	if(pResult->NumArguments() == 1)
+	{
+		CEcon *pThis = static_cast<CEcon *>(pUserData);
+		pThis->Console()->SetPrintOutputLevel(pThis->m_PrintCBIndex, pResult->GetInteger(0));
+	}
 }
 
 void CEcon::ConLogout(IConsole::IResult *pResult, void *pUserData)
@@ -75,7 +75,11 @@ void CEcon::Init(IConsole *pConsole, CNetBan *pNetBan)
 
 	NETADDR BindAddr;
 	if(g_Config.m_EcBindaddr[0] && net_host_lookup(g_Config.m_EcBindaddr, &BindAddr, NETTYPE_ALL) == 0)
+	{
+		// got bindaddr
+		BindAddr.type = NETTYPE_ALL;
 		BindAddr.port = g_Config.m_EcPort;
+	}
 	else
 	{
 		mem_zero(&BindAddr, sizeof(BindAddr));
@@ -159,25 +163,25 @@ void CEcon::Update()
 
 void CEcon::Send(int ClientID, const char *pLine)
 {
-    if(!m_Ready)
-        return;
+	if(!m_Ready)
+		return;
 
-    if(ClientID == -1)
-    {
-        for(int i = 0; i < NET_MAX_CONSOLE_CLIENTS; i++)
-        {
-            if(m_aClients[i].m_State == CClient::STATE_AUTHED)
-                m_NetConsole.Send(i, pLine);
-        }
-    }
-    else if(ClientID >= 0 && ClientID < NET_MAX_CONSOLE_CLIENTS && m_aClients[ClientID].m_State == CClient::STATE_AUTHED)
-        m_NetConsole.Send(ClientID, pLine);
+	if(ClientID == -1)
+	{
+		for(int i = 0; i < NET_MAX_CONSOLE_CLIENTS; i++)
+		{
+			if(m_aClients[i].m_State == CClient::STATE_AUTHED)
+				m_NetConsole.Send(i, pLine);
+		}
+	}
+	else if(ClientID >= 0 && ClientID < NET_MAX_CONSOLE_CLIENTS && m_aClients[ClientID].m_State == CClient::STATE_AUTHED)
+		m_NetConsole.Send(ClientID, pLine);
 }
 
 void CEcon::Shutdown()
 {
-    if(!m_Ready)
-        return;
+	if(!m_Ready)
+		return;
 
-    m_NetConsole.Close();
+	m_NetConsole.Close();
 }

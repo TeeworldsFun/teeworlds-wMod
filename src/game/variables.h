@@ -87,6 +87,12 @@ MACRO_CONFIG_INT(SvForceVoteReason, sv_force_votereason, 0, 0, 1, CFGFLAG_SERVER
 
 MACRO_CONFIG_INT(SvTwoEvent, sv_two_event, 0, 0, 1, CFGFLAG_SERVER, "Two Event")
 
+// Monster
+MACRO_CONFIG_INT(SvHardNinja, sv_hard_ninja, 0, 0, 1, CFGFLAG_SERVER, "Makes ninja's AI a lot better if enabled")
+MACRO_CONFIG_INT(SvWallLenght, sv_wall_lenght, 650, 32, 10000, CFGFLAG_SERVER, "Walls lenght")
+MACRO_CONFIG_INT(SvNumMonster, sv_num_monster, 4, 0, 16, CFGFLAG_SERVER, "The number of monsters that can be alive at the same time")
+MACRO_CONFIG_INT(SvDifficulty, sv_difficulty, 1, 0, 4, CFGFLAG_SERVER, "The difficuly of monters")
+
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, 15, CFGFLAG_SERVER, "")
