@@ -6,7 +6,7 @@
 CGameControllerDM::CGameControllerDM(class CGameContext *pGameServer)
 	: IGameController(pGameServer)
 {
-	m_pGameType = "wDM|Fun|Mod";
+	m_pGameType = "wMonster|Fun|DM";
 }
 
 void CGameControllerDM::Tick()

@@ -8,7 +8,7 @@
 
 CGameControllerTDM::CGameControllerTDM(class CGameContext *pGameServer) : IGameController(pGameServer)
 {
-	m_pGameType = "wTDM|wDM|Fun|Mod";
+	m_pGameType = "wMonster|Fun|TDM";
 	m_GameFlags = GAMEFLAG_TEAMS;
 }
 
