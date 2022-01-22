@@ -583,7 +583,7 @@ void CSqlServer::DisplayRank(int id)
 {
 	if (id < 1)
 	{
-		GameServer()->SendChatTarget(-1, "The anonymous account hasn't got ranks !");
+		GameServer()->SendChatTarget(-1, "陌生人账号不保存数据 !");
 		return;
 	}
 
@@ -631,25 +631,25 @@ id, id, id, id, id, id, id, id, id, id, id, id, id, id);
 	char a[256] = "";
 	char ranks[15][50];
 
-	str_format(ranks[0], 50, "Name : %s", Name);
-	str_format(ranks[1], 50, "Level : %ld%s.", m_pResult->getUInt(1), Suffix(m_pResult->getUInt(1)));
-	str_format(ranks[2], 50, "Score : %ld%s.", m_pResult->getUInt(2), Suffix(m_pResult->getUInt(2)));
+	str_format(ranks[0], 50, "名称 : %s", Name);
+	str_format(ranks[1], 50, "等级 : %ld%s.", m_pResult->getUInt(1), Suffix(m_pResult->getUInt(1)));
+	str_format(ranks[2], 50, "分数 : %ld%s.", m_pResult->getUInt(2), Suffix(m_pResult->getUInt(2)));
 
-	str_format(ranks[3], 50, "Killed : %ld%s.", m_pResult->getUInt(3), Suffix(m_pResult->getUInt(3)));
-	str_format(ranks[4], 50, "Rapport K/D : %ld%s.", m_pResult->getUInt(4), Suffix(m_pResult->getUInt(4)));
-	str_format(ranks[5], 50, "Log-in : %ld%s.", m_pResult->getUInt(5), Suffix(m_pResult->getUInt(5)));
+	str_format(ranks[3], 50, "击杀数 : %ld%s.", m_pResult->getUInt(3), Suffix(m_pResult->getUInt(3)));
+	str_format(ranks[4], 50, "战绩 K/D : %ld%s.", m_pResult->getUInt(4), Suffix(m_pResult->getUInt(4)));
+	str_format(ranks[5], 50, "登录 : %ld%s.", m_pResult->getUInt(5), Suffix(m_pResult->getUInt(5)));
 
-	str_format(ranks[6], 50, "Fire : %ld%s.", m_pResult->getUInt(6), Suffix(m_pResult->getUInt(6)));
-	str_format(ranks[7], 50, "Pick-Up Weapon : %ld%s.", m_pResult->getUInt(7), Suffix(m_pResult->getUInt(7)));
-	str_format(ranks[8], 50, "Pick-Up Ninja : %ld%s.", m_pResult->getUInt(8), Suffix(m_pResult->getUInt(8)));
+	str_format(ranks[6], 50, "开火数 : %ld%s.", m_pResult->getUInt(6), Suffix(m_pResult->getUInt(6)));
+	str_format(ranks[7], 50, "捡起过多少次武器 : %ld%s.", m_pResult->getUInt(7), Suffix(m_pResult->getUInt(7)));
+	str_format(ranks[8], 50, "捡起过多少次忍者 : %ld%s.", m_pResult->getUInt(8), Suffix(m_pResult->getUInt(8)));
 
-	str_format(ranks[9], 50, "Switch Weapon : %ld%s.", m_pResult->getUInt(9), Suffix(m_pResult->getUInt(9)));
-	str_format(ranks[10], 50, "Time Play : %ld%s.", m_pResult->getUInt(10), Suffix(m_pResult->getUInt(10)));
-	str_format(ranks[11], 50, "Msg Sent : %ld%s.", m_pResult->getUInt(11), Suffix(m_pResult->getUInt(11)));
+	str_format(ranks[9], 50, "切换过多少次武器 : %ld%s.", m_pResult->getUInt(9), Suffix(m_pResult->getUInt(9)));
+	str_format(ranks[10], 50, "玩了多长时间 : %ld%s.", m_pResult->getUInt(10), Suffix(m_pResult->getUInt(10)));
+	str_format(ranks[11], 50, "发送过多少个消息 : %ld%s.", m_pResult->getUInt(11), Suffix(m_pResult->getUInt(11)));
 
-	str_format(ranks[12], 50, "Total Killing Spree : %ld%s.", m_pResult->getUInt(12), Suffix(m_pResult->getUInt(12)));
-	str_format(ranks[13], 50, "Max Killing Spree : %ld%s.", m_pResult->getUInt(13), Suffix(m_pResult->getUInt(13)));
-	str_format(ranks[14], 50, "Flag Capture : %ld%s.", m_pResult->getUInt(14), Suffix(m_pResult->getUInt(14)));
+	str_format(ranks[12], 50, "杀人如潮 : %ld%s.", m_pResult->getUInt(12), Suffix(m_pResult->getUInt(12)));
+	str_format(ranks[13], 50, "最多杀人如潮 : %ld%s.", m_pResult->getUInt(13), Suffix(m_pResult->getUInt(13)));
+	str_format(ranks[14], 50, "夺旗 : %ld%s.", m_pResult->getUInt(14), Suffix(m_pResult->getUInt(14)));
 
 	for ( int i = 0; i < 5; i++ )
 	{
@@ -674,25 +674,25 @@ MAX(Max_Killing_Spree), MAX(Flag_Capture) FROM Players_Stats;");
 	char a[256] = "";
 	char stats[15][50];
 
-	str_format(stats[0], 50, "Best of :");
-	str_format(stats[1], 50, "Level : %u", m_pResult->getUInt(1));
-	str_format(stats[2], 50, "Score : %u", m_pResult->getUInt(2));
+	str_format(stats[0], 50, "最佳 :");
+	str_format(stats[1], 50, "等级 : %u", m_pResult->getUInt(1));
+	str_format(stats[2], 50, "分数 : %u", m_pResult->getUInt(2));
 
-	str_format(stats[3], 50, "Killed : %u", m_pResult->getUInt(3));
-	str_format(stats[4], 50, "Rapport K/D : %f", m_pResult->getDouble(4));
-	str_format(stats[5], 50, "Log-in : %u", m_pResult->getUInt(5));
+	str_format(stats[3], 50, "击杀数 : %u", m_pResult->getUInt(3));
+	str_format(stats[4], 50, "战绩 K/D : %f", m_pResult->getDouble(4));
+	str_format(stats[5], 50, "登录 : %u", m_pResult->getUInt(5));
 
-	str_format(stats[6], 50, "Fire : %u", m_pResult->getUInt(6));
-	str_format(stats[7], 50, "Pick-Up Weapon : %u", m_pResult->getUInt(7));
-	str_format(stats[8], 50, "Pick-Up Ninja : %u", m_pResult->getUInt(8));
+	str_format(stats[6], 50, "开火 : %u", m_pResult->getUInt(6));
+	str_format(stats[7], 50, "捡起过多少次武器 : %u", m_pResult->getUInt(7));
+	str_format(stats[8], 50, "捡起过多少次忍者 : %u", m_pResult->getUInt(8));
 
-	str_format(stats[9], 50, "Switch Weapon : %u", m_pResult->getUInt(9));
-	str_format(stats[10], 50, "Time Play : %u min", m_pResult->getUInt(10) / 60);
-	str_format(stats[11], 50, "Msg Sent : %u", m_pResult->getUInt(11));
+	str_format(stats[9], 50, "切换过多少次武器 : %u", m_pResult->getUInt(9));
+	str_format(stats[10], 50, "总共玩了多长时间 : %u 分钟", m_pResult->getUInt(10) / 60);
+	str_format(stats[11], 50, "发送给多少次消息 : %u", m_pResult->getUInt(11));
 
-	str_format(stats[12], 50, "Total Killing Spree : %u", m_pResult->getUInt(12));
-	str_format(stats[13], 50, "Max Killing Spree : %u", m_pResult->getUInt(13));
-	str_format(stats[14], 50, "Flag Capture : %u", m_pResult->getUInt(14));
+	str_format(stats[12], 50, "杀人如潮 : %u", m_pResult->getUInt(12));
+	str_format(stats[13], 50, "最多次杀人如潮 : %u", m_pResult->getUInt(13));
+	str_format(stats[14], 50, "夺旗 : %u", m_pResult->getUInt(14));
 
 	str_format(a, 256, "%s %s | %s", stats[0], stats[1], stats[2]);
 	GameServer()->SendChatTarget(-1, a);
