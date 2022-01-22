@@ -62,9 +62,9 @@ void CEvent::Tick()
 		char Prefix[10] = "";
 
 		if ( i == 0 )
-			str_copy(Prefix, "Event", 10);
+			str_copy(Prefix, "事件", 10);
 		else
-			str_copy(Prefix, "\nEvent 2", 10);
+			str_copy(Prefix, "\n事件 2", 10);
 
 		switch(m_ActualEvent[i])
 		{
@@ -202,61 +202,61 @@ void CEvent::Tick()
 		switch (m_ActualEventTeam)
 		{
 		case T_NOTHING:
-			str_format(Temp, 256, "\nEvent Team : Nothing. | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Nothing. | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case HAMMER_HEAL:
-			str_format(Temp, 256, "\nEvent Team : Hammer Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Hammer Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case GUN_HEAL:
-			str_format(Temp, 256, "\nEvent Team : Gun Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Gun Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case SHOTGUN_HEAL:
-			str_format(Temp, 256, "\nEvent Team : Shotgun Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Shotgun Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case GRENADE_HEAL:
-			str_format(Temp, 256, "\nEvent Team : Grenade Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Grenade Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case RIFLE_HEAL:
-			str_format(Temp, 256, "\nEvent Team : Rifle Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Rifle Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case KATANA_HEAL:
-			str_format(Temp, 256, "\nEvent Team : Katana Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Katana Heal Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case CAN_HEAL:
-			str_format(Temp, 256, "\nEvent Team : Can heal teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Can heal teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case HAMMER_KILL:
-			str_format(Temp, 256, "\nEvent Team : Hammer Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Hammer Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case GUN_KILL:
-			str_format(Temp, 256, "\nEvent Team : Gun Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Gun Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case SHOTGUN_KILL:
-			str_format(Temp, 256, "\nEvent Team : Shotgun Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Shotgun Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case GRENADE_KILL:
-			str_format(Temp, 256, "\nEvent Team : Grenade Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Grenade Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case RIFLE_KILL:
-			str_format(Temp, 256, "\nEvent Team : Rifle Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Rifle Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case KATANA_KILL:
-			str_format(Temp, 256, "\nEvent Team : Katana Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Katana Kill Teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case CAN_KILL:
-			str_format(Temp, 256, "\nEvent Team : Can kill teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Can kill teammate ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case ANONYMOUS:
-			str_format(Temp, 256, "\nEvent Team : All are anonymous ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : All are anonymous ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case T_SURVIVOR:
-			str_format(Temp, 256, "\nEvent Team : Survivor ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Survivor ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case STEAL_TEE:
-			str_format(Temp, 256, "\nEvent Team : Steal Tee ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Steal Tee ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		case TEE_VS_ZOMBIE:
-			str_format(Temp, 256, "\nEvent Team : Tee vs Zombies ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
+			str_format(Temp, 256, "\n团队事件 : Tee vs Zombies ! | Remaining : %02d:%02d", (300 - ElapsedTeam/Server()->TickSpeed()) / 60, (300 - ElapsedTeam/Server()->TickSpeed()) % 60);
 			break;
 		}
 

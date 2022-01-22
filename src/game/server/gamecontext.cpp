@@ -1057,7 +1057,7 @@ void CGameContext::CommandOnChat(const char *Message, const int ClientID, const 
 			char aBuf[256] = "";
 			str_format(aBuf, 256, "使用方式 : %s <种族>", Arguments[0]);
 			SendChatTarget(ClientID, aBuf);
-			SendChatTarget(ClientID, "种族 : Human or Gnome or Orc or Elf");
+			SendChatTarget(ClientID, "种族 : Human(人类)， Gnome(日本人)，Orc(兽人)， Elf(灰太狼)，Custom(游行者)");
 		}
 		else
 		{
