@@ -1500,7 +1500,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 							str_comp_nocase(pReason, "太强") == 0 ||
 							str_comp_nocase(pReason, "傻逼") == 0 ||
 							str_comp_nocase(pReason, "开挂") == 0 ||
-							str_comp_nocase(pReason, "gay") == 0 ||
+							str_comp_nocase(pReason, "蠢") == 0 ||
 							str_comp_nocase(pReason, "gay") == 0 ||
 							str_comp_nocase(pReason, "cheat") == 0))
 				{
@@ -1606,7 +1606,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					if(m_apPlayers[ClientID]->GetSID() < 0)
 					{
 						SendBroadcast("你作为陌生人登录，不会保存你的任何记录 !", ClientID);
-						SendChatTarget(ClientID, "你作为陌生人登录，不会保存你的任何记录 ! 如果你想保持你的账号数据, 请输入/register注册一个账号，或使用/login登录你的账号 ! 玩的开心 ;)", ClientID);
+						SendChatTarget(ClientID, "你作为陌生人登录，不会保存你的任何记录 ! 如果你想保持你的账号数据, 请输入/reg注册一个账号，或使用/login登录你的账号 ! 玩的开心 ;)", ClientID);
 						m_apPlayers[ClientID]->SetSID(0);
 					}
 					pPlayer->m_LastSetTeam = Server()->Tick();
