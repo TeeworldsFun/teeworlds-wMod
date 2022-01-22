@@ -176,29 +176,29 @@ void CStats::DisplayStat()
 	char a[256] = "";
 	char stats[18][50];
 
-	str_format(stats[0], 50, "Name : %s", m_player.m_pseudo);
-	str_format(stats[1], 50, "Level : %ld", m_stats.m_level);
-	str_format(stats[2], 50, "Rank : %ld.", GameServer()->m_pStatsServer ? GameServer()->m_pStatsServer->GetRank(m_player.m_id) : -1);
+	str_format(stats[0], 50, "名称 : %s", m_player.m_pseudo);
+	str_format(stats[1], 50, "等级 : %ld", m_stats.m_level);
+	str_format(stats[2], 50, "排名 : %ld.", GameServer()->m_pStatsServer ? GameServer()->m_pStatsServer->GetRank(m_player.m_id) : -1);
 
-	str_format(stats[3], 50, "Score : %ld", m_stats.m_score);
-	str_format(stats[4], 50, "Killed : %ld", m_stats.m_kill);
-	str_format(stats[5], 50, "Dead : %ld", m_stats.m_dead);
+	str_format(stats[3], 50, "分数 : %ld", m_stats.m_score);
+	str_format(stats[4], 50, "击杀数 : %ld", m_stats.m_kill);
+	str_format(stats[5], 50, "死亡数 : %ld", m_stats.m_dead);
 
-	str_format(stats[6], 50, "Rapport K/D : %lf", m_stats.m_rapport);
-	str_format(stats[7], 50, "Suicide : %ld", m_stats.m_suicide);
-	str_format(stats[8], 50, "Log-in : %ld", m_stats.m_log_in);
+	str_format(stats[6], 50, "战绩 K/D : %lf", m_stats.m_rapport);
+	str_format(stats[7], 50, "自杀数 : %ld", m_stats.m_suicide);
+	str_format(stats[8], 50, "登录 : %ld", m_stats.m_log_in);
 
-	str_format(stats[9], 50, "Fire : %ld", m_stats.m_fire);
-	str_format(stats[10], 50, "Pick-Up Weapon : %ld", m_stats.m_pickup_weapon);
-	str_format(stats[11], 50, "Pick-Up Ninja : %ld", m_stats.m_pickup_ninja);
+	str_format(stats[9], 50, "开火数 : %ld", m_stats.m_fire);
+	str_format(stats[10], 50, "捡起过多少次武器 : %ld", m_stats.m_pickup_weapon);
+	str_format(stats[11], 50, "捡起过多少次忍者 : %ld", m_stats.m_pickup_ninja);
 
-	str_format(stats[12], 50, "Switch Weapon : %ld", m_stats.m_change_weapon);
-	str_format(stats[13], 50, "Time Play : %ld min", m_stats.m_time_play / 60);
-	str_format(stats[14], 50, "Msg Sent : %ld", m_stats.m_message);
+	str_format(stats[12], 50, "切换过多少次武器 : %ld", m_stats.m_change_weapon);
+	str_format(stats[13], 50, "玩了多久（总共） : %ld 分钟", m_stats.m_time_play / 60);
+	str_format(stats[14], 50, "发送过多少次消息 : %ld", m_stats.m_message);
 
-	str_format(stats[15], 50, "Total Killing Spree : %ld", m_stats.m_killing_spree);
-	str_format(stats[16], 50, "Max Killing Spree : %ld", m_stats.m_max_killing_spree);
-	str_format(stats[17], 50, "Flag Capture : %ld", m_stats.m_flag_capture);
+	str_format(stats[15], 50, "疯狂杀戮 : %ld", m_stats.m_killing_spree);
+	str_format(stats[16], 50, "最多一次的疯狂杀戮 : %ld", m_stats.m_max_killing_spree);
+	str_format(stats[17], 50, "夺过多少次旗 : %ld", m_stats.m_flag_capture);
 
 	for ( int i = 0; i < 6; i++ )
 	{
@@ -212,13 +212,13 @@ void CStats::DisplayPlayer()
 	UpdateUpgrade();
 
 	char upgr[7][50];
-	str_format(upgr[0], 50, "Name : %s | Level : %ld | Score : %ld", GameServer()->Server()->ClientName(m_pPlayer->GetCID()), m_stats.m_level, m_stats.m_score);
-	str_format(upgr[1], 50, "Upgrade :");
-	str_format(upgr[2], 50, "Money : %ld", m_upgr.m_money);
-	str_format(upgr[3], 50, "Weapon: %ld/40", m_upgr.m_weapon);
-	str_format(upgr[4], 50, "Life : %ld/40", m_upgr.m_life);
-	str_format(upgr[5], 50, "Move : %ld/40", m_upgr.m_move);
-	str_format(upgr[6], 50, "Hook : %ld/40", m_upgr.m_hook);
+	str_format(upgr[0], 50, "名称 : %s | 等级 : %ld | 分数 : %ld", GameServer()->Server()->ClientName(m_pPlayer->GetCID()), m_stats.m_level, m_stats.m_score);
+	str_format(upgr[1], 50, "升级 :");
+	str_format(upgr[2], 50, "钱 : %ld", m_upgr.m_money);
+	str_format(upgr[3], 50, "武器: %ld/40", m_upgr.m_weapon);
+	str_format(upgr[4], 50, "生命 : %ld/40", m_upgr.m_life);
+	str_format(upgr[5], 50, "移动 : %ld/40", m_upgr.m_move);
+	str_format(upgr[6], 50, "钩子 : %ld/40", m_upgr.m_hook);
 
 
 	for ( int i = 0; i < 7; i++ )
