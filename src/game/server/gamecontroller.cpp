@@ -389,11 +389,11 @@ void IGameController::OnCharacterKill(class CPlayer *pKiller, class CPlayer *pVi
 	{
 		pKiller->m_level = pKiller->m_pStats->GetLevel();
 		char Text[256] = "";
-		str_format(Text, 256, "XP : %d/%d", pKiller->m_level, pKiller->m_level);
+		str_format(Text, 256, "EXP : %d/%d", pKiller->m_level, pKiller->m_level);
 		m_pGameServer->SendChatTarget(pKiller->GetCID(), Text, CGameContext::CHAT_INFO_XP);
-		str_format(Text, 256, "%s has a levelup ! He is level %ld now ! Good Game ;) !", Server()->ClientName(pKiller->GetCID()), pKiller->m_level);
+		str_format(Text, 256, "%s 等级提升了 ! 他的等级现在是： %ld ! 玩的开心！ ;) !", Server()->ClientName(pKiller->GetCID()), pKiller->m_level);
 		m_pGameServer->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_LEVELUP);
-		m_pGameServer->SendChatTarget(pKiller->GetCID(), "You've get a levelup ! Don't forget put /upgr on the chat to upgr your statistics ! Good Game ;)");
+		m_pGameServer->SendChatTarget(pKiller->GetCID(), "你的等级提升了 ! 别忘记使用/upgr提升你的属性 ! 玩的开心 ;)");
 	}
 	else
 	{
@@ -418,27 +418,27 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 
 			if ( pKiller->m_pStats->GetActualKill() > 0 && (pKiller->m_pStats->GetActualKill() % 5) == 0 )
 			{
-				char spree_note[6][32] = { "is on a killing spree", "is on a rampage", "is dominating", "is unstoppable", "is Godlike", "is Wicked SICK" };
+				char spree_note[6][32] = { "杀人如潮了", "陷入癫狂了", "失去灵魂了", "无法阻挡了", "无敌了", "临近死亡了" };
 				if( pKiller->m_pStats->GetActualKill() <= 30 )
 				{
 					char buf[512];
-					str_format(buf, sizeof(buf), "%s %s with %ld kills !", Server()->ClientName(pKiller->GetCID()), spree_note[pKiller->m_pStats->GetActualKill()/5-1], pKiller->m_pStats->GetActualKill());
+					str_format(buf, sizeof(buf), "%s 已经%s了，%ld杀！", Server()->ClientName(pKiller->GetCID()), spree_note[pKiller->m_pStats->GetActualKill()/5-1], pKiller->m_pStats->GetActualKill());
 					GameServer()->SendChatTarget(-1, buf, CGameContext::CHAT_INFO_KILLING_SPREE);
 				}
 				else
 				{
 					char Text[256] = "";
-					str_format(Text, 256, "WARNING : %s must be stopped !!! %ld kills !!! ;)", Server()->ClientName(pKiller->GetCID()), pKiller->m_pStats->GetActualKill());
+					str_format(Text, 256, "警告 : %s 必须被阻止 !!! %ld 杀 !!! ;)", Server()->ClientName(pKiller->GetCID()), pKiller->m_pStats->GetActualKill());
 					GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
 				}
 				if ((pKiller->m_pStats->GetActualKill() / 5) < 5)
 				{
-					char bonus_note[4][100] = {"handle x1.5 and fly unlimited", "all weapons", "invisibility", "protect for 30 sec but loses invisibility"};
+					char bonus_note[4][100] = {"速度x1.5和无限飞行", "所有武器", "隐身", "30秒内无敌，但是失去了隐身效果"};
 					char Text[256] = "";
-					str_format(Text, 256, "%s gets %s !", Server()->ClientName(pKiller->GetCID()), bonus_note[(pKiller->m_pStats->GetActualKill() / 5) - 1]);
+					str_format(Text, 256, "%s 得到了奖励： %s !", Server()->ClientName(pKiller->GetCID()), bonus_note[(pKiller->m_pStats->GetActualKill() / 5) - 1]);
 					GameServer()->SendChatTarget(-1, Text, CGameContext::CHAT_INFO_KILLING_SPREE);
 
-					str_format(Text, 256, "You've get %s by killing spree !", bonus_note[(pKiller->m_pStats->GetActualKill() / 5) - 1]);
+					str_format(Text, 256, "%s 个灵魂在地下长眠...", bonus_note[(pKiller->m_pStats->GetActualKill() / 5) - 1]);
 					GameServer()->SendChatTarget(pKiller->GetCID(), Text);
 
 					if ((pKiller->m_pStats->GetActualKill() / 5) == 1)
@@ -461,7 +461,7 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 			if ( pVictim->GetPlayer()->m_PlayerFlags & PLAYERFLAG_CHATTING )
 			{
 				char Text[256] = "";
-				str_format(Text, 256, "%s made a chatkill to %s!", Server()->ClientName(pKiller->GetCID()), Server()->ClientName(pVictim->GetPlayer()->GetCID()));
+				str_format(Text, 256, "wow, %s 在聊天的时候杀死了 %s!", Server()->ClientName(pKiller->GetCID()), Server()->ClientName(pVictim->GetPlayer()->GetCID()));
 				GameServer()->SendChatTarget(-1, Text);
 			}
 
@@ -964,17 +964,17 @@ void IGameController::DoWincheck()
 
 				if ( m_aTeamscore[0] && !m_aTeamscore[1] && nb_player > 1 )
 				{
-					GameServer()->SendChatTarget(-1, "The red team win !!! Good Game !!!");
+					GameServer()->SendChatTarget(-1, "红队赢了 !!! 好耶 !!!");
 					EndRound();
 				}
 				else if ( m_aTeamscore[1] && !m_aTeamscore[0] && nb_player > 1 )
 				{
-					GameServer()->SendChatTarget(-1, "The blue team win !!! Good Game !!!");
+					GameServer()->SendChatTarget(-1, "蓝队赢了 !!! 好耶 !!!");
 					EndRound();
 				}
 				else if ( !m_aTeamscore[0] && !m_aTeamscore[1] && nb_player > 0 )
 				{
-					GameServer()->SendChatTarget(-1, "There isn't a winner ... ");
+					GameServer()->SendChatTarget(-1, "国足赢了！好耶！ ...(?) ");
 					EndRound();
 				}
 			}
@@ -989,17 +989,17 @@ void IGameController::DoWincheck()
 					{
 						while (!GameServer()->m_apPlayers[m_Captain[TEAM_RED] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->GetTeam() != TEAM_RED);
 						char Text[256] = "";
-						str_format(Text, 256, "%s is the captain of the red team !", Server()->ClientName(m_Captain[TEAM_RED]));
+						str_format(Text, 256, "%s 成为了红队的队长!", Server()->ClientName(m_Captain[TEAM_RED]));
 						GameServer()->SendChatTarget(-1, Text);
-						GameServer()->SendChatTarget(m_Captain[TEAM_RED], "You're the captain of the red team ! You must keep your teammate and capture all players !");
+						GameServer()->SendChatTarget(m_Captain[TEAM_RED], "你是红队的队长，你必须保持自己所有的成员并偷走蓝队的成员 !");
 					}
 					if ( m_Captain[TEAM_BLUE] < 0 && m_aTeamscore[TEAM_BLUE] > 0 )
 					{
 						while (!GameServer()->m_apPlayers[m_Captain[TEAM_BLUE] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_BLUE]]->GetTeam() != TEAM_BLUE);
 						char Text[256] = "";
-						str_format(Text, 256, "%s is the captain of the blue team !", Server()->ClientName(m_Captain[TEAM_BLUE]));
+						str_format(Text, 256, "%s 成为了蓝队的队长 !", Server()->ClientName(m_Captain[TEAM_BLUE]));
 						GameServer()->SendChatTarget(-1, Text);
-						GameServer()->SendChatTarget(m_Captain[TEAM_BLUE], "You're the captain of the blue team ! You must keep your teammate and capture all players !");
+						GameServer()->SendChatTarget(m_Captain[TEAM_BLUE], "你是红队的队长，你必须保持自己所有的成员并偷走蓝队的成员 !");
 					}
 				}
 				else if (IsTeamplay() && GameServer()->m_pEventsGame->GetActualEventTeam() == TEE_VS_ZOMBIE && m_aTeamscore[TEAM_BLUE] > 1 && m_Captain[TEAM_RED] < 0 && Server()->Tick() > GameServer()->m_pEventsGame->m_StartEventRound+Server()->TickSpeed()*5 )
@@ -1009,9 +1009,9 @@ void IGameController::DoWincheck()
 						while (!GameServer()->m_apPlayers[m_Captain[TEAM_RED] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->GetTeam() == TEAM_SPECTATORS);
 						GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->SetTeam(TEAM_RED, false);
 						char Text[256] = "";
-						str_format(Text, 256, "%s is a zombie !!! Flee or be his slaves !!!", Server()->ClientName(m_Captain[TEAM_RED]));
+						str_format(Text, 256, "%s 成为了僵尸 !!! 逃跑或者成为他的猎物 !!!", Server()->ClientName(m_Captain[TEAM_RED]));
 						GameServer()->SendChatTarget(-1, Text);
-						GameServer()->SendChatTarget(m_Captain[TEAM_RED], "You're a zombie ! Eat some brains !");
+						GameServer()->SendChatTarget(m_Captain[TEAM_RED], "你现在是僵尸了 ! 吃掉他们的脑子 !");
 					}
 					else
 						while (!GameServer()->m_apPlayers[m_Captain[TEAM_RED] = (rand() % (0 - MAX_CLIENTS + 1)) + 0] || GameServer()->m_apPlayers[m_Captain[TEAM_RED]]->GetTeam() != TEAM_RED);
@@ -1033,7 +1033,7 @@ void IGameController::DoWincheck()
 						if ( Team == TEAM_BLUE )
 							m_aTeamscore[TEAM_BLUE] = 100;
 						char Text[256] = "";
-						str_format(Text, 256, "The %s win !", Team ? "humans" : "zombies");
+						str_format(Text, 256, "%s 胜利了 !", Team ? "人类们" : "僵尸们");
 						GameServer()->SendChatTarget(-1, Text);
 					}
 
